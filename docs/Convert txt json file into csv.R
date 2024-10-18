@@ -1,0 +1,35 @@
+# Load the necessary library
+#install.packages("jsonlite") 
+#install.packages("plyr") # Run this 2 lines in console only if not installed
+library(jsonlite)
+library(plyr)
+# Set your working directory to where the text file is located
+setwd("/Users/admin/Desktop/A HEC/Master/Semestre 3/Knowledge Graphs and Generative AI /Reddit")
+
+# Read the text file line by line
+lines <- readLines("RC_2015-01 - 15k.txt")  # Make sure to specify the correct filename
+
+# Parse each line to JSON safely, handle errors and ensure missing fields are handled
+json_data_list <- lapply(lines, function(line) {
+  # Try to parse each JSON line, return NULL if there's an error
+  tryCatch({
+    parsed_json <- fromJSON(line, flatten = TRUE)
+    as.data.frame(parsed_json, stringsAsFactors = FALSE)  # Convert to data frame
+  }, error = function(e) NULL)  # Handle errors by returning NULL
+})
+
+# Filter out any NULL values (lines that failed to parse)
+json_data_list <- Filter(Negate(is.null), json_data_list)
+
+# Check if we have any parsed data
+if (length(json_data_list) == 0) {
+  stop("No valid JSON objects were parsed.")
+}
+
+# Combine all data frames in the list into a single data frame, handling different columns
+df_reddit <- rbind.fill(json_data_list)  # rbind.fill fills missing columns with NA
+
+# Write the data frame to a CSV file (optional)
+write.csv(df_reddit, "reddit_small.csv", row.names = FALSE)
+# Print a message when done
+cat("Conversion complete! CSV saved as reddit_small.csv\n")
