@@ -1,0 +1,41 @@
+# Introduction
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, include=FALSE}
+library(here)
+source(here("src/setup.R"))
+```
+
+## Overview and Motivation
+
+### Context and Background
+
+The Swiss real estate market is known for its resilience and complexity, making it an ideal candidate for advanced analytical approaches to understand pricing dynamics. This project, part of a Master's degree course in Machine Learning at the University of Lausanne, aims to leverage data science to predict real estate market prices in Switzerland. This project provides practical and up-to-date insights into real estate valuation.
+
+With housing prices fluctuating due to factors like interest rate changes and demographic shifts, ([Credit Suisse](https://www.credit-suisse.com/ch/en/private-clients/mortgages/schweizer-immobilienmarkt-aktuelle-fakten.html)), this study could be valuable for investors, policymakers, and academics alike.
+
+### Aim Of The Investigation
+
+The main goal of this study is to predict Swiss real estate prices using real-time data from ImmoScout24, one of the biggest, if not the biggest, Swiss real estate website. Specifically, the study aims to answer:
+
+-   *How accurately can machine learning models predict the market prices of real estate properties in Switzerland based on current market data?*
+
+### Description of the Data
+
+The main data set for this study comes from ImmoScout24 and includes variables like `price`, `number of rooms`, `square meters`, `address`, `canton`, `property type`, `floor`, and `year of construction`. These data points were collected through a sophisticated scraping algorithm, providing a detailed snapshot of the current market. This comprehensive data set with a granular view of the market is essential for training effective machine learning models.
+
+The additional data sets come from the [Swiss Federal Statistical Office](https://www.bfs.admin.ch/bfs/en/home/statistics.html). This source was used to create the political, demographic and fiscal landscape surrounding the real estate market.
+
+### Methodology
+
+The project uses both supervised and unsupervised machine learning techniques to quantify the impact of various factors on property prices in Switzerland. Unsupervised methods were used to reduce the dimensions of external factors, that were then used along our main data set to train predictive models to understand the complex relationships within the data, allowing for an analysis of both linear dependencies and more intricate interactions, such as how location and property type affect pricing.
+
+### Structure of the Report
+
+The report is structured to provide a clear and logical analysis:
+
+-   Section 1: *Introduction* - Outlines the research context, objectives, and significance.
+-   Section 2: *Data* - Details the sources, nature, and preprocessing of the data used.
+-   Section 3: *Unsupervised Learning* - Applies clustering techniques to understand the political, demographic and fiscal landscape.
+-   Section 4: *Exploratory Data Analysis (EDA)* - Analyzes the data to explore patterns and anomalies.
+-   Section 5: *Supervised Learning* - Discusses the development and validation of predictive models.
+-   Section 6: *Conclusion* - Summarizes the findings, discusses the implications, and suggests areas for further research.

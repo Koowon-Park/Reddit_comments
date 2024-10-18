@@ -1,0 +1,354 @@
+# Unsupervised learning
+
+In order to explore the relationship between real estate prices and external factor, we decided to perform three unsupervised clustering methods on fiscal, demographic and political data sets for each Swiss municipalities. The resulting clusters are then included as features of our supervised models, as the municipalities within those clusters follow roughly the same behavior in these regards.
+
+## Fiscal clustering
+
+First, we performed a k-means clustering on the fiscal data set. We used the elbow method with the within-sum of squares to determine the optimal number of clusters.
+
+```{r}
+# Clean data and convert to numeric
+set.seed(123)
+cleaned_impots <- apply(impots, 2, function(x) as.numeric(gsub("[^0-9.-]", "", x)))
+cleaned_impots[is.na(cleaned_impots)] <- 0  # Replace NA values with 0
+
+# Scale the features
+scaled_impots <- scale(cleaned_impots)
+
+# Perform k-means clustering
+k <- 2  # Initial guess for the number of clusters
+kmeans_model <- kmeans(scaled_impots, centers = k)
+
+# Check within-cluster sum of squares (elbow method)
+wss <- numeric(10)
+for (i in 1:10) {
+  kmeans_model <- kmeans(scaled_impots, centers = i)
+  wss[i] <- sum(kmeans_model$withinss)
+}
+plot(1:10, wss, type = "b", xlab = "Number of Clusters", ylab = "Within groups sum of squares")
+
+# Adjust k based on elbow method
+k <- 5  
+
+# Perform k-means clustering again with optimal k
+kmeans_model <- kmeans(scaled_impots, centers = k)
+
+# Assign cluster labels to dendrogram
+clusters <- kmeans_model$cluster
+
+# Plot dendrogram
+#colored_dend <- color_branches(dend, k = 5)
+#y_zoom_range <- c(0, 80)  # Adjust the y-axis range as needed
+
+#plot(colored_dend, main = "Hierarchical Clustering Dendrogram", horiz = FALSE, ylim = y_zoom_range)
+
+```
+
+We can see that the optimal number of clusters is either 5 or 7. We decided to stop at 5.
+
+```{r}
+# Get the cluster centers
+cluster_centers <- kmeans_model$centers
+
+# Create a data frame with cluster centers
+cluster_centers_df <- data.frame(cluster = 1:k, cluster_centers)
+
+# Print cluster centers
+# print(cluster_centers_df)
+
+# Calculate the size of each cluster
+cluster_sizes <- table(kmeans_model$cluster)
+
+# Print cluster sizes
+# print(cluster_sizes)
+
+# Get the cluster labels
+cluster_labels <- kmeans_model$cluster
+
+# Convert cleaned_impots to a data frame
+impots_cluster <- as.data.frame(cleaned_impots)
+
+# Add the cluster labels to cleaned_impots
+impots_cluster$cluster <- cluster_labels
+
+rownames(impots_cluster) <- rownames(impots)
+
+impots_cluster <- impots_cluster %>%
+  rownames_to_column(var = "Community")
+
+```
+
+Next, we interpret the clusters by looking at the cluster centers, the size of each cluster, and the distribution of the variables within each cluster.
+
+```{r}
+# Subset your dataset to include only the variables used to create the tax clusters and the tax cluster labels
+tax_vars <- select(impots_cluster, -c("Community", "cluster", "Coefficient d'impôt en %"))
+
+# Scale the variables
+scaled_tax_vars <- scale(tax_vars)
+
+# Convert to data frame
+scaled_tax_vars <- as.data.frame(scaled_tax_vars)
+
+# Add tax cluster labels
+scaled_tax_vars$Tax_cluster <- impots_cluster$cluster
+
+# Melt the dataset to long format
+melted_tax <- melt(scaled_tax_vars, id.vars = "Tax_cluster")
+
+# Subset your dataset to include only the variables used to create the tax clusters and the tax cluster labels
+tax_vars <- select(impots_cluster, -c("Community", "cluster", "Coefficient d'impôt en %"))
+
+# Scale the variables
+scaled_tax_vars <- scale(tax_vars)
+
+# Convert to data frame
+scaled_tax_vars <- as.data.frame(scaled_tax_vars)
+
+# Add tax cluster labels
+scaled_tax_vars$Tax_cluster <- impots_cluster$cluster
+
+# Melt the dataset to long format
+melted_tax <- melt(scaled_tax_vars, id.vars = "Tax_cluster")
+
+# Create boxplots for each variable using ggplot2 with viridis colors
+p <- ggplot(melted_tax, aes(x = as.factor(Tax_cluster), y = value, fill = as.factor(Tax_cluster))) +
+  geom_boxplot() +
+  facet_wrap(~ variable, scales = "free", ncol = 2) +  # Arrange plots in 2 columns
+  scale_fill_viridis_d() +  # Use viridis color palette
+  theme_minimal(base_size = 15) +  # Increase base font size for larger plot
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5),
+  ) +
+  labs(
+    x = "",
+    y = "",
+    title = "Boxplots of Scaled Tax Variables by Cluster"
+  )
+
+# Convert ggplot to an interactive plot using plotly
+interactive_plot <- ggplotly(p, width = 800, height = 1000)
+
+# Print the interactive plot
+interactive_plot
+```
+
+The fiscal clusters are quite difficult to interpret. A few interesting observations we can make are the following:
+
+- Cluster 1 seems to have average-to-low taxes across the board
+
+- Cluster 2 has a very similar behavior to cluster 1, with lower state (cantonal) taxes
+
+- Cluster 3 seems to have higher municipal taxes than cluster 1 and 2, 
+
+- Cluster 4 has a very similar behavior to cluster 2
+
+- Cluster 5 has high cantonal taxes, while having average communal (municipal) taxes. This cluster has overall the highest taxes for individuals
+
+We are however aware that these interpretation, has well as the interpretation given in the following sections fail to encompass the whole picture. Moreover, the clustering ran on all fiscal values fails to capture the difference in attractiveness for individuals and companies (taxes on income/wealth vs on profits).
+
+## Demographic clustering
+
+Then, we performed a hierarchical clustering on the demographic and fiscal data sets. First, the data was scaled (some features are percentages, some are real values), then the dissimilarity matrix was computed using the Minkowski method, then Ward's method was used for the linkage.
+
+As the optimal number of clusters for the fiscal data set was determined to be 5, we decided to continue our analysis of the two other data sets with 5 clusters in order to keep the same scale (even though categorical) for the 3 features resulting from the unsupervised clustering.
+
+```{r, warning=FALSE}
+# Clustering demographic
+cols_commune_demographic <- select(commune, -c("REGION", "CODE_REGION","Conseil national - PLR","Conseil national - PDC", "Conseil national - PS", "Conseil national - UDC", "Conseil national - PEV/PCS", "Conseil national - PVL", "Conseil national - PBD", "Conseil national - PST/Sol.", "Conseil national - PES", "Conseil national - Petits partis de droite"))
+
+# Scale the columns, some are total numbers, some are percentages
+cols_commune_demographic <- scale(cols_commune_demographic)
+
+# Calculate the distance matrix
+dist_matrix_demographic <- dist(cols_commune_demographic, method = "minkowski")
+
+# Perform hierarchical clustering
+hclust_model_demographic <- hclust(dist_matrix_demographic, method = "ward.D2")
+
+# Create dendrogram
+dend_demo <- as.dendrogram(hclust_model_demographic)
+dend_demo <- color_branches(dend_demo, k = 5) #Set number of cluster to 5, to keep the same scale for all our variables
+
+par(mar = c(0.001, 4, 4, 2) + 0.1)
+# plot(dend_demo, main = "Demographics - Hierarchical Clustering Dendrogram", xlab = "")
+
+# Interpretaion of demographic clusters
+demographic_vars <- select(commune, -c("REGION", "CODE_REGION", "Conseil national - PLR", "Conseil national - PDC", "Conseil national - PS", "Conseil national - UDC", "Conseil national - PEV/PCS", "Conseil national - PVL", "Conseil national - PBD", "Conseil national - PST/Sol.", "Conseil national - PES", "Conseil national - Petits partis de droite", "Population - Ménages privés"))
+
+# Scale the variables
+scaled_demographic_vars <- scale(demographic_vars)
+
+# Convert to data frame
+scaled_demographic_vars <- as.data.frame(scaled_demographic_vars)
+
+# Add demographic cluster labels
+scaled_demographic_vars$Demographic_cluster <- cutree(hclust_model_demographic, k = 5)
+
+# Melt the dataset to long format
+melted_demographic <- melt(scaled_demographic_vars, id.vars = "Demographic_cluster")
+
+# Create boxplots for each variable using ggplot2 with custom colors and smaller data points
+p <- ggplot(melted_demographic, aes(x = as.factor(Demographic_cluster), y = value, fill = as.factor(Demographic_cluster))) +
+  geom_boxplot() +
+  geom_boxplot(outlier.shape = 1) +  # Change outlier point shape
+  geom_point(size = 0.2) +  # Adjust the size of data points (smaller size)
+  facet_wrap(~ variable, scales = "free", ncol = 2) +  # Arrange plots in 2 columns
+  theme_minimal(base_size = 15) +  # Increase base font size for larger plot
+  scale_fill_viridis_d() +  # Use viridis color palette
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5),
+  ) +
+  labs(
+    x = "",
+    y = "",
+    title = "Boxplots of Scaled Demographic Variables by Cluster"
+  )
+
+# Convert ggplot to an interactive plot using plotly
+interactive_plot <- ggplotly(p, width = 800, height = 1000)
+
+# Print the interactive plot
+interactive_plot
+```
+
+The unsupervised clustering method performed on the demographic data of Swiss municipalities return some interesting results.
+
+- Our first cluster seems to be for municipalities where a lot of families with children live ("Part du group d'âge 0-19 ans" is high, "Taille moyenne des ménages high). Moreover, we can observe the very low values for "Habitants/Densité de la population" (inhabitants, population density). From this, we can infer that cluster 1 encompasses rural municipalities, geared towards families.
+
+- Cluster 2 and 3 are very similar, with a lot of variables showing no special indication. It is however to note that municipalities in cluster 2 have slightly higher population density than cluster 3, with more foreign inhabitants. We could therefore hypothesize that cluster 2 is more urban that cluster 3.
+
+- Cluster 4 seems to be for municipalities in large cities (Large and dense population, with most of its inhabitants being 20 to 64 years old). We can also note the high share of foreign inhabitants. This value could be explained by the sizable foreign workforce in main Swiss cities where large corporations and NGOs operate (Geneva, Zurich). Moreover, the above-average share of welfare recipients (Taux d'aide sociale) further reinforce the large city hypothesis, where wealth disparities are more prevalent.
+
+- Cluster 5 seems to be for municipalities with an aging population ("Part du groupe d'âge 65+ ans" and "Taux de mortalité" with high values). The low values in population density further paints the picture of the small rural villages in remote areas. 
+
+
+## Political clustering
+
+The same process was used for our political data set, with 5 clusters for the same reasons. The share of each major parties voted for the Conseil National are represented. The only difference in methodology with the Demographic clustering is that the data was not scaled, as all features are percentages.
+
+```{r}
+# Clustering politics
+
+cols_commune_politics <- select(commune, c("Conseil national - PLR","Conseil national - PDC", "Conseil national - PS", "Conseil national - UDC", "Conseil national - PEV/PCS", "Conseil national - PVL", "Conseil national - PBD", "Conseil national - PST/Sol.", "Conseil national - PES", "Conseil national - Petits partis de droite"))
+
+
+# Calculate the distance matrix
+dist_matrix_politics <- dist(cols_commune_politics, method = "minkowski")
+
+# Perform hierarchical clustering
+hclust_model_politics <- hclust(dist_matrix_politics, method = "ward.D2")
+
+# Create dendrogram
+dend_pol <- as.dendrogram(hclust_model_politics)
+dend_pol <- color_branches(dend_pol, k = 5) #Set number of cluster to 5, to keep the same scale for all our variables
+
+# plot(dend_pol, main = "Politics - Hierarchical Clustering Dendrogram")
+
+# Subset your dataset to include only the variables used to create the political clusters and the political cluster labels
+political_vars <- select(commune, c("Conseil national - PLR","Conseil national - PDC", "Conseil national - PS", "Conseil national - UDC", "Conseil national - PEV/PCS", "Conseil national - PVL", "Conseil national - PBD", "Conseil national - PST/Sol.", "Conseil national - PES", "Conseil national - Petits partis de droite"))
+
+colnames(political_vars) <- sub("Conseil national - ", "", colnames(political_vars))
+
+# Add political cluster labels
+political_vars$Political_cluster <- cutree(hclust_model_politics, k = 5)
+
+# Melt the dataset to long format
+melted_political <- melt(political_vars, id.vars = "Political_cluster")
+
+# Create boxplots for each variable using ggplot2 with pastel colors
+p <- ggplot(melted_political, aes(x = as.factor(Political_cluster), y = value, fill = as.factor(Political_cluster))) +
+  geom_boxplot() +
+  facet_wrap(~ variable, scales = "free", ncol = 2) +  # Arrange plots in 2 columns
+  theme_minimal(base_size = 15) +  # Increase base font size for larger plot
+  scale_fill_viridis_d() +  # Use viridis color palette
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5),
+  ) +
+  labs(
+    x = "Political Cluster",
+    y = "",
+    title = "Boxplots of Political Variables by Cluster"
+  )
+
+# Convert ggplot to an interactive plot using plotly
+interactive_plot <- ggplotly(p, width = 800, height = 1000)
+
+# Print the interactive plot
+interactive_plot
+
+```
+
+The political clusters are more difficult to interpret than the demographic ones. It is however interesting to note the following points: 
+
+- Cluster 1 has average values for most major political parties, displaying equal strengths across the political spectrum within the municipality.
+
+- Cluster 2 has a fairly high value for UDC while the other political parties receive average votes. This paints the picture of municipalities that lean more towards the right.
+
+- Cluster 3 has fairly high values for left-leaning parties (PS, PST) and one center-right party (PLR). This seems to show the opposite behaviour to cluster 2, with a balanced view but leaning towards the left.
+
+- Cluster 4 finds its highest values in PDC and UDC. Municipalities in cluster 4 are therefore very right-leaning.
+
+- Cluster 5's most striking difference is its large distribution amongst "Petits partis de droite". We could maybe hypothesize that these municipalities are from the Italian-speaking part of Switzerland, where a lot of small right-wing parties find a lot of support.
+
+```{r}
+# Preparing df_commune for merging with main dataset
+
+df_commune <- select(commune, REGION)
+
+df_commune$Demographic_cluster <- cutree(hclust_model_demographic, k = 5)
+df_commune$Political_cluster <- cutree(hclust_model_politics, k = 5)
+
+# Preparing to merge
+
+merging <- inner_join(amto_df, df_commune, by = c("Community" = "REGION"))
+
+impots_cluster_subset <- impots_cluster[, c("Community", "cluster")]
+merging <- merging %>%
+  left_join(impots_cluster_subset, by = "Community")
+
+clusters_df <- merging %>%
+  rename(Tax_cluster = cluster) %>%
+  rename(Commune = Community)
+
+clusters_df <- clusters_df %>%
+  select(c("Commune", "zip_code", "Canton_code", "Demographic_cluster", "Political_cluster", "Tax_cluster"))
+
+# Only NAs are for commune Brugg, (written Brugg (AG) in the other data set) -> j'entre le cluster à la mano
+clusters_df$Tax_cluster[is.na(clusters_df$Tax_cluster)] <- 2
+
+# adding it to our main data set:
+properties_filtered <- merge(properties_filtered, clusters_df[, c("zip_code", "Demographic_cluster", "Political_cluster", "Tax_cluster")], by = "zip_code", all.x = TRUE)
+
+```
+
+Finally, when adding this new feature into our main data set, 228 rows were not merged correctly. Indeed, the clusters' municipalities' names and the main data set's municipalities' names were not exactly the same. Trying to merge via the zip codes also resulted in a failure. Given the size of our data set (20k+ rows), and given the heterogeneous reparation of the missing data, we took the decision to remove these 228 rows from our main data set.
+
+```{r}
+# Dropping 228 rows containing NAs after the merge (Problem with names)
+
+# Find rows with NA values in the specified columns
+na_rows <- subset(properties_filtered, is.na(Demographic_cluster) | is.na(Political_cluster) | is.na(Tax_cluster))
+
+# Drop the NA rows
+properties_filtered <- anti_join(properties_filtered, na_rows, by = "zip_code")
+
+all_objects <- ls()
+
+# Remove all objects except 'properties_filtered'
+rm(list = setdiff(all_objects, "properties_filtered"))
+
+```
+
+
+
+
+
+
+
+
+
+

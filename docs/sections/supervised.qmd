@@ -1,0 +1,883 @@
+# Supervised learning
+## Model 1
+
+This section provides a comprehensive outline of the linear regression model and analysis methods employed in the study of property price determinants.
+
+### Tools 
+
+For the linear regression model, R programming language and its packages were used. `corrplot` was used for visualizing correlation matrices, `car` for checking multicollinearity through variance inflation factor (VIF), `caret` for managing data splits and cross-validation, `ggplot2` and `plotly` for graphical representations of diagnostics and results, and `gtsummary` for summarizing the regression outcomes in tables. These tools supported each phase of the model, from preliminary analysis to validation.
+
+### Linear Regression
+
+We analyzed property price determinants using linear regression, involving data splitting, correlation analysis for predictor selection, and VIF for multicollinearity checks. The model was refined with stepwise regression, lasso and ridge regularization, and its performance evaluated using RMSE, MAE, and R-squared through cross-validation to ensure robustness and generalizability.
+
+### Linear Regression - With All Prices
+#### Correlation Analysis - Continuous Variable
+
+Initially, a correlation analysis was conducted to identify and visualize linear relationships between the property prices and potential predictive variables such as the `number of rooms` and `square meters`. The correlation matrix was computed and plotted using the `corrplot` package:
+
+```{r}
+# Create a copy of properties_filtered as properties2
+properties2 <- properties_filtered
+
+# Convert property_type column to a factor in properties2
+properties2$property_type <- as.factor(properties2$property_type)
+# Convert the factor to numeric scale
+properties2$property_type_numeric <- as.numeric(properties2$property_type)
+
+# Convert canton column to a factor in properties2
+properties2$canton <- as.factor(properties2$canton)
+# Convert the factor to numeric scale
+properties2$canton_numeric <- as.numeric(properties2$canton)
+
+# Convert canton column to a factor in properties2
+properties2$year_category <- as.factor(properties2$year_category)
+# Convert the factor to numeric scale
+properties2$year_category_numeric <- as.numeric(properties2$year_category)
+
+# Convert canton column to a factor in properties2
+properties2$Demographic_cluster <- as.factor(properties2$Demographic_cluster)
+# Convert the factor to numeric scale
+properties2$Demographic_cluster_numeric <- as.numeric(properties2$Demographic_cluster)
+
+# Convert canton column to a factor in properties2
+properties2$Tax_cluster <- as.factor(properties2$Tax_cluster)
+# Convert the factor to numeric scale
+properties2$Tax_cluster_numeric <- as.numeric(properties2$Tax_cluster)
+
+# Convert canton column to a factor in properties2
+properties2$Political_cluster <- as.factor(properties2$Political_cluster)
+# Convert the factor to numeric scale
+properties2$Political_cluster_numeric <- as.numeric(properties2$Political_cluster)
+
+correlation_matrix <- cor(properties2[ , c("price", "number_of_rooms", "square_meters","property_type_numeric","canton_numeric", "year_category_numeric", "Political_cluster_numeric","Tax_cluster_numeric","Demographic_cluster_numeric")], use="complete.obs")
+corrplot(correlation_matrix, method="square", type="upper", tl.col="black", tl.srt=45, tl.cex=0.8, cl.cex=0.8, addCoef.col="black", number.cex=0.8, order="hclust", hclust.method="complete", tl.pos="lt", tl.offset=0.5, cl.pos="n", cl.length=1.5)
+
+rm(properties2)
+```
+
+- We can observe that the correlation between the `number of rooms` and `price` (0.46) and `square meters` and `price` (0.67) suggests a moderate correlation with the `number of rooms` and a strong correlation with `square meters`. 
+- The number of `rooms` and` square meters` also have a strong correlation (0.7), indicating potential multicollinearity between these predictors.
+- There is a correlation of (0.28) between the `type of properties` and `price`, suggesting a weak positive relationship. 
+- The correlation of (0.08) between `canton` and `price` indicates a very weak positive relationship. 
+- Surprisingly, there are almost no correlation (-0.03) between the `year category` and `price`.
+- Further analysis reveals that the` year category` exhibits correlations of (-0.31), (-0.28), and (-0.17) with the `type of properties`, `number of rooms`, and `square meters`, respectively. These negative correlations suggest that as the `year category` increases, there is a tendency for `the type of properties`, `number of rooms`, and `square meters` to decrease, which may reflect changing trends or market dynamics over time.
+
+#### GVIF (Generalized Variance Inflation Factor)
+
+```{r}
+properties_filtered
+## Multicollinearity Check
+model_for_vif <- lm(price ~ number_of_rooms + square_meters + canton + floor + year_category + Demographic_cluster + Political_cluster + Tax_cluster, data=properties_filtered)
+vif_values <- vif(model_for_vif)
+#show the result in the html
+kable(vif_values, format = "html") %>%
+  kable_styling(full_width = F)
+```
+
+- No multicollinearity issues are observed for the predictors `number_of_rooms` and `square_meters`, with VIF values below 5. Despite their correlation, it is not strong enough to cause multicollinearity issues.
+- High VIF Values:
+
+    - canton and `Tax_cluster` have VIF values much greater than 10, indicating serious multicollinearity issues. These predictors are highly correlated with other predictors in the model.
+
+- Moderate VIF Values:
+  
+    - Other predictors like `number_of_rooms`, `square_meters`, `Political_cluster`, etc., have VIF values below 5, indicating acceptable multicollinearity.
+
+We removed the `canton` variable from the model due to its high VIF value, which could lead to unstable coefficient estimates and unreliable model predictions.
+
+We keep the `Tax_cluster` variable in the model for now, as it may provide valuable information for predicting property prices.
+
+#### Basic Model
+##### Model Building and Evaluation
+
+The data set was split into training and testing sets to validate the model’s performance. The linear regression model was then fitted using selected predictors:
+
+```{r}
+# Model Building
+## Split the Data
+set.seed(123)  # for reproducibility
+trainIndex <- createDataPartition(properties_filtered$price, p=0.8, list=FALSE)
+trainData <- properties_filtered[trainIndex, ]
+testData <- properties_filtered[-trainIndex, ]
+
+## Fit the Model
+lm_model_1 <- lm(price ~ number_of_rooms + square_meters + property_type + floor + year_category  + Demographic_cluster +Political_cluster + Tax_cluster , data=trainData)
+
+summary(lm_model_1)
+```
+
+Diagnostic checks such as residual analysis and normality tests were conducted to validate model assumptions. Performance metrics including R-squared and RMSE were calculated to assess the model's explanatory power and prediction accuracy.
+
+```{r}
+#use gt summary to show the result
+tbl_reg_1 <- gtsummary::tbl_regression(lm_model_1)
+tbl_reg_1
+```
+
+- Square Meters: The coefficient of 9,149 for square meters is highly significant (p < 0.001), underscoring its importance as a predictor of property price.
+- Property Type: Different property types show varied impacts on price, with some types (like Attic flats and Chalets) **significantly increasing** price, while others (such as Farm houses and Bifamiliar houses) **significantly decreasing** it. A large set of them have none significant p-values and high confidence intervals, indicating that they may not significantly influence property prices.
+- Year Category: The coefficients for the year categories are all significantly different from zero (p < 0.001), indicating that the age and era of construction are important factors in predicting property prices.
+- Demographic, Political, and Tax Clusters: These coefficients are significant, suggesting that demographic factors, political, and tax considerations within different clusters significantly affect property prices.
+- Floor : Seems none significant.
+
+##### Assess Overfitting
+
+```{r}
+# For the Linear Model
+lm_train_pred <- predict(lm_model_1, newdata = trainData)
+lm_test_pred <- predict(lm_model_1, newdata = testData)
+
+# Calculate RMSE and R-squared for Training Data
+lm_train_rmse <- sqrt(mean((trainData$price - lm_train_pred)^2))
+lm_train_rsquared <- summary(lm(lm_train_pred ~ trainData$price))$r.squared
+
+# Calculate RMSE and R-squared for Test Data
+lm_test_rmse <- sqrt(mean((testData$price - lm_test_pred)^2))
+lm_test_rsquared <- summary(lm(lm_test_pred ~ testData$price))$r.squared
+
+# show the results in a table
+results_table <- data.frame(
+  Model = c("Linear Regression"),
+  RMSE_Train = lm_train_rmse,
+  RMSE_Test = lm_test_rmse,
+  Rsquared_Train = lm_train_rsquared,
+  Rsquared_Test = lm_test_rsquared
+)
+
+#show table in html
+kable(results_table, format = "html") %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed"))
+```
+
+No overfitting is observed as the RMSE and R-squared values are similar between the training and test sets, indicating that the model generalizes well to new data.
+
+##### Metrics 
+
+Here are the performance metrics for the initial model:
+
+```{r}
+# print R-squared and Adj R-squared and RMSE and MAE and AIC
+r_sq <- summary(lm_model_1)$r.squared
+adj_r_sq <- summary(lm_model_1)$adj.r.squared
+rmse <- rmse(testData$price, predict(lm_model_1, newdata=testData))
+mae <- mae(testData$price, predict(lm_model_1, newdata=testData))
+aic <- AIC(lm_model_1)
+# show those metrics in a html table
+metrics_1 <- kable(data.frame(r_sq, adj_r_sq, rmse, mae, aic), format = "html", col.names = c("R-Squared", "Adjusted R-Squared", "RMSE", "MAE", "AIC")) %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed"))  %>%
+  add_header_above(c("Basic Model Performance Metrics" = 5)) 
+metrics_1
+```
+
+- The model has moderate explanatory power, with an R-Squared of 0.493 and an Adjusted R-Squared of 0.492.
+
+- Prediction accuracy, as indicated by RMSE (980'302) and MAE (491'715), shows that the model's predictions are reasonably close to actual prices but could be improved.
+
+- The AIC value (500'701) provides a benchmark for comparing with other models
+
+#### Hyperparameter Tuning
+##### Stepwise Regression
+Stepwise regression was performed to refine the model and improve its predictive performance. The resulting model was evaluated using the same diagnostic checks and performance metrics as the initial model:
+
+```{r}
+# stepwise regression
+lm_model_2 <- step(lm_model_1)
+
+#use gt summary to show the result 
+tbl_reg_2 <- gtsummary::tbl_regression(lm_model_2)
+tbl_reg_1_and_2 <- tbl_merge(
+  tbls= list(tbl_reg_1, tbl_reg_2),
+  tab_spanner = c("**Basic Model**", "**Model Stepwise**")
+  )
+tbl_reg_1_and_2
+```
+
+We observe :
+
+- Number of Rooms and Floor Dropped
+
+    -  Interestingly the stepwise model drops the number_of_rooms and floor variables, indicating that these predictors may not significantly influence property prices.
+- Consistency in Key Predictors 
+    
+    - The primary significant predictors (e.g., square_meters, certain property types, and year categories) remain consistent across both models, indicating their robust influence on property prices.
+- Similar Effect Sizes
+
+    - The effect sizes (β) and confidence intervals for significant predictors are similar in both models, reinforcing the reliability of these predictors.
+
+##### Lasso and Ridge Regression
+A Lasso and Ridge regression were also performed to compare the performance of the linear regression model with regularization techniques. 
+We fit both models using cross-validation to determine the optimal lambda (penalty parameter).
+
+```{r, warning=FALSE}
+
+# Convert data frames to matrices for glmnet
+dat_tr_re_mat_x <- as.matrix(trainData[, c("number_of_rooms", "square_meters", "floor", "year_category", "Demographic_cluster", "Political_cluster", "Tax_cluster")])
+dat_tr_re_mat_y <- trainData$price
+
+dat_te_re_mat_x <- as.matrix(testData[, c("number_of_rooms", "square_meters", "floor", "year_category", "Demographic_cluster", "Political_cluster", "Tax_cluster")])
+dat_te_re_mat_y <- testData$price
+
+# Fit Lasso model using cross-validation
+set.seed(123)  # For reproducibility
+
+# Fit Lasso model
+lasso_model <- cv.glmnet(dat_tr_re_mat_x, dat_tr_re_mat_y, alpha = 1) # Lasso
+
+# Fit Ridge model
+ridge_model <- cv.glmnet(dat_tr_re_mat_x, dat_tr_re_mat_y, alpha = 0) # Ridge
+
+ridge_fit_best <- glmnet(x=dat_tr_re_mat_x, y = dat_tr_re_mat_y, 
+                         lambda = ridge_model$lambda.min)
+
+lasso_fit_best <- glmnet(x=dat_tr_re_mat_x, y=dat_tr_re_mat_y, 
+                         lambda = lasso_model$lambda.min) #can also use lasso_fit$lambda.1se
+
+# lasso & ridge performance on the training set
+postResample(predict(ridge_fit_best, newx = dat_tr_re_mat_x), dat_tr_re_mat_y)
+postResample(predict(lasso_fit_best, newx = dat_tr_re_mat_x), dat_tr_re_mat_y)
+# lasso & ridge performance on the test set
+postResample(predict(ridge_fit_best, newx = dat_te_re_mat_x), dat_te_re_mat_y)
+postResample(predict(lasso_fit_best, newx = dat_te_re_mat_x), dat_te_re_mat_y)
+
+# Step-wise lm performance on training and test sets
+postResample(predict(lm_model_2,trainData), dat_tr_re_mat_y)
+postResample(predict(lm_model_2,testData), dat_te_re_mat_y)
+```
+We then compared the performance of the Lasso and Ridge models with the stepwise linear regression model using RMSE and MAE:
+
+```{r}
+# Calculate RMSE and MAE
+get_metrics <- function(predictions, actuals) {
+  RMSE <- sqrt(mean((predictions - actuals)^2))
+  MAE <- mean(abs(predictions - actuals))
+  Rsquared <- cor(predictions, actuals)^2
+
+  
+  return(c(RMSE = RMSE, MAE = MAE, Rsquared = Rsquared) )
+}
+
+# Capture the performance metrics
+ridge_train_preds <- predict(ridge_fit_best, newx = dat_tr_re_mat_x)
+lasso_train_preds <- predict(lasso_fit_best, newx = dat_tr_re_mat_x)
+ridge_test_preds <- predict(ridge_fit_best, newx = dat_te_re_mat_x)
+lasso_test_preds <- predict(lasso_fit_best, newx = dat_te_re_mat_x)
+lm_train_preds <- predict(lm_model_2, trainData)
+lm_test_preds <- predict(lm_model_2, testData)
+
+ridge_train_metrics <- get_metrics(ridge_train_preds, dat_tr_re_mat_y)
+lasso_train_metrics <- get_metrics(lasso_train_preds, dat_tr_re_mat_y)
+ridge_test_metrics <- get_metrics(ridge_test_preds, dat_te_re_mat_y)
+lasso_test_metrics <- get_metrics(lasso_test_preds, dat_te_re_mat_y)
+lm_train_metrics <- get_metrics(lm_train_preds, dat_tr_re_mat_y)
+lm_test_metrics <- get_metrics(lm_test_preds, dat_te_re_mat_y)
+
+# Create a data frame with the performance metrics
+performance_df <- data.frame(
+  Model = c("Ridge (Training)", "Lasso (Training)", "Ridge (Test)", "Lasso (Test)", "Stepwise (Training)", "Stepwise (Test)"),
+  RMSE = c(ridge_train_metrics["RMSE"], lasso_train_metrics["RMSE"], ridge_test_metrics["RMSE"], lasso_test_metrics["RMSE"], lm_train_metrics["RMSE"], lm_test_metrics["RMSE"]),
+  MAE = c(ridge_train_metrics["MAE"], lasso_train_metrics["MAE"], ridge_test_metrics["MAE"], lasso_test_metrics["MAE"], lm_train_metrics["MAE"], lm_test_metrics["MAE"]),
+  Rsquared = c(ridge_train_metrics["Rsquared"], lasso_train_metrics["Rsquared"], ridge_test_metrics["Rsquared"], lasso_test_metrics["Rsquared"], lm_train_metrics["Rsquared"], lm_test_metrics["Rsquared"])
+)
+
+# Create the kable extra table
+performance_table_hyp_tune <- kable(performance_df, format = "html") %>%
+  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed")) %>%
+  add_header_above(c( "Performance Metrics (RMSE, MAE, R-sq)" = 4))
+
+# Print the table
+performance_table_hyp_tune
+```
+The performance metrics of the Ridge, Lasso, and Stepwise regression models on both training and testing sets indicate moderate model effectiveness. RMSE values are relatively high across all models, suggesting that the models' predictions are on average about 950,000 to 1,003,230 units away from the actual values, which may indicate limited predictive accuracy. The MAE values, being lower than the RMSE values, suggest fewer extreme errors in prediction. R-squared values, ranging from 0.464 to 0.493, show that the models explain approximately 46.4% to 49.3% of the variance in the dependent variable, which is moderate but indicates room for improvement in model fit or perhaps exploring more predictive features or different modeling techniques.
+
+
+Among the Ridge, Lasso, and Stepwise regression models evaluated based on the provided metrics, the Stepwise regression model appears to be the preferred choice. 
+
+- Lower RMSE and MAE: The Stepwise model shows the lowest RMSE and MAE values on both the training and testing sets compared to the Ridge and Lasso models, suggesting it has better accuracy and fewer prediction errors.
+- Higher R-squared: It also boasts the highest R-squared values in both training (0.493) and testing (0.480) scenarios, indicating it can explain a higher proportion of variance in the dependent variable than the other models.
+
+We note however, that the Lasso model might also be considered as it shows slightly less overfitting than the others, although the difference in generalization between the training and testing sets is minimal.
+
+##### Metrics
+
+Here we compare the performance metrics of the initial model and the stepwise model.
+The metrics of our initial model :
+
+```{r}
+metrics_1
+```
+
+
+Stepwise model:
+
+```{r}
+# print R-squared and Adj R-squared and RMSE and MAE and AIC
+r_sq <- summary(lm_model_2)$r.squared
+adj_r_sq <- summary(lm_model_2)$adj.r.squared
+rmse <- rmse(testData$price, predict(lm_model_2, newdata=testData))
+mae <- mae(testData$price, predict(lm_model_2, newdata=testData))
+aic <- AIC(lm_model_2)
+# show those metrics in a html table
+metrics_2 <- kable(data.frame(r_sq, adj_r_sq, rmse, mae, aic), format = "html", col.names = c("R-Squared", "Adjusted R-Squared", "RMSE", "MAE", "AIC")) %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed"))  %>%
+  add_header_above(c("Stepwise Model Performance Metrics" = 5)) 
+metrics_2
+```
+
+The Stepwise model offers a slight improvement over the Basic model in terms of prediction accuracy (lower MAE) and model efficiency (lower AIC).
+Both models perform similarly in explaining the variance in property prices, with nearly identical R-Squared and Adjusted R-Squared values.
+Given the minimal differences, the choice between models may depend on the preference for model simplicity (Stepwise model) versus a more comprehensive approach (Basic model).
+
+#### Cross-Validation
+
+Cross-validation was used to assess the model's robustness, typically to avoid overfitting and ensure that the model generalizes well to new data., using the `caret` package to manage this process efficiently. The CV results show metrics like RMSE and R-squared across folds, which indicate the model’s performance stability across different subsets of the data.
+
+10-fold cross-validation Metrics:
+
+```{r}
+#add + Demographic_cluster +Political_cluster + Tax_cluster after dealing with NAN
+## Cross-Validation
+cv_results <- train(price ~ number_of_rooms + square_meters + year_category + property_type + Demographic_cluster +Political_cluster + Tax_cluster , data=trainData, method="lm", trControl=trainControl(method="cv", number=10))
+summary(cv_results)
+
+
+#show the CV result in the html
+metrics_cv_1 <- kable(cv_results$results, format = "html") %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed"))  %>%
+  add_header_above(c("10 Fold Cross Validation Metrics" = 7))
+metrics_cv_1
+```
+
+Here are the performance metrics for the stepwise model:
+
+```{r}
+metrics_2
+```
+
+The 10-fold cross-validation results indicate improved prediction accuracy with a lower RMSE of 955,116 compared to the Stepwise model's RMSE of 980,670. However, the explanatory power is slightly reduced, as shown by a marginally lower R-squared of 0.496 in the cross-validated assessments versus 0.493 in the Stepwise model. These findings suggest that while the model exhibits a stable generalization to new data, it does so with a *slight* compromise in explaining the variance across different data subsets. But the difference is minimal.
+
+#### Model testing
+
+We chose the stepwise model as the best model for the linear regresion due to its balance of accuracy and simplicity.
+
+The final model was tested using the unseen test dataset to evaluate its predictive accuracy. Residual plots and actual vs. predicted price plots were created to visually assess model performance:
+
+##### Residual vs Predicted Prices
+This plot  shows residuals (differences between observed and predicted prices) against predicted prices. Ideally, residuals should randomly scatter around the horizontal line at zero, indicating that the model doesn’t systematically overestimate or underestimate prices. 
+
+```{r}
+# Model Testing 
+## Test the Model
+predicted_prices <- predict(lm_model_2, newdata=testData)
+testData$predicted_prices <- predicted_prices  # Add to testData to ensure alignment
+# Calculate residuals
+testData$test_residuals <- testData$price - predicted_prices  # Manually compute residuals
+
+# Residual Analysis
+gg <- ggplot(data = testData, aes(x = predicted_prices, y = test_residuals)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  labs(title = "Residuals vs Predicted Prices", x = "Predicted Prices", y = "Residuals")
+
+gg
+```
+
+The residual plot for all cantons shows a pronounced trend of increasing residuals with higher predicted prices, along with more extreme outliers. This indicates potential model misfit or heteroscedasticity issues when considering all cantons.
+
+##### Actual vs Predicted Prices
+
+This plot should ideally show points along the diagonal line, where actual prices equal predicted prices. The data clustering along the line suggests a generally good model fit, but here we can observe the spread which indicates variance in predictions, especially at higher price points.
+
+```{r}
+## Visualization
+gg <- ggplot(data=testData, aes(x=predicted_prices, y=price)) +
+    geom_point() +
+    geom_smooth(method="lm", col="blue") +
+    labs(title="Actual vs Predicted Prices", x="Predicted Prices", y="Actual Prices")
+
+gg
+```
+
+
+### Linear Regression - Reducing Complexity
+
+To solve this issue of variance at higher price points, we can filter the data to focus on a more specific range of canton. Specifically cantons Valais, Tessin, Vaud, Berne, Fribourg to see if the model performs better within this range.
+
+Indeed, as seen in the EDA section, these cantons have more properties and show similar price distributions.
+
+Also, as seen in the previous linear regression model, we consider removing variables that show a high p-value and a wide confidence interval (CI) indicating less statistical significance and reliability.
+
+Thus `number_of_rooms` can be removed as it has a p-value of 0.6, as 'floor' with a p-value of 0.3 indicating they are not statistically significant.
+`Loft`, `Rustic house`, and `Terrace flat` also show high p-values (0.7 for `Loft` and `Rustic house`, 0.6 for `Terrace flat`) and wide confidence intervals, suggesting that they do not significantly impact the model and their removal would simplify the model without losing predictive power.
+`Roof` flat with a p-value hovering around 0.10 (0.079 in the stepwise model) could be considered for removal if further simplification is needed, though its influence is closer to being significant compared to the others.
+`Roof flat` and `Attic flat` will also be removed purely based on the eda where we saw that they have very few properties in the dataset.
+
+```{r}
+#select only 'Apartment', 'Single house', 'Villa', 'Attic flat', 'Farm house', 'Roof flat', 'Chalet', 'Duplex', 'Bifamiliar house' in property_type col
+properties_filtered_2 <- properties_filtered %>% filter(property_type %in% c("Apartment", "Single house", "Villa", "Farm house", "Chalet", "Duplex", "Bifamiliar house"))
+#select properties_filtered based on the canton valais, tessin, vaud, Berne, Fribourg
+properties_filtered_2 <- properties_filtered_2 %>% filter(canton %in% c("Valais", "Ticino", "Vaud", "Bern", "Fribourg"))
+```
+
+#### Model Building and Evaluation
+We then repeat the model building and evaluation process for this filtered dataset to compare the performance with the initial (best) model:
+
+```{r}
+# Model Building
+## Split the Data
+set.seed(123)  # for reproducibility
+trainIndex <- createDataPartition(properties_filtered_2$price, p=0.8, list=FALSE)
+trainData2 <- properties_filtered_2[trainIndex, ]
+testData2 <- properties_filtered_2[-trainIndex, ]
+
+
+## Fit the Model
+lm_model_1.1 <- lm(price ~ square_meters + property_type +  year_category  + Political_cluster + Tax_cluster + Demographic_cluster, data=trainData2)
+
+summary(lm_model_1.1)
+
+# Model Evaluation
+## Diagnostic Checks
+#plot(lm_model)
+#ad.test(residuals(lm_model))
+
+#use gt summary to show the result
+tbl_reg_1.1 <- gtsummary::tbl_regression(lm_model_1.1)
+
+tbl_reg_1_vs_1.1 <- tbl_merge(
+  tbls= list(tbl_reg_2, tbl_reg_1.1),
+  tab_spanner = c("**Stepwise Model (All Prices)**", "**Basic Model (reduce complexity)**")
+  )
+tbl_reg_1_vs_1.1
+```
+
+- Consistency and Impact: 
+
+    - Most variables retain their significance and exhibit similar or enhanced predictive power across both models, affirming their robustness as predictors. Like `square_meters`,
+
+- Property Types: 
+
+    - The impact of specific property types like `Chalet` and `Villa` has increased significantly in the reduced complexity model,but the confidence intervals are still wide, indicating some uncertainty in their effects even though less than in the previous model.
+    
+- Shifts in Significance: 
+
+    - Reducing model complexity has led to significant changes in the predictive impact and statistical significance of some variables like `Duplex` and the `1919-1945` (two world war period might explain that) `year category`, suggesting a potential overestimation or uncertainty in their effects when fewer variables are included
+
+#### Assess Overfitting
+
+```{r}
+# For the Linear Model
+lm_train_pred <- predict(lm_model_1.1, newdata = trainData2)
+lm_test_pred <- predict(lm_model_1.1, newdata = testData2)
+
+# Calculate RMSE and R-squared for Training Data
+lm_train_rmse <- sqrt(mean((trainData2$price - lm_train_pred)^2))
+lm_train_rsquared <- summary(lm(lm_train_pred ~ trainData2$price))$r.squared
+
+# Calculate RMSE and R-squared for Test Data
+lm_test_rmse <- sqrt(mean((testData2$price - lm_test_pred)^2))
+lm_test_rsquared <- summary(lm(lm_test_pred ~ testData2$price))$r.squared
+
+# show the results in a table
+results_table <- data.frame(
+  Model = c("Linear Regression"),
+  RMSE_Train = lm_train_rmse,
+  RMSE_Test = lm_test_rmse,
+  Rsquared_Train = lm_train_rsquared,
+  Rsquared_Test = lm_test_rsquared
+)
+
+#show table in html
+kable(results_table, format = "html") %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed"))
+```
+
+- Consistent Generalization: 
+
+    - We observe a slight increase in RMSE from training to testing. This minor variation suggests consistent performance across both training and testing datasets, despite a minimal loss in prediction accuracy on new data.
+
+- Unusual Predictive Performance: 
+
+    - Interestingly, the model's R-squared is higher on the test set than on the training set, which is atypical as models generally perform better on training data. This anomaly might indicate that the test data contains features that align well with the model's parameters, or it may suggest a robustness in the model's ability to handle and explain variability in unseen data more effectively than in the training data.
+
+##### Metrics 
+
+Here are the performance metrics for the filtered:
+
+```{r}
+# print R-squared and Adj R-squared and RMSE and MAE and AIC
+r_sq <- summary(lm_model_1.1)$r.squared
+adj_r_sq <- summary(lm_model_1.1)$adj.r.squared
+rmse <- rmse(testData2$price, predict(lm_model_1.1))
+mae <- mae(testData2$price, predict(lm_model_1.1, newdata=testData2))
+aic <- AIC(lm_model_1.1)
+# show those metrics in a html table
+metrics_1.1 <- kable(data.frame(r_sq, adj_r_sq, rmse, mae, aic), format = "html", col.names = c("R-Squared", "Adjusted R-Squared", "RMSE", "MAE", "AIC")) %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed")) %>%
+  add_header_above(c("Basic Model Performance Metrics (less complex)" = 5))  
+metrics_1.1
+``` 
+
+Here was the previous metrics of our first Basic model (more complex)
+
+```{r}
+metrics_2
+``` 
+
+We observe a very slight increase in r-squared, a large drop in RMSE, and another drop in AIC, indicating that the model may perform better in predicting property prices within this specific canton range.
+
+#### Variable Selection
+
+```{r}
+# stepwise regression
+lm_model_2.1 <- step(lm_model_1.1)
+# plot(lm_model2)
+# ad.test(residuals(lm_model2))
+
+lm_model_2.1
+
+#use gt summary to show the result 
+tbl_reg_2.1 <- gtsummary::tbl_regression(lm_model_2.1)
+tbl_reg_1.1_vs_2.1 <- tbl_merge(
+  tbls= list(tbl_reg_1.1, tbl_reg_2.1),
+  tab_spanner = c("**Basic Model**", "**Stepwise Model**")
+  )
+tbl_reg_1.1_vs_2.1
+```
+
+We observe no change. The stepwise model retains the same predictors as the initial model, indicating that the selected variables are the most relevant for predicting property prices within this specific canton range.
+
+##### Metrics
+
+Here are the performance metrics for the stepwise model with prices between the 10th and 90th percentiles as well as the comparison with the initial model:
+
+```{r}
+## Performance Metrics
+r_sq <- summary(lm_model_2.1)$r.squared
+adj_r_sq <- summary(lm_model_2.1)$adj.r.squared
+rmse <- rmse(testData2$price, predict(lm_model_2.1))
+mae <- mae(testData2$price, predict(lm_model_2.1, newdata=testData2))
+aic <- AIC(lm_model_2.1)
+# show those metrics in a html table
+metrics_2.1 <- kable(data.frame(r_sq, adj_r_sq, rmse, mae, aic), format = "html", col.names = c("R-Squared", "Adjusted R-Squared", "RMSE", "MAE", "AIC")) %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed")) %>%
+  add_header_above(c("Stepwise Model Performance Metrics (Less Complex)" = 5))
+metrics_2.1
+```
+
+Here was the previous metrics of our Basic Model (without selecting variables)
+
+```{r}
+metrics_1.1
+```
+
+As indicated before, the predictors remain consistent across both models, so the metrics are similar.
+
+#### Cross-Validation
+
+```{r}
+## Cross-Validation
+cv_results2 <- train(price ~ square_meters + year_category + property_type + Demographic_cluster +Political_cluster + Tax_cluster, data=trainData2, method="lm", trControl=trainControl(method="cv", number=10))
+summary(cv_results2)
+
+#show the CV result in the html
+metrics_cv2 <- kable(cv_results2$results, format = "html") %>%
+  
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed"))  %>%
+  add_header_above(c("10 Fold Cross Validation Metrics (less complex)" = 7))
+metrics_cv2
+```
+
+Here was the previous metrics of our first Basic Model (without selecting variables) :
+
+```{r}
+metrics_cv_1
+```
+
+
+- Consistency and Predictive Stability: 
+
+    - The less complex model shows more consistent performance across different data subsets, shown by lower variability in both RMSE and R-squared during cross-validation. It might offer more stable and reliable predictions compared to the more complex model.
+
+- Explanatory Power and Accuracy: 
+
+    - While the more complex model might score slightly better on average in predicting exact values, it is less consistent. This means in some cases it might not perform as expected. On the other hand, the less complex model, although not always as sharp, explains the variations in the data more steadily across different tests.
+
+#### Model testing
+##### Residual vs Predicted Prices
+
+```{r}
+# Model Testing 
+## Test the Model
+predicted_prices <- predict(lm_model_2.1, newdata=testData2)
+testData2$predicted_prices <- predicted_prices  # Add to testData to ensure alignment
+# Calculate residuals
+testData2$test_residuals <- testData2$price - predicted_prices  # Manually compute residuals
+
+# Residual Analysis
+gg <- ggplot(data = testData2, aes(x = predicted_prices, y = test_residuals)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  labs(title = "Residuals vs Predicted Prices", x = "Predicted Prices", y = "Residuals")
+
+gg
+```
+
+The residual plot for the less complex model displays a similar pattern where a clustering of residuals around the zero line and some extreme outliers.
+
+##### Actual vs Predicted Prices
+
+```{r}
+## Visualization
+gg <- ggplot(data=testData, aes(x=predicted_prices, y=price)) +
+    geom_point() +
+    geom_smooth(method="lm", col="blue") +
+    labs(title="Actual vs Predicted Prices", x="Predicted Prices", y="Actual Prices")
+
+gg
+```
+
+The same trend is observed in the actual vs. predicted prices plot, with a wider spread of points at higher price points, indicating that the model may not perform as well in predicting prices for more expensive properties.
+
+### Conclusion
+
+For our first model, we used a linear regression model to predict property prices based on various features. We evaluated the model using performance metrics such as R-squared, RMSE, and MAE to assess its predictive accuracy and explanatory power. Even when the complexity is reduced, especially at higher price points. Especially at higher price points. We have tried to limit the price range to only include prices lower than 3.3 Million (as per the EDA) but the model was even worse. 
+
+Thus we have to consider other models to predict the property prices.
+
+## Model 2
+
+This section explores another model to try to obtain a better performance. 
+
+### Tools
+
+The Random Forest model was implemented using R with the `randomForest` package, which facilitated the model fitting and evaluation. Data partitioning was managed by `caret`, ensuring robust training and testing sets. Performance metrics were derived using base R functions and visualizations of variable importance were generated using `varImpPlot` from the randomForest package. Hyperparameter tuning was conducted to optimize the model, enhancing its predictive accuracy and generalizability.
+
+### Random Forest
+
+As an alternative, the Random Forest model addressed non-linear relationships using multiple decision trees, enhancing prediction accuracy and robustness. After data splitting and hyperparameter tuning, predictor importance was assessed, and model stability confirmed with performance metrics like R-squared, RMSE, and MAE through cross-validation.
+
+#### Model Building and Evaluation
+
+We split the data into training and testing sets, fit the Random Forest model and then evaluated the model using performance metrics such as R-squared, RMSE, and MAE to assess its predictive accuracy and explanatory power.
+
+```{r}
+#split the data in training and test set 0.8/0.2
+set.seed(123)  # for reproducibility
+#trainIndex <- createDataPartition(properties_filtered$price, p=0.8, list=FALSE)
+#trainData <- properties_filtered[trainIndex, ]
+#testData <- properties_filtered[-trainIndex, ]
+
+
+#apply the RF model as a regression
+rf_model <- randomForest(price ~., data=trainData, ntree=500, importance=TRUE)
+rf_model.pred_rf <- predict(rf_model, newdata=testData)
+
+
+rmse_rf <- sqrt(mean((testData$price - rf_model.pred_rf)^2))
+mae_rf <- mean(abs(testData$price - rf_model.pred_rf))
+r_sq_rf <- cor(testData$price, rf_model.pred_rf)^2
+
+# show those metrics in a html table
+metrics_rf <- kable(data.frame(r_sq_rf, rmse_rf, mae_rf), format = "html", col.names = c("R-Squared", "RMSE", "MAE")) %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed")) %>%
+  add_header_above(c("Random Forest Model Performance Metrics" = 3))
+# metrics_rf
+
+# Predictions on Training Data
+rf_train_pred <- predict(rf_model, newdata=trainData)
+
+# Calculate performance metrics for Training Data
+rmse_train <- sqrt(mean((trainData$price - rf_train_pred)^2))
+mae_train <- mean(abs(trainData$price - rf_train_pred))
+r_sq_train <- cor(trainData$price, rf_train_pred)^2
+
+# Existing metrics for Test Data
+# These were already calculated: rmse_rf, mae_rf, r_sq_rf using rf_model.pred_rf
+
+# Create a data frame for displaying metrics comparison
+performance_metrics <- data.frame(
+  DataSet = c("Training", "Testing"),
+  RMSE = c(rmse_train, rmse_rf),
+  MAE = c(mae_train, mae_rf),
+  R_Squared = c(r_sq_train, r_sq_rf)
+)
+
+# Generate HTML table using kable and apply styling
+kable(performance_metrics, format = "html", col.names = c("Data Set", "RMSE", "MAE", "R-Squared")) %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed")) %>%
+  add_header_above(c("Random Forest Model Performance Metrics" = 4))
+```
+
+The discrepancy between the training and testing performance metrics in the Random Forest model highlights several key points:
+
+The model's R-squared value on the training set is 0.958, indicating an excellent fit, as it explains 95.8% of the variance in the training data. The training RMSE and MAE values are relatively low at 301,114 and 129,571, respectively, suggesting the model predicts the training data accurately.
+
+On the test set, the model's R-squared value drops significantly to 0.770, explaining only 77.0% of the variance in the test data. Additionally, the RMSE and MAE values increase to 666,553 and 322,086, respectively, indicating a substantial drop in prediction accuracy.
+
+This substantial difference in performance metrics between the training and test sets suggests that the model is severly overfitting. Overfitting occurs when a model learns the training data too well, including its noise and outliers, but fails to generalize to new, unseen data. The Random Forest model captures the complexity of the training data, but this complexity does not transfer well to the test data, leading to poorer performance.
+
+
+##### Evaluation Metrics and Comparison
+
+```{r}
+# metrics_2
+
+plot(testData$price ~rf_model.pred_rf, col = 'black',
+     xlab = 'Actual Price', ylab = 'Predicted Price',
+     main = 'Actual vs Predicted Price')
+
+abline(0,1, col = 'blue')
+```
+
+As seen in the linear regression, this plot demonstrates a similar pattern  where the model accurately predicts lower-priced properties, but it's predictions for higher-priced properties are less accurate, indicating a need for further model refinement.
+
+### Random Forest 2 - less complex
+
+To reduce the overfitting issue, we tested various model as per the linear regression (less complex) one which still did not solve the issue. We then choose to train our model on a single canton (Vaud), for properties built between 2016 and 2024, and for prices between CHF 0 and CHF 3.3 Million. The goal is to assess the prediction power of the new model with a more homogeneous subset of data.
+
+```{r}
+#filter price on less than 3.3M and year 2016-2024 and by canton
+properties_filtered_3 <- properties_filtered_2 %>% filter(price < 3300000 & year_category =="2016-2024" & canton == "Vaud")
+# Model Building
+## Split the Data and randomize it
+set.seed(123)  # for reproducibility
+
+trainIndex <- createDataPartition(properties_filtered_3$price, p=0.8, list=FALSE)
+trainData3 <- properties_filtered_3[trainIndex, ]
+testData3 <- properties_filtered_3[-trainIndex, ]
+
+#remove canton and demographic clusters
+
+#apply the RF model as a regression
+rf_model <- randomForest(price ~ square_meters + number_of_rooms + property_type  + Political_cluster +Tax_cluster, data=testData3, ntree=500, importance=TRUE)
+rf_model.pred_rf <- predict(rf_model, newdata=testData3)
+
+
+rmse_rf <- sqrt(mean((testData3$price - rf_model.pred_rf)^2))
+mae_rf <- mean(abs(testData2$price - rf_model.pred_rf))
+r_sq_rf <- cor(testData3$price, rf_model.pred_rf)^2
+
+# show those metrics in a html table
+metrics_rf_2 <- kable(data.frame(r_sq_rf, rmse_rf, mae_rf), format = "html", col.names = c("R-Squared", "RMSE", "MAE")) %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed")) %>%
+  add_header_above(c("Random Forest Model Metrics (less complex)" = 3))
+metrics_rf_2
+```
+
+#### Assess Overfitting
+
+```{r}
+#assess overfitting
+# For the Random Forest Model
+rf_train_pred <- predict(rf_model, newdata = trainData3)
+rf_test_pred <- predict(rf_model, newdata = testData3)
+
+# Calculate RMSE and R-squared and Mae for Training Data
+rf_train_rmse <- sqrt(mean((trainData3$price - rf_train_pred)^2))
+rf_train_rsquared <- cor(trainData3$price, rf_train_pred)^2
+rf_train_mae <- mean(abs(trainData3$price - rf_train_pred))
+
+# Calculate RMSE and R-squared for Test Data
+rf_test_rmse <- sqrt(mean((testData3$price - rf_test_pred)^2))
+rf_test_rsquared <- cor(testData3$price, rf_test_pred)^2
+rf_test_mae <- mean(abs(testData3$price - rf_test_pred))
+
+
+# Create a data frame for displaying metrics comparison
+performance_metrics <- data.frame(
+  Model = c("Random Forest"),
+  RMSE_Train = rf_train_rmse,
+  RMSE_Test = rf_test_rmse,
+  Rsquared_Train = rf_train_rsquared,
+  Rsquared_Test = rf_test_rsquared,
+  MAE_Train = rf_train_mae,
+  MAE_Test = rf_test_mae
+)
+# Generate HTML table using kable and apply styling
+kable(performance_metrics, format = "html", col.names = c("Model", "RMSE Train", "RMSE Test", "R-Squared Train", "R-Squared Test", "MAE Train", "MAE Test")) %>%
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed"))
+```
+
+The performance metrics for the Random Forest model indicate its predictive capability on both the training and test data sets. The model achieves a Root Mean Squared Error (RMSE) of 416'285 on the training set and 352'086 on the test set. The R-squared values are 0.619 for the training set and 0.66 for the test set, suggesting the model explains 61.9% of the variance in the training data and 66% in the test data. The Mean Absolute Error (MAE) is 307'292 for the training set and 271,968 for the test set. These results show that the model performs slightly better on the test data, with lower RMSE and MAE values and a higher R-squared value, indicating good generalization but also potential underlying issues within our model.
+
+```{r}
+plot(testData3$price ~rf_model.pred_rf, col = 'black',
+     xlab = 'Actual Price', ylab = 'Predicted Price',
+     main = 'Actual vs Predicted Price')
+
+abline(0,1, col = 'blue')
+```
+
+The data points are more concentrated around the dark red line compared to the previous graph, suggesting a closer alignment between actual and predicted prices in this range. However, the scatter around the line indicates the presence of some remaining discrepancies.
+
+This graph indicates that while the model has a reasonable predictive power, there is room for improvement, especially in reducing overestimation for higher-priced items and addressing the underestimation in the lower price range. It is however a large improvment compared to our more complex model.
+
+#### Cross-Validation
+
+```{r}
+## Cross-Validation
+cv_results3 <- train(price ~ square_meters + property_type +Political_cluster + Tax_cluster, data=trainData3, method="lm", trControl=trainControl(method="cv", number=10))
+summary(cv_results3)
+
+#show the CV result in the html
+metrics_cv3 <- kable(cv_results3$results, format = "html") %>%
+  
+  kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed"))  %>%
+  add_header_above(c("10 Fold Cross Validation Metrics (less complex)" = 7))
+metrics_cv3
+```
+
+The model explains about 52.5% of the variance in the outcome variable, as indicated by the R-squared value from cross-validation. The RMSE of 558'770 and MAE of 320'632 suggest that while the model has a reasonable fit, there is still a significant amount of unexplained variance. The high standard deviations for RMSE and R-squared indicate variability in model performance across different folds, highlighting potential instability.
+
+In summary, the model identifies several significant predictors of the outcome variable, with `square_meters`, `property_type`, `Farm house`, `property_type`,` Single house`, `property_type`, `Villa`, and `Political_cluster` being the most influential.
+
+#### Hyperparameter Tuning
+##### Tuning Hyperparameters (mtry, ntree)
+
+```{r}
+tuneGrid <- expand.grid(mtry = seq(2, sqrt(ncol(trainData3)), by = 1))  # Tune over a range of mtry values
+
+# Train the model with tuning
+rf_tuned <- train(price ~ square_meters + number_of_rooms + property_type  + Political_cluster +Tax_cluster, 
+                  data = trainData3, method = "rf", 
+                  trControl = trainControl(method = "cv", number = 5, search = "grid"), 
+                  tuneGrid = tuneGrid, 
+                  ntree = 500)
+
+# Plotting the tuning effect
+plot(rf_tuned)
+```
+
+The graph displays the RMSE of a less complex random forest model decreasing as the number of randomly selected predictors increases from 2 to 4, during cross-validation. The steepest drop in RMSE occurs between 2 and 3 predictors, suggesting a significant improvement in model accuracy with the addition of the third predictor. After this point, gains in accuracy diminish, indicating that three predictors might provide an optimal balance between model complexity and predictive accuracy, while additional predictors offer minimal further benefits. This trend can guide the tuning of model complexity to enhance generalization without overfitting.
+
+```{r}
+
+# Now, evaluate the tuned model
+rf_model_pred <- predict(rf_tuned, newdata = testData3)
+# Calculate performance metrics
+rmse_rf <- sqrt(mean((testData3$price - rf_model_pred)^2))
+mae_rf <- mean(abs(testData3$price - rf_model_pred))
+r_sq_rf <- cor(testData3$price, rf_model_pred)^2
+# Show metrics
+metrics_rf <- kable(data.frame(R_Squared = r_sq_rf, RMSE = rmse_rf, MAE = mae_rf),
+                    format = "html", col.names = c("R-Squared", "RMSE", "MAE")) %>%
+              kable_styling(position = "center", bootstrap_options = c("striped", "bordered", "hover", "condensed")) %>%
+              add_header_above(c("Tuned Random Forest Model Performance Metrics" = 3))
+metrics_rf
+```
+
+The hyperparameter tuning further refined the model, achieving a post-tuning R-squared of 0.603, which, while slightly lower than the test set performance pre-tuning, still shows a solid understanding of the underlying data dynamics. The RMSE and particularly the MAE improved significantly post-tuning, highlighting the effectiveness of adjusting the model parameters.
+
+
+##### Importance of Predictors
+
+VI plots are a useful tool to understand the relative importance of predictors in the Random Forest model. This plot shows the importance of each predictor in the model, helping to identify key features that drive price predictions.0
+
+```{r eval=TRUE}
+var_imp <- varImp(rf_tuned)
+plot(var_imp)
+```
+
+We see that square_meters is the most important predictor, followed by number_of_rooms. It is interesting to note that, in our simplified model, our Political clusters carry more weight than some of our native variables.
+
