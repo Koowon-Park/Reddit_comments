@@ -6,6 +6,7 @@
 -   Spotting mistakes and missing data (could be part of EDA too)
 -   Listing anomalies and outliers (could be part of EDA too)
 
+# LEO CODE
 ```{r}
 # Load the necessary library
 #install.packages("jsonlite") 
@@ -42,5 +43,131 @@ df_reddit <- rbind.fill(json_data_list)  # rbind.fill fills missing columns with
 write.csv(df_reddit, "reddit_small.csv", row.names = FALSE)
 # Print a message when done
 cat("Conversion complete! CSV saved as reddit_small.csv\n")
+```
+
+# URS CODE
+## Check consistency accross txt file
+
+```{r}
+# Load required libraries
+library(jsonlite)
+library(dplyr)
+
+# Function to analyze JSON structure consistency
+analyze_reddit_comments <- function(file_path) {
+  # Read the file line by line
+  lines <- readLines(file_path)
+  
+  # Parse each line as JSON and store the results
+  parsed_data <- lapply(lines, fromJSON)
+  
+  # Get field names from each JSON object
+  field_names <- lapply(parsed_data, names)
+  
+  # Check if all comments have the same fields
+  are_fields_consistent <- length(unique(lapply(field_names, sort))) == 1
+  
+  # Get the common fields if structure is consistent
+  common_fields <- sort(unique(unlist(field_names)))
+  
+  # Count number of records
+  num_records <- length(lines)
+  
+  # Analyze field presence and types
+  field_analysis <- data.frame(
+    field_name = character(0),
+    present_in_records = numeric(0),
+    data_type = character(0)
+  )
+  
+  for (field in common_fields) {
+    field_presence <- sum(sapply(parsed_data, function(x) !is.null(x[[field]])))
+    # Get the most common data type for this field
+    field_type <- class(parsed_data[[1]][[field]])
+    
+    field_analysis <- rbind(field_analysis, 
+                           data.frame(
+                             field_name = field,
+                             present_in_records = field_presence,
+                             data_type = field_type[1]
+                           ))
+  }
+  
+  # Return analysis results
+  return(list(
+    total_records = num_records,
+    structure_consistent = are_fields_consistent,
+    common_fields = common_fields,
+    field_analysis = field_analysis
+  ))
+}
+
+#check wd
+file.exists("../../../RC_2015-01 - 15k")
+
+# usage:
+results <- analyze_reddit_comments("../../../RC_2015-01 - 15k")
+
+# Print results
+cat("Total number of records:", results$total_records, "\n")
+cat("Structure consistent across all records:", results$structure_consistent, "\n\n")
+cat("Field analysis:\n")
+print(results$field_analysis)
+```
+
+## Transform data into a CSV
+
+```{r}
+# Function to convert Reddit comments to CSV
+convert_reddit_to_csv <- function(input_file, output_file) {
+  # Read and parse all JSON lines
+  data <- stream_in(file(input_file), verbose = FALSE)
+  
+  # Select and transform relevant columns
+  cleaned_data <- data %>%
+    select(
+      id,                    # unique identifier
+      author,                # username
+      subreddit,             # community
+      body,                  # comment text
+      score,                 # net upvotes
+      created_utc,           # timestamp
+      controversiality,      # controversy flag
+      parent_id,            # parent comment/post ID
+      gilded,               # times gilded
+      edited                 # whether edited
+    ) %>%
+    # Convert UTC timestamp to datetime
+    mutate(
+      created_utc = as.POSIXct(as.numeric(created_utc), origin = "1970-01-01", tz = "UTC"),
+      # Clean body text (remove newlines and quotes)
+      body = gsub("\\n", " ", body),
+      body = gsub("\"", "'", body)
+    )
+  
+  # Write to CSV
+  write.csv(cleaned_data, output_file, row.names = FALSE, quote = TRUE)
+  
+  # Return summary of the conversion
+  return(list(
+    total_rows = nrow(cleaned_data),
+    columns = colnames(cleaned_data),
+    file_size = file.size(output_file)
+  ))
+}
+
+# Execute the conversion
+results <- convert_reddit_to_csv("../../../RC_2015-01 - 15k", "reddit_comments_15k.csv")
+
+# Print summary
+cat("Conversion completed!\n")
+cat("Total rows processed:", results$total_rows, "\n")
+cat("Columns saved:", paste(results$columns, collapse = ", "), "\n")
+cat("Output file size:", round(results$file_size/1024/1024, 2), "MB\n")
+```
+## check the CSV
+
+```{r}
+head(read.csv("../../data/reddit_comments_15k.csv"), 100)
 ```
 
