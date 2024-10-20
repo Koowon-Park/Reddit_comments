@@ -36,7 +36,8 @@ packages <- c(
   "randomForest", "magrittr", # for random forest
   "glmnet", #for lasso/ridge
   "cluster","dendextend", # for clustering
-  "reshape2"
+  "reshape2",
+  "jsonlite", "dplyr" # for json
 )
 
 # Install missing packages and load all the required libraries
