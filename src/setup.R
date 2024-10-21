@@ -37,7 +37,11 @@ packages <- c(
   "glmnet", #for lasso/ridge
   "cluster","dendextend", # for clustering
   "reshape2",
-  "jsonlite", "dplyr" # for json
+  "jsonlite", "dplyr", # for json
+  "quanteda", "tidytext",  # for text analysis
+  "stringr", "tm", "wordcloud", "SnowballC", "stopwords", # for text analysis
+  "caTools", # for splitting
+  "topicmodels"
 )
 
 # Install missing packages and load all the required libraries

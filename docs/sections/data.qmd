@@ -168,6 +168,7 @@ cat("Output file size:", round(results$file_size/1024/1024, 2), "MB\n")
 ## check the CSV
 
 ```{r}
-head(read.csv("../../data/reddit_comments_15k.csv"), 100)
+df <- read.csv("../../data/reddit_comments_15k.csv")
+(head(df))
+(summary(df))
 ```
-

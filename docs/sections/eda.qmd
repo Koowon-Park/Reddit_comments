@@ -1,2 +1,104 @@
 # EDA
+## Text Mining Approach
+
+```{r}
+# Step 1: Basic text cleaning and preprocessing
+# Remove punctuation, convert to lowercase, remove stopwords, etc.
+clean_text <- df %>%
+  mutate(body_clean = body %>%
+           str_to_lower() %>%                  # Convert text to lowercase
+           str_replace_all("[^[:alnum:]\\s]", " ") %>% # Remove punctuation
+           str_squish())                       # Remove extra whitespace
+
+# Remove stop words
+data(stop_words)  # Load stopwords from tidytext package
+clean_text <- clean_text %>%
+  unnest_tokens(word, body_clean) %>%
+  anti_join(stop_words, by = "word")
+
+# Step 3: Exploratory Data Analysis (EDA)
+# Word frequency analysis on training set
+word_counts <- clean_text %>%
+  count(word, sort = TRUE)
+
+# Visualize top 20 most frequent words
+word_counts %>%
+  top_n(20, n) %>%
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 20 Most Frequent Words", x = "Word", y = "Frequency")
+```
+
+
+```{r}
+# Calculate TF-IDF to find the most important words by subreddit
+tf_idf <- clean_text %>%
+  count(subreddit, word, sort = TRUE) %>%               # Count the frequency of words in each subreddit
+  bind_tf_idf(word, subreddit, n)                       # Compute TF-IDF
+
+# View the top terms by TF-IDF
+tf_idf %>%
+  arrange(desc(tf_idf)) %>%
+  top_n(20, tf_idf) %>%
+  ggplot(aes(x = reorder(word, tf_idf), y = tf_idf, fill = subreddit)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 20 Terms by TF-IDF across Subreddits", x = "Word", y = "TF-IDF")
+```
+
+```{r}
+# Load the sentiment lexicons from tidytext
+bing_sentiments <- get_sentiments("bing")  # Bing lexicon: Positive/Negative
+
+# Perform sentiment analysis by subreddit
+sentiment_analysis <- clean_text %>%
+  inner_join(bing_sentiments, by = "word") %>%   # Join with sentiment lexicon
+  count(subreddit, sentiment) %>%                # Count sentiments for each subreddit
+  spread(sentiment, n, fill = 0) %>%             # Spread the sentiment counts into separate columns
+  mutate(sentiment_score = positive - negative)  # Calculate sentiment score (Positive - Negative)
+
+# Visualize sentiment scores by subreddit
+ggplot(sentiment_analysis, aes(x = reorder(subreddit, sentiment_score), y = sentiment_score)) +
+  geom_col(fill = "blue") +
+  coord_flip() +
+  labs(title = "Sentiment Score by Subreddit", x = "Subreddit", y = "Sentiment Score")
+
+```
+
+```{r}
+# Prepare document-term matrix (DTM) for LDA
+dtm <- clean_text %>%
+  count(id, word) %>%                       # Count word frequencies per comment (id)
+  cast_dtm(id, word, n)                     # Create a document-term matrix
+
+# Apply LDA to discover topics
+lda_model <- LDA(dtm, k = 5, control = list(seed = 1234))  # Choose 5 topics
+
+# Get the terms per topic
+topics <- tidy(lda_model, matrix = "beta")
+
+# Visualize the top 10 words per topic
+top_terms <- topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+ggplot(top_terms, aes(x = reorder_within(term, beta, topic), y = beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free", ncol = 2) +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(title = "Top Terms per Topic", x = "Terms", y = "Beta")
+```
+
+```{r}
+# Save the LDA model to an R file
+save(lda_model, file = "lda_model.RData")
+
+# To load the model back into R session
+#load("lda_model.RData")
+
+```
 
