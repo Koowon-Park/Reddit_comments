@@ -1,10 +1,11 @@
 # EDA
-## Text Mining Approach
+## Text Mining
+### Attempt 1
 
 ```{r}
 # Step 1: Basic text cleaning and preprocessing
 # Remove punctuation, convert to lowercase, remove stopwords, etc.
-clean_text <- df %>%
+clean_text <- df %>%#
   mutate(body_clean = body %>%
            str_to_lower() %>%                  # Convert text to lowercase
            str_replace_all("[^[:alnum:]\\s]", " ") %>% # Remove punctuation
@@ -40,7 +41,7 @@ tf_idf <- clean_text %>%
 # View the top terms by TF-IDF
 tf_idf %>%
   arrange(desc(tf_idf)) %>%
-  top_n(20, tf_idf) %>%
+  top_n(5, tf_idf) %>%
   ggplot(aes(x = reorder(word, tf_idf), y = tf_idf, fill = subreddit)) +
   geom_bar(stat = "identity") +
   coord_flip() +
@@ -73,8 +74,8 @@ dtm <- clean_text %>%
   cast_dtm(id, word, n)                     # Create a document-term matrix
 
 # Apply LDA to discover topics
-lda_model <- LDA(dtm, k = 5, control = list(seed = 1234))  # Choose 5 topics
-
+#lda_model <- LDA(dtm, k = 5, control = list(seed = 1234))  # Choose 5 topics
+load("lda_model.RData")
 # Get the terms per topic
 topics <- tidy(lda_model, matrix = "beta")
 
@@ -95,10 +96,345 @@ ggplot(top_terms, aes(x = reorder_within(term, beta, topic), y = beta, fill = fa
 
 ```{r}
 # Save the LDA model to an R file
-save(lda_model, file = "lda_model.RData")
+#save(lda_model, file = "lda_model.RData")
 
 # To load the model back into R session
 #load("lda_model.RData")
 
 ```
 
+### Second Attempt
+#### Preprocessing
+```{r}
+# Tokenize text
+# DSOTM <- read_xlsx("../DSOTM.xlsx")
+# head(DSOTM)
+# tokens <- DSOTM %>% unnest_tokens(word, Lyrics)
+# head(tokens)
+# DSOTM %>% unnest_tokens(word, Lyrics)  %>% 
+#   count(word, sort = TRUE) %>% 
+#   mutate(word = reorder(word, n)) %>% 
+#   filter(n >= 14) %>% ggplot(aes(n, word)) + geom_col()
+
+#tokenize text
+tokens <- df %>% unnest_tokens(word, body)
+head(tokens)
+df %>% unnest_tokens(word, body)  %>% 
+  count(word, sort = TRUE) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  filter(n >= 12000) %>% ggplot(aes(n, word)) + geom_col()
+```
+The `n` value in the `filter` function can be adjusted to show more or fewer words in the plot. This analysis can help identify the most common words in the text data, which can provide insights into the main topics or themes present in the text. Here `n`is set to 12000, which is enormous, because the dataset is large. We see here the most common words are words like "the", "and", "a", etc., which are common stopwords in English text. These words are not very informative for topic modeling or sentiment analysis, so they are typically removed in the preprocessing steps.
+
+##### Creating a corpus
+
+```{r}
+# Create a corpus from the text data where the text field is "body" but the document field is "subreddit"
+corpus <- corpus(df, text_field = "body", docid_field = "id") 
+
+# Add metadata to the corpus
+docvars(corpus, "author") <- df$author
+docvars(corpus, "subreddit") <- df$subreddit
+docvars(corpus, "score") <- df$score
+docvars(corpus, "controversiality") <- df$controversiality
+docvars(corpus, "parent_id") <- df$parent_id
+docvars(corpus, "gilded") <- df$gilded
+docvars(corpus, "edited") <- df$edited
+
+summary(corpus)
+```
+
+##### Process the data
+
+1. Tokenization of the commment in `body` column into individual words. Which was already done before
+
+2. Preprocessing these tokens by converting them to lowercase, stemming, and removing common stop words. For this particular dataset, we know that the articles are coming from Reddit platform, hence the word ‘reddit’ is not useful to us can be removed as a stop word.
+
+```{r}
+df.tk <- tokens(
+  corpus,
+  remove_numbers = TRUE,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE,
+  remove_hyphens = TRUE,
+  remove_separators = TRUE,
+)
+df.tk <- df.tk %>%
+  tokens_tolower() %>%
+  tokens_remove(stop_words$word) %>%
+  tokens_remove("reddit")
+```
+
+##### See again the most common words
+
+```{r}
+df.tk %>%
+  dfm() %>%
+  topfeatures( n = 20) %>%
+  as.data.frame()
+```
+It looks like some of the words we’re seeing, such as “amp” and “gt”, are artifacts from HTML encoding or other text formatting issues. 
+
+There also seems to be a lot of curse words
+
+##### Removing HTML encoding artifacts
+
+```{r}
+# Remove HTML tags
+corpus <- str_remove_all(corpus, "<[^>]+>")
+
+# Tokenize and preprocess
+df.tk <- tokens(
+  corpus,
+  remove_numbers = TRUE,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE,
+  remove_hyphens = TRUE,
+  remove_separators = TRUE
+)
+
+df.tk <- df.tk %>%
+  tokens_tolower() %>%
+  tokens_remove(stop_words$word) %>%
+  tokens_remove("reddit") %>%
+  tokens_remove("subreddit") %>%
+  tokens_remove("amp") %>%
+  tokens_remove("gt") %>%
+  tokens_remove("deleted") %>%
+  # remove any 'x' characters
+  tokens_remove("x{2,}")
+```
+
+##### See again the most common words
+
+```{r}
+df.tk %>%
+  dfm() %>%
+  topfeatures( n = 20) %>%
+  as.data.frame()
+```
+
+#### TF and TF-IDF
+##### Term Frequency (TF)
+
+Now, let us compute the word frequencies (TF) and arrange them by decreasing frequencies. For the Document-Term Matrix, quanteda uses dfm() objects like below (for document frequency matrix).
+
+```{r}
+df.dfm <- dfm(df.tk)
+df.dfm
+
+#extract the TF
+tf <- rowSums(t(df.dfm))
+tf <- data.frame(term = names(tf), count = tf) %>%
+  tibble() %>%
+  arrange(desc(count))
+head(tf)
+```
+Let us compute the frequencies by documents. We can use tidy function directly on the crude.dfm object to turn it into a dataframe and view the results.
+
+```{r}
+tidy(df.dfm) %>%
+  arrange(desc(count))
+
+## compute global term frequency
+df.freq <- textstat_frequency(df.dfm)
+head(df.freq,20)
+```
+
+##### TF-IDF
+
+Now, we repeat the same analysis using the tf-idf formula. We use function bind_tf_idf() from tidytext. The results are ordered by decreasing TF_IDF. Note that the TF_IDF is calculated per document.
+
+```{r}
+# ## Compute TF-IDF and 
+# crude.tfidf <- dfm_tfidf(crude.dfm)  
+# 
+# ## Turn it into a tidy object so that it's easier to wrangle
+# crude.tfidf.tidy <- tidy(crude.dfm) %>%  
+#   bind_tf_idf(term = term,
+#               document = document,
+#               n = count) %>%
+#   arrange(desc(count))
+# head(crude.tfidf.tidy, n = 10) %>% flextable() %>% autofit()
+
+df.tfidf <- dfm_tfidf(df.dfm)
+df.tfidf.tidy <- tidy(df.tfidf) %>%
+  bind_tf_idf(term = term, document = document, n = count) %>%
+  arrange(desc(tf_idf))
+head(df.tfidf.tidy, n = 10) %>% flextable() %>% autofit()
+```
+Now, we take the max TF_IDF per words (over all documents):
+
+```{r}
+# crude.tfidf.max <- crude.tfidf.tidy %>% 
+#   group_by(term) %>% 
+#   summarise(tf_idf = max(tf_idf)) %>% 
+#   ungroup() %>% 
+#   arrange(desc(tf_idf))
+# head(crude.tfidf.max, n = 10) %>% flextable() %>% autofit()
+
+df.tfidf.max <- df.tfidf.tidy %>%
+  group_by(term) %>%
+  summarise(tf_idf = max(tf_idf)) %>%
+  ungroup() %>%
+  arrange(desc(tf_idf))
+head(df.tfidf.max, n = 10) %>% flextable() %>% autofit()
+```
+We can also illustrate Zipf’s law on the data. The terms are ranked by their frequency (rank = 1 for the most frequent), then plotted versus its rank. This is easily obtained using quanteda 
+
+##### Plotting the Results
+
+```{r}
+# crude.freq %>% 
+#   top_n(20, frequency) %>%
+#   ggplot(aes(
+#     x = reorder(feature, frequency),
+#     y = frequency)) + 
+#   geom_bar(stat = "identity") + 
+#   coord_flip() +
+#   xlab("Frequency") + 
+#   ylab("term")
+
+df.freq %>%
+  top_n(20, frequency) %>%
+  ggplot(aes(
+    x = reorder(feature, frequency),
+    y = frequency)) + 
+  geom_bar(stat = "identity") + 
+  coord_flip() +
+  xlab("Frequency") + 
+  ylab("term")
+
+textplot_wordcloud(df.dfm)
+
+df.freq %>%
+  top_n(50, frequency) %>%
+  ggplot(aes(label = feature, size = frequency)) +
+  geom_text_wordcloud() +
+  scale_size_area(max_size = 20) +
+  theme_minimal()
+
+#plot per documents
+df.dfm %>%
+  tidy() %>%
+  top_n(8, count) %>%
+  ggplot(aes(x = term, y = count)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme(axis.text.y = element_text(size = 8), 
+        axis.ticks.y = element_blank()) +
+  facet_wrap(~document, ncol = 2)
+```
+
+### Attempt 3
+
+Here i take the idea that a 'document' is a subbredit. It is like all comments that are part of one subreddit will be a document.
+It is a bit an analysis per subreddit
+
+```{r}
+#take the df data and group all comments by subreddit
+df.subreddit <- df %>%
+  group_by(subreddit) %>%
+  summarise(body = paste(body, collapse = " "))
+df.subreddit
+
+# show number of subreddits
+cat("Number of subreddits:", nrow(df.subreddit), "\n")
+
+# show top 10 subreddits by length in a bar plot
+df.subreddit %>%
+  mutate(subreddit = reorder(subreddit, nchar(body))) %>%
+  top_n(10, nchar(body)) %>%
+  ggplot(aes(x = subreddit, y = nchar(body))) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Top 10 Subreddits by Length", x = "Subreddit", y = "Length")
+
+# preprocess the text data
+df.subreddit.cp <- corpus(df.subreddit$body)
+df.subreddit.cp
+df.subreddit.tk <- tokens(
+  df.subreddit.cp,
+  remove_numbers = TRUE,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE,
+  remove_hyphens = TRUE,
+  remove_separators = TRUE
+)
+df.subreddit.tk <- df.subreddit.tk %>%
+  tokens_tolower() %>%
+  tokens_remove(stop_words$word) %>%
+  tokens_remove("reddit") %>%
+  tokens_remove("subreddit") %>%
+  tokens_remove("amp") %>%
+  tokens_remove("gt") %>%
+  tokens_remove("deleted") %>%
+  tokens_remove("x{2,}")
+
+# tf and tf-idf analysis
+#tf
+df.subreddit.dfm <- dfm(df.subreddit.tk)
+tf <- rowSums(t(df.subreddit.dfm))
+tf <- data.frame(term = names(tf), count = tf) %>%
+  tibble() %>%
+  arrange(desc(count))
+head(tf)
+
+#freq per documents
+tidy(df.subreddit.dfm) %>%
+  arrange(desc(count))
+
+#freq per term
+df.subreddit.freq <- textstat_frequency(df.subreddit.dfm)
+head(df.subreddit.freq,20)
+
+#plot 20 most frequent words
+df.subreddit.freq %>%
+  top_n(20, frequency) %>%
+  ggplot(aes(
+    x = reorder(feature, frequency),
+    y = frequency)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("Frequency") +
+  ylab("term")
+
+textplot_wordcloud(df.subreddit.dfm)
+
+df.subreddit.freq %>%
+  top_n(20, frequency) %>%
+  ggplot(aes(label = feature, size = frequency)) +
+  geom_text_wordcloud() +
+  scale_size_area(max_size = 20) +
+  theme_minimal()
+
+#tf-idf
+df.subreddit.tfidf <- dfm_tfidf(df.subreddit.dfm)
+
+df.subreddit.tfidf.tidy <- tidy(df.subreddit.tfidf) %>%
+  bind_tf_idf(term = term, document = document, n = count) %>%
+  arrange(desc(tf_idf))
+head(df.subreddit.tfidf.tidy, n = 10) %>% flextable() %>% autofit()
+
+#max tf-idf per term over all documents
+df.subreddit.tfidf.max <- df.subreddit.tfidf.tidy %>%
+  group_by(term) %>%
+  summarise(tf_idf = max(tf_idf)) %>%
+  ungroup() %>%
+  arrange(desc(tf_idf))
+head(df.subreddit.tfidf.max, n = 10) %>% flextable() %>% autofit()
+
+#plot per document
+df.subreddit.dfm %>%
+  tidy() %>%
+  top_n(8, count) %>%
+  ggplot(aes(x = term, y = count)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme(axis.text.y = element_text(size = 10),
+        axis.ticks.y = element_blank()) +
+  facet_wrap(~document, ncol = 2)
+```

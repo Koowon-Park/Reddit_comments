@@ -19,30 +19,49 @@
 
 # load your virtual environment for the project
 
-# load the required packages
+# Load the required packages
 packages <- c(
-  "here", # for the project's organization
-  "tidyverse", "lubridate", "dplyr", "tidyr",# for wrangling
-  "patchwork", "maps", "scales", "ggmap",# for plotting
-  "knitr", "kableExtra", "rmarkdown", # for the report
-  # "reticulate", # for using python
-  "caret", # for the modelling part
-  "reactable", # for interactive tables,
-  "readxl", # for reading excel files
-  "ggplot2", "plotly", # for plotting
-  "reactable", "kableExtra", # for tables
-  "leaflet",# for maps
-  "corrplot", "car", "caret", "nortest", "Metrics", # for regression
-  "randomForest", "magrittr", # for random forest
-  "glmnet", #for lasso/ridge
-  "cluster","dendextend", # for clustering
-  "reshape2",
-  "jsonlite", "dplyr", # for json
-  "quanteda", "tidytext",  # for text analysis
-  "stringr", "tm", "wordcloud", "SnowballC", "stopwords", # for text analysis
-  "caTools", # for splitting
+  # Project organization
+  "here",
+  
+  # Data wrangling
+  "tidyverse", "lubridate", "dplyr", "tidyr",
+  
+  # Plotting
+  "patchwork", "maps", "scales", "ggmap", "ggplot2", "plotly", "ggrepel",
+  
+  # Reporting
+  "knitr", "kableExtra", "rmarkdown", "flextable",
+
+  
+  # Interactive tables
+  "reactable",
+  
+  # Reading Excel files
+  "readxl",
+  
+  # Clustering
+  "cluster", "dendextend",
+  
+  # JSON handling
+  "jsonlite",
+  
+  # Text analysis
+  "quanteda", "quanteda.textstats", "quanteda.textplots", "tidytext", 
+  "stringr", "tm", "wordcloud", "SnowballC", "stopwords", 
+  "ggwordcloud", "broom", "igraph", "reshape2",
+  
+  # Data splitting
+  "caTools",
+  
+  # Topic modeling
   "topicmodels"
 )
+
+# Install and load the packages
+install.packages(packages)
+lapply(packages, library, character.only = TRUE)
+
 
 # Install missing packages and load all the required libraries
 purrr::walk(packages, function(pkg) {

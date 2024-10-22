@@ -7,7 +7,7 @@
 -   Listing anomalies and outliers (could be part of EDA too)
 
 # LEO CODE
-```{r}
+```{r eval=FALSE} 
 # Load the necessary library
 #install.packages("jsonlite") 
 #install.packages("plyr") # Run this 2 lines in console only if not installed
@@ -117,7 +117,7 @@ print(results$field_analysis)
 
 ## Transform data into a CSV
 
-```{r}
+```{r eval=FALSE}
 # Function to convert Reddit comments to CSV
 convert_reddit_to_csv <- function(input_file, output_file) {
   # Read and parse all JSON lines
