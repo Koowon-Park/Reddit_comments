@@ -1,5 +1,5 @@
 ---
-title: ML Project
+title: Reddit Project
 author:
  - Urs Hurni
  - Hugo Troendle
