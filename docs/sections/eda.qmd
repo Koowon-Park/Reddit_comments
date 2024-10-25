@@ -75,20 +75,21 @@ dtm <- clean_text %>%
 
 # Apply LDA to discover topics
 #lda_model <- LDA(dtm, k = 5, control = list(seed = 1234))  # Choose 5 topics
-load("lda_model.RData")
+#load using here()
+load(here("docs/sections/lda_model.RData"))
 # Get the terms per topic
 topics <- tidy(lda_model, matrix = "beta")
 
 # Visualize the top 10 words per topic
 top_terms <- topics %>%
   group_by(topic) %>%
-  top_n(10, beta) %>%
+  top_n(8, beta) %>%
   ungroup() %>%
   arrange(topic, -beta)
 
 ggplot(top_terms, aes(x = reorder_within(term, beta, topic), y = beta, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
-  facet_wrap(~ topic, scales = "free", ncol = 2) +
+  facet_wrap(~ topic, scales = "free", ncol = 5) +
   coord_flip() +
   scale_x_reordered() +
   labs(title = "Top Terms per Topic", x = "Terms", y = "Beta")

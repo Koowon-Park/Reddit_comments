@@ -167,6 +167,7 @@ cat("Total rows processed:", results$total_rows, "\n")
 cat("Columns saved:", paste(results$columns, collapse = ", "), "\n")
 cat("Output file size:", round(results$file_size/1024/1024, 2), "MB\n")
 ```
+
 ## check the CSV
 
 ```{r load_data}
@@ -189,6 +190,9 @@ df$body <- gsub("XX+", "", df$body)
 
 #show number of rows
 nrow(df)
+
+#save csv as cleaned (a reecrire qd on clean +)
+#write.csv(df, here("data/reddit_comments_15k_cleaned.csv"), row.names = TRUE)
 ```
 
 
