@@ -6,6 +6,8 @@
 -   Spotting mistakes and missing data (could be part of EDA too)
 -   Listing anomalies and outliers (could be part of EDA too)
 
+setting eval=FALSE will not run the code when knitting the document
+
 # LEO CODE
 ```{r eval=FALSE} 
 # Load the necessary library
@@ -48,7 +50,7 @@ cat("Conversion complete! CSV saved as reddit_small.csv\n")
 # URS CODE
 ## Check consistency accross txt file
 
-```{r}
+```{r eval=FALSE}
 # Load required libraries
 library(jsonlite)
 library(dplyr)
@@ -167,8 +169,26 @@ cat("Output file size:", round(results$file_size/1024/1024, 2), "MB\n")
 ```
 ## check the CSV
 
-```{r}
-df <- read.csv("../../data/reddit_comments_15k.csv")
-(head(df))
+```{r load_data}
+#load csv with here
+df <- read.csv(here("data/reddit_comments_15k.csv"))
+(head(df, 1000))
 (summary(df))
+
+#show column that contains 'deleted'
+df[df$body == '[deleted]',]
+
+#remove rows where 'deleted' in body or author
+df <- df[!(df$body == '[deleted]' | df$author == '[deleted]'),]
+
+head(df, 1000)
+
+# Remove any series of 'x' characters from the 'body' column
+df$body <- gsub("xx+", "", df$body)
+df$body <- gsub("XX+", "", df$body)
+
+#show number of rows
+nrow(df)
 ```
+
+

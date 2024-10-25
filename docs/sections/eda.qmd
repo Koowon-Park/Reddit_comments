@@ -103,7 +103,7 @@ ggplot(top_terms, aes(x = reorder_within(term, beta, topic), y = beta, fill = fa
 
 ```
 
-### Second Attempt
+### Second Attempt - A comment = A document
 #### Preprocessing
 ```{r}
 # Tokenize text
@@ -122,9 +122,9 @@ head(tokens)
 df %>% unnest_tokens(word, body)  %>% 
   count(word, sort = TRUE) %>% 
   mutate(word = reorder(word, n)) %>% 
-  filter(n >= 12000) %>% ggplot(aes(n, word)) + geom_col()
+  filter(n >= 15000) %>% ggplot(aes(n, word)) + geom_col()
 ```
-The `n` value in the `filter` function can be adjusted to show more or fewer words in the plot. This analysis can help identify the most common words in the text data, which can provide insights into the main topics or themes present in the text. Here `n`is set to 12000, which is enormous, because the dataset is large. We see here the most common words are words like "the", "and", "a", etc., which are common stopwords in English text. These words are not very informative for topic modeling or sentiment analysis, so they are typically removed in the preprocessing steps.
+The `n` value in the `filter` function can be adjusted to show more or fewer words in the plot. This analysis can help identify the most common words in the text data, which can provide insights into the main topics or themes present in the text. Here `n`is set to 15000, which is enormous, because the dataset is large. We see here the most common words are words like "the", "and", "a", etc., which are common stopwords in English text. These words are not very informative for topic modeling or sentiment analysis, so they are typically removed in the preprocessing steps.
 
 ##### Creating a corpus
 
@@ -203,7 +203,7 @@ df.tk <- df.tk %>%
   tokens_remove("amp") %>%
   tokens_remove("gt") %>%
   tokens_remove("deleted") %>%
-  # remove any 'x' characters
+  # remove any 'xxxx' characters
   tokens_remove("x{2,}")
 ```
 
@@ -217,7 +217,7 @@ df.tk %>%
 ```
 
 #### TF and TF-IDF
-##### Term Frequency (TF)
+##### Term Frequency (TF) 
 
 Now, let us compute the word frequencies (TF) and arrange them by decreasing frequencies. For the Document-Term Matrix, quanteda uses dfm() objects like below (for document frequency matrix).
 
@@ -232,6 +232,9 @@ tf <- data.frame(term = names(tf), count = tf) %>%
   arrange(desc(count))
 head(tf)
 ```
+
+##### Frequency per document (DFM)
+
 Let us compute the frequencies by documents. We can use tidy function directly on the crude.dfm object to turn it into a dataframe and view the results.
 
 ```{r}
@@ -282,7 +285,6 @@ df.tfidf.max <- df.tfidf.tidy %>%
   arrange(desc(tf_idf))
 head(df.tfidf.max, n = 10) %>% flextable() %>% autofit()
 ```
-We can also illustrate Zipf’s law on the data. The terms are ranked by their frequency (rank = 1 for the most frequent), then plotted versus its rank. This is easily obtained using quanteda 
 
 ##### Plotting the Results
 
@@ -313,22 +315,22 @@ df.freq %>%
   top_n(50, frequency) %>%
   ggplot(aes(label = feature, size = frequency)) +
   geom_text_wordcloud() +
-  scale_size_area(max_size = 20) +
+  scale_size_area() +
   theme_minimal()
 
 #plot per documents
 df.dfm %>%
   tidy() %>%
-  top_n(8, count) %>%
+  top_n(10, count) %>%
   ggplot(aes(x = term, y = count)) +
   geom_bar(stat = "identity") +
   coord_flip() +
   theme(axis.text.y = element_text(size = 8), 
         axis.ticks.y = element_blank()) +
-  facet_wrap(~document, ncol = 2)
+  facet_wrap(~document, ncol = 5)
 ```
 
-### Attempt 3
+### Attempt 3 - A subreddit = A document
 
 Here i take the idea that a 'document' is a subbredit. It is like all comments that are part of one subreddit will be a document.
 It is a bit an analysis per subreddit
@@ -338,7 +340,6 @@ It is a bit an analysis per subreddit
 df.subreddit <- df %>%
   group_by(subreddit) %>%
   summarise(body = paste(body, collapse = " "))
-df.subreddit
 
 # show number of subreddits
 cat("Number of subreddits:", nrow(df.subreddit), "\n")
@@ -434,7 +435,7 @@ df.subreddit.dfm %>%
   ggplot(aes(x = term, y = count)) +
   geom_bar(stat = "identity") +
   coord_flip() +
-  theme(axis.text.y = element_text(size = 10),
+  theme(axis.text.y = element_text(size = 8),
         axis.ticks.y = element_blank()) +
-  facet_wrap(~document, ncol = 2)
+  facet_wrap(~document, ncol = 6)
 ```
