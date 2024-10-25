@@ -33,7 +33,6 @@ packages <- c(
   # Reporting
   "knitr", "kableExtra", "rmarkdown", "flextable",
 
-  
   # Interactive tables
   "reactable",
   
@@ -58,9 +57,6 @@ packages <- c(
   "topicmodels"
 )
 
-# Install and load the packages
-install.packages(packages)
-lapply(packages, library, character.only = TRUE)
 
 
 # Install missing packages and load all the required libraries

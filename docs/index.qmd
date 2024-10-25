@@ -18,28 +18,18 @@ format:
     code-summary: "Click to show code"
     # pdf: default # use this if you want to render pdfs instead
 abstract: |
-  This project applies machine learning techniques to predict real estate prices in Switzerland, focusing on a comprehensive dataset scraped from ImmoScout24. It utilizes Linear Regression and Random Forest models to navigate the complexities of the market, enhanced by additional demographic, political, and tax data from the Swiss Federal Statistical Office.
-
-  The effectiveness of these models was tested through metrics such as R-squared, RMSE, and MAE, with cross-validation to ensure reliability. The Random Forest model proved superior, particularly in handling the dataset's complexity and demonstrating a robust capacity to predict real estate prices with considerable accuracy. However, overfitting issues arose. To address this, we attempted to simplify the model as per Occam's razor by conducting a variety of tests.
-
-  These tests showed that creating separate models for each canton and year category provided the least discrepancy. However, an unusual outcome was noted where test metrics occasionally surpassed those of the training set, indicating potential peculiarities in the model's generalization across different data subsets.
-
-  After further refinement, we found that a simpler model significantly reduced this peculiarity. This model used only one canton and one year category. Nevertheless, because Switzerland has 26 cantons and 11 different year categories, creating a specific model for each combination would be a huge and computationally heavy task. Therefore, we designed a model that could be adapted for any year category and canton as desired.
-
-  It is therefore recommended to develop models tailored to specific regions to better understand local market trends, which can lead to more accurate predictions and help stakeholders make informed decisions.
-
-  The analysis also identified key predictors of price, such as property size, with square meters being the most impactful.
-
-  This study highlights the potential of using machine learning for real estate evaluations, suggesting that further enhancements and application of these models could extend their use to other regions or sectors, providing valuable insights for decision-making in real estate investments. Future research could explore incorporating additional variables, other models, and employing newer analytical methods to enhance the models' accuracy and applicability.
+  This project applies ...
 
 ---
 
 ```{r, echo = FALSE, message = FALSE, warning= FALSE}
 # loading all the necessary packages
 library(here)
+#check where here is pointing
+here()
 source(here("src/setup.R"))
 ```
 
 
-```{r child = paste0('sections/', c('intro.qmd', 'data.qmd', 'unsupervised.qmd', 'eda.qmd','supervised.qmd', 'concl.qmd'))}
+```{r child = paste0('sections/', c('intro.qmd', 'data.qmd', 'eda.qmd', 'concl.qmd'))}
 ```
