@@ -442,13 +442,95 @@ df.subbredit.hc <- hclust(as.dist(df.subbredit.eucl))
 ## df.subbredit.hc <- hclust(as.dist(1 - df.subbredit.jac)) # use this line for Jaccard
 ## df.subbredit.hc <- hclust(as.dist(1 - df.subbredit.cos)) # use this line for Cosine
 plot(df.subbredit.hc)
-df.subbredit.clust <- cutree(df.subbredit.hc, k = 5)
+df.subbredit.clust <- cutree(df.subbredit.hc, k = 3)
 df.subbredit.clust
 #k-means
-#We restrict ourselves to a small subset of the highest tf-idf of the data to avoid memory issues and readability issues in the plots.
-df.subreddit.tfidf.small <- df.subreddit.tfidf[1:50,]
-df.subreddit.tfidf.small
-df.subbredit.km <- kmeans(df.subreddit.tfidf, centers = 5)
+
+df.subbredit.km <- kmeans(df.subreddit.tfidf.small, centers = 3)
 df.subbredit.km$cluster
+```
+
+#### Similarities between words
+
+In this part we analyze similarities between words (through documents). We restrict ourselves to a subset corresponding to words with frequency rank less than 40 (it should correspond to the 40 most frequent words but several words have the same frequency rank). We use the cosine similarity and plot the heatmap.
+
+```{r}
+# crude.feat <- textstat_frequency(crude.dfm) %>%
+#   filter(rank <= 40) 
+# crude.feat$feature
+# 
+# crude.cos <- textstat_simil(
+#   crude.dfm[, crude.feat$feature],
+#   method = "cosine",
+#   margin = "feature")
+# crude.cos.mat <- melt(as.matrix(crude.cos)) # Convert the object to matrix then to data frame 
+# 
+# ggplot(data = crude.cos.mat, aes(x=Var1, y=Var2, fill=value)) +
+#   scale_fill_gradient2(
+#     low = "blue",
+#     high = "red",
+#     mid = "white",
+#     midpoint = 0.5,
+#     limit = c(0, 1),
+#     name = "Cosine") +
+#   geom_tile() + 
+#   theme(
+#     axis.text.x = element_text(angle = 45, hjust = 1, size = 5),
+#     axis.text.y = element_text(size = 5)) +
+#   xlab("") + 
+#   ylab("")
+
+df.subreddit.freq <- textstat_frequency(df.subreddit.dfm) %>%
+  filter(rank <= 40)
+df.subreddit.freq$feature
+
+df.subreddit.cos <- textstat_simil(
+  df.subreddit.dfm[, df.subreddit.freq$feature],
+  method = "cosine",
+  margin = "feature")
+df.subreddit.cos.mat <- melt(as.matrix(df.subreddit.cos)) # Convert the object to matrix then to data frame
+
+ggplot(data = df.subreddit.cos.mat, aes(x=Var1, y=Var2, fill=value)) +
+  scale_fill_gradient2(
+    low = "blue",
+    high = "red",
+    mid = "white",
+    midpoint = 0.5,
+    limit = c(0, 1),
+    name = "Cosine") +
+  geom_tile() + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 5),
+    axis.text.y = element_text(size = 5)) +
+  xlab("") + 
+  ylab("")
+```
+
+Lots of words are similar in terms of cosine similarity. this is peculiar which means that they are used in a similar proportion through subreddits.
+
+#### Clustering Words
+
+```{r}
+#cluster and rotate labels
+df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos))
+plot(df.subreddit.hc)
+```
+
+#### Co-occurences
+
+The procedure below is quite similar to the one with cosine. We first compute the co-occurrence (that we make symmetrical), then represent this matrix on a heatmap, then run the clustering algorithm, and finally try to represent it on a map.
+
+The function below makes a co-occurrence on a (half-)window of 3. Note that the object needs to be the tokens because co-occurrences needs the token order and thus cannot be computed on a BOW object (like DTM).
+
+```{r}
+# crude.fcm <- fcm(crude.tk, 
+#                  window = 3, 
+#                  tri = FALSE)
+# crude.fcm <- (crude.fcm + t(crude.fcm))/2 ## make the co-occurrence matrix symmetrical
+
+df.subreddit.fcm <- fcm(df.subreddit.tk, 
+                 window = 3, 
+                 tri = FALSE)
+df.subreddit.fcm <- (df.subreddit.fcm + t(df.subreddit.fcm))/2 ## make the co-occurrence matrix symmetrical
 ```
 
