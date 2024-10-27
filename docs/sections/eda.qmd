@@ -268,7 +268,7 @@ Maybe not really relevant as we have a lot of documents/comments ?
 
 Here i take the idea that a 'document' is a subbredit. It is like all comments that are part of one subreddit will be a document. It is a bit an analysis per subreddit
 
-```{r fig.width=10, fig.height=10}}
+```{r fig.width=10, fig.height=10}
 #take the df data and group all comments by subreddit
 df.subreddit <- df %>%
   group_by(subreddit) %>%

@@ -9,7 +9,7 @@
 setting eval=FALSE will not run the code when knitting the document
 
 # LEO CODE
-```{r eval=FALSE} 
+```{r eval=FALSE, echo=FALSE} 
 # Load the necessary library
 #install.packages("jsonlite") 
 #install.packages("plyr") # Run this 2 lines in console only if not installed
@@ -50,7 +50,7 @@ cat("Conversion complete! CSV saved as reddit_small.csv\n")
 # URS CODE
 ## Check consistency accross txt file
 
-```{r eval=FALSE}
+```{r echo=FALSE, eval=FALSE}
 # Load required libraries
 library(jsonlite)
 library(dplyr)
@@ -119,7 +119,7 @@ print(results$field_analysis)
 
 ## Transform data into a CSV
 
-```{r eval=FALSE}
+```{r eval=FALSE, echo=FALSE}
 # Function to convert Reddit comments to CSV
 convert_reddit_to_csv <- function(input_file, output_file) {
   # Read and parse all JSON lines
@@ -179,7 +179,7 @@ summary(df)
 
 ## Clean the data
 
-```{r}
+```{r clean_data}
 #show column that contains 'deleted'
 df[df$body == '[deleted]',]
 
