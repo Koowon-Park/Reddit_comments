@@ -366,3 +366,89 @@ df.subreddit.dfm %>%
 - The subbredits 'news' is associated in terms of frequency with the term 'people' which is logical as news is about people.
 
 #### Similarity between Subreddits/Documents
+
+we analyze similarities and dissimilarities between the documents (through words) in the data. We use quanteda extensively. We’ll use the objects created previously in the exercises.
+
+Then use the functions textstat_simil() and textstat_dist() to compute the Jaccard index matrix, the cosine matrix, and the Euclidean distances matrix.
+
+```{r}
+#We restrict ourselves to a small subset of the highest tf-idf of the data to avoid memory issues and readability issues in the plots.
+df.subreddit.tfidf.small <- df.subreddit.tfidf[1:50,]
+df.subreddit.tfidf.small
+
+df.subbredit.jac <- textstat_simil(
+  df.subreddit.tfidf.small, method = "jaccard", margin = "documents")
+
+df.subbredit.cos <- textstat_simil(
+  df.subreddit.tfidf.small, method = "cosine", margin = "documents")
+
+df.subbredit.eucl <- textstat_dist(
+  df.subreddit.tfidf.small, method = "euclidean", margin = "documents")
+
+#heatmap representation of similariteis between subreddits
+## jaccard
+df.subbredit.jac.mat <- melt(as.matrix(df.subbredit.jac))
+ggplot( data = df.subbredit.jac.mat, 
+        mapping = aes(x = Var1, y = Var2, fill = value)) +
+  scale_fill_gradient2(
+    low = "blue", 
+    high = "red", 
+    mid = 'white', 
+    midpoint = 0.5, 
+    limit = c(0,1), 
+    name = "Jaccard") +
+  geom_tile() + xlab("") + ylab("") +
+  #incline x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+## cosine
+df.subbredit.cos.mat <- melt(as.matrix(df.subbredit.cos))
+ggplot( data = df.subbredit.cos.mat, 
+        mapping = aes(x = Var1, y = Var2, fill = value)) +
+  scale_fill_gradient2(
+    low = "blue", 
+    high = "red", 
+    mid = 'white', 
+    midpoint = 0.5, 
+    limit = c(0,1), 
+    name = "Cosine") +
+  geom_tile() + xlab("") + ylab("") +
+  #incline x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+## euclidean
+df.subbredit.eucl.mat <- melt(as.matrix(df.subbredit.eucl))
+ggplot( data = df.subbredit.eucl.mat, 
+        mapping = aes(x = Var1, y = Var2, fill = value)) +
+  scale_fill_gradient2(
+    low = "blue", 
+    high = "red", 
+    mid = 'white', 
+    midpoint = 0.5, 
+    limit = c(0,1), 
+    name = "Euclidean") +
+  geom_tile() + xlab("") + ylab("") +
+  #incline x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Clustering of Documents
+
+Hierarchical clustering and K-means. The first one is applied on the dissimilarities (Euclidean, inverted Jaccard, and inverted cosine). The second one is applied on the features, here, TF-IDF. To illustrate the methods, we decide to create five clusters.
+
+```{r}
+#hierarchical
+df.subbredit.hc <- hclust(as.dist(df.subbredit.eucl))
+## df.subbredit.hc <- hclust(as.dist(1 - df.subbredit.jac)) # use this line for Jaccard
+## df.subbredit.hc <- hclust(as.dist(1 - df.subbredit.cos)) # use this line for Cosine
+plot(df.subbredit.hc)
+df.subbredit.clust <- cutree(df.subbredit.hc, k = 5)
+df.subbredit.clust
+#k-means
+#We restrict ourselves to a small subset of the highest tf-idf of the data to avoid memory issues and readability issues in the plots.
+df.subreddit.tfidf.small <- df.subreddit.tfidf[1:50,]
+df.subreddit.tfidf.small
+df.subbredit.km <- kmeans(df.subreddit.tfidf, centers = 5)
+df.subbredit.km$cluster
+```
+
