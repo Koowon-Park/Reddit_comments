@@ -174,8 +174,12 @@ cat("Output file size:", round(results$file_size/1024/1024, 2), "MB\n")
 #load csv with here
 df <- read.csv(here("data/reddit_comments_15k.csv"))
 (head(df, 1000))
-(summary(df))
+summary(df)
+```
 
+## Clean the data
+
+```{r}
 #show column that contains 'deleted'
 df[df$body == '[deleted]',]
 
