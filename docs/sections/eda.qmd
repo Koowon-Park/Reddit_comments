@@ -266,7 +266,7 @@ Maybe not really relevant as we have a lot of documents/comments ?
 
 ### Attempt 3 - A subreddit = A document
 
-Here i take the idea that a 'document' is a subbredit. It is like all comments that are part of one subreddit will be a document. It is a bit an analysis per subreddit
+Here i take the idea that a 'document' is a subreddit. It is like all comments that are part of one subreddit will be a document. It is a bit an analysis per subreddit
 
 ```{r fig.width=10, fig.height=10}
 #take the df data and group all comments by subreddit
@@ -359,11 +359,11 @@ df.subreddit.dfm %>%
   facet_wrap(~document, ncol = 5)
 ```
 
--   We observe that AskReddit has lots of words frequency which makes sense as it is the biggest subbredit by lenght.
--   We also observe that the term 'game' is associated in term of frequency with sports Subbredits like CFB (College Football) and Hockey which makes sense.
+-   We observe that AskReddit has lots of words frequency which makes sense as it is the biggest subreddit by lenght.
+-   We also observe that the term 'game' is associated in term of frequency with sports subreddits like CFB (College Football) and Hockey which makes sense.
 -   Interestingly the subreddits LoL (League of Legends) is associated with the term 'happy', which show us that the community may be the happiest, careful bias here, it is just a word frequency analysis.
 - In the subreddits 'pics' we observe a lot of 'gem' term which indicates treasure or something valuable. This is interesting as it is a subreddit for sharing pictures.
-- The subbredits 'news' is associated in terms of frequency with the term 'people' which is logical as news is about people.
+- The subreddits 'news' is associated in terms of frequency with the term 'people' which is logical as news is about people.
 
 #### Similarity between Subreddits/Documents
 
@@ -376,19 +376,19 @@ Then use the functions textstat_simil() and textstat_dist() to compute the Jacca
 df.subreddit.tfidf.small <- df.subreddit.tfidf[1:50,]
 df.subreddit.tfidf.small
 
-df.subbredit.jac <- textstat_simil(
+df.subreddit.jac <- textstat_simil(
   df.subreddit.tfidf.small, method = "jaccard", margin = "documents")
 
-df.subbredit.cos <- textstat_simil(
+df.subreddit.cos <- textstat_simil(
   df.subreddit.tfidf.small, method = "cosine", margin = "documents")
 
-df.subbredit.eucl <- textstat_dist(
+df.subreddit.eucl <- textstat_dist(
   df.subreddit.tfidf.small, method = "euclidean", margin = "documents")
 
 #heatmap representation of similariteis between subreddits
 ## jaccard
-df.subbredit.jac.mat <- melt(as.matrix(df.subbredit.jac))
-ggplot( data = df.subbredit.jac.mat, 
+df.subreddit.jac.mat <- melt(as.matrix(df.subreddit.jac))
+ggplot( data = df.subreddit.jac.mat, 
         mapping = aes(x = Var1, y = Var2, fill = value)) +
   scale_fill_gradient2(
     low = "blue", 
@@ -402,8 +402,8 @@ ggplot( data = df.subbredit.jac.mat,
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ## cosine
-df.subbredit.cos.mat <- melt(as.matrix(df.subbredit.cos))
-ggplot( data = df.subbredit.cos.mat, 
+df.subreddit.cos.mat <- melt(as.matrix(df.subreddit.cos))
+ggplot( data = df.subreddit.cos.mat, 
         mapping = aes(x = Var1, y = Var2, fill = value)) +
   scale_fill_gradient2(
     low = "blue", 
@@ -417,8 +417,8 @@ ggplot( data = df.subbredit.cos.mat,
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ## euclidean
-df.subbredit.eucl.mat <- melt(as.matrix(df.subbredit.eucl))
-ggplot( data = df.subbredit.eucl.mat, 
+df.subreddit.eucl.mat <- melt(as.matrix(df.subreddit.eucl))
+ggplot( data = df.subreddit.eucl.mat, 
         mapping = aes(x = Var1, y = Var2, fill = value)) +
   scale_fill_gradient2(
     low = "blue", 
@@ -438,16 +438,16 @@ Hierarchical clustering and K-means. The first one is applied on the dissimilari
 
 ```{r}
 #hierarchical
-df.subbredit.hc <- hclust(as.dist(df.subbredit.eucl))
-## df.subbredit.hc <- hclust(as.dist(1 - df.subbredit.jac)) # use this line for Jaccard
-## df.subbredit.hc <- hclust(as.dist(1 - df.subbredit.cos)) # use this line for Cosine
-plot(df.subbredit.hc)
-df.subbredit.clust <- cutree(df.subbredit.hc, k = 3)
-df.subbredit.clust
+df.subreddit.hc <- hclust(as.dist(df.subreddit.eucl))
+## df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.jac)) # use this line for Jaccard
+## df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos)) # use this line for Cosine
+plot(df.subreddit.hc)
+df.subreddit.clust <- cutree(df.subreddit.hc, k = 3)
+df.subreddit.clust
 #k-means
 
-df.subbredit.km <- kmeans(df.subreddit.tfidf.small, centers = 3)
-df.subbredit.km$cluster
+df.subreddit.km <- kmeans(df.subreddit.tfidf.small, centers = 3)
+df.subreddit.km$cluster
 ```
 
 #### Similarities between words
@@ -515,3 +515,130 @@ Lots of words are similar in terms of cosine similarity. this is peculiar which 
 df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos))
 plot(df.subreddit.hc)
 ```
+### Attempt 4 - Topic Modelling per subrreddit
+
+```{r}
+#select subset of data of the top 10 subreddits for readability purposes
+df.top10_subreddit <- df.subreddit %>%
+  arrange(desc(nchar(body))) %>%
+  filter(row_number() <= 10)
+
+#corpus
+df.top10_subreddit.cp <- corpus(df.top10_subreddit$body)
+# Assign subreddit names as document identifiers
+docnames(df.top10_subreddit.cp) <- df.top10_subreddit$subreddit
+
+#token
+df.top10_subreddit.tk <- tokens(
+  corpus(df.top10_subreddit$body),
+  remove_numbers = TRUE,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE,
+  remove_hyphens = TRUE,
+  remove_separators = TRUE
+)
+df.top10_subreddit.tk <- df.top10_subreddit.tk %>%
+  tokens_tolower() %>%
+  tokens_remove(stop_words$word) %>%
+  tokens_remove(c("reddit", "subreddit", "amp", "gt", "deleted", "x+")) %>%
+  tokens_replace(
+    pattern = hash_lemmas$token,
+    replacement = hash_lemmas$lemma)
+
+# Create Document-Feature Matrix (DFM)
+df.top10_subreddit.dfm <- dfm(df.top10_subreddit.tk)
+
+# Explicitly set document names in the DFM to the subreddit names
+docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
+df.top10_subreddit.dfm
+
+#use textmodel_lsa() on dfm using 10 dimensions
+df.subreddit.lsa <- textmodel_lsa(
+  x = df.top10_subreddit.dfm,
+  nd = 10)
+
+head(df.subreddit.lsa$docs)
+#interpretation
+## we look at the five terms with the largest values and the five ones with the lowest value (i.e., largest negative value)
+
+n.terms <- 5
+##for dim 2
+w.order <- sort(df.subreddit.lsa$features[, 2], decreasing = TRUE)
+w.top2 <- c(w.order[1:n.terms], rev(rev(w.order)[1:n.terms]))
+##for dim 3
+w.order <- sort(df.subreddit.lsa$features[, 3], decreasing = TRUE)
+w.top3 <- c(w.order[1:n.terms], rev(rev(w.order)[1:n.terms]))
+
+w.top2
+w.top3
+```
+
+Topic 2 is associated positively with topic like  (game, team, play, games, fuck, ) and negatively with topics like (questions, question, comments, post, people)
+
+```{r}
+#PCA bibplots for links between topics and documents and topcis with terms
+w.subset <-
+  ##restric chart to terms that are mostly related to dim2 and dim3 so w.top2 and w.top3
+  df.subreddit.lsa$features[
+    c(unique(c(names(w.top2), names(w.top3)))), 2:3]
+
+biplot(
+  y = df.subreddit.lsa$docs[, 2:3],
+  x = df.subreddit.lsa$features[,2:3],
+  col = c("black","red"),
+  cex = c(0.5, 0.5),
+  xlab = "Dim 2",
+  ylab = "Dim 3")
+```
+We observe that the word `people` is associated with dim 2 and negatively associated with `game` or `play`. `happy` is associated with dim 3 and is interestingly negatively associated to `happy` which makes sense.
+
+```{r}
+#we repeat analysis of LSA on TF-IDF
+df.top10_subbredit.tfidf <- dfm_tfidf(df.top10_subbredit.dfm)
+# Explicitly set document names in the DFM to the subreddit names
+docnames(df.top10_subbredit.tfidf) <- df.top10_subreddit$subreddit
+
+df.top10_subbredit.lsa2 <- textmodel_lsa(df.top10_subbredit.tfidf, nd = 10) 
+head(df.top10_subbredit.lsa2$docs)
+head(df.top10_subbredit.lsa2$features)
+df.top10_subbredit.lsa2$sk
+
+n.terms <- 5
+w.order <- sort(df.top10_subbredit.lsa2$features[,2], decreasing = TRUE)
+w.top2 <- c(w.order[1:n.terms], rev(rev(w.order)[1:n.terms]))
+
+w.order <- sort(df.top10_subbredit.lsa2$features[,3], decreasing = TRUE)
+w.top3 <- c(w.order[1:n.terms], rev(rev(w.order)[1:n.terms]))
+
+w.subset <- df.top10_subbredit.lsa2$features[c(unique(c(names(w.top2), names(w.top3)))),2:3]
+biplot(
+  y = df.top10_subbredit.lsa2$docs[,2:3],
+  x = w.subset,
+  col = c("black", "red"),
+  xlab = "Dim 2",
+  ylab="Dim 3")
+```
+
+#### LDA
+
+```{r}
+docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
+set.seed(1234) #To create reproducible results
+df.top10_subbredit.lda <- textmodel_lda(
+  x = df.top10_subbredit.dfm,
+  k = 10)
+
+#extract top 5 terms per topic
+seededlda::terms(df.top10_subbredit.lda, 5)
+
+# Extract subreddits per topic and rename output to match subreddit names
+top_subreddits <- seededlda::topics(df.top10_subbredit.lda)
+names(top_subreddits) <- df.top10_subreddit$subreddit
+top_subreddits
+
+#count the number of documents per topic
+seededlda::topics(df.top10_subbredit.lda) %>% table()
+```
+
+Topic 8 with 3 subreddits ( AskReddit, funny and news) is the most popular topic with words like people, time, fuck, day, feel which may represent huma experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human. Indeed, what reddit is about haha

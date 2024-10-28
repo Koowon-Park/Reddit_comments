@@ -46,7 +46,7 @@ packages <- c(
   "jsonlite",
   
   # Text analysis
-  "quanteda", "quanteda.textstats", "quanteda.textplots", "tidytext", 
+  "quanteda", "quanteda.textstats", "quanteda.textplots", "quanteda.textmodels","tidytext", 
   "stringr", "tm", "wordcloud", "SnowballC", "stopwords", 
   "ggwordcloud", "broom", "igraph", "reshape2",
   
@@ -54,7 +54,9 @@ packages <- c(
   "caTools",
   
   # Topic modeling
-  "topicmodels"
+  "topicmodels", "seededlda", "topicmodels", "topicdoc",
+  
+  "lexicon"
 )
 
 
