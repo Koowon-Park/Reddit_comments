@@ -759,4 +759,90 @@ beta.long %>%
     strip.text = element_text(size = 5))
 ```
 
+### Attempt 5 - Regression
+
+We will try to predict the rating of a comment.
+
+```{r}
+#focus on col 'body' which contains the written comment and 'score' which is the rating
+
+#statistics of ratings/scores
+df %>%
+  group_by(score) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  arrange(score)
+
+#print max and min scores
+cat("max score", max(df$score), "\n")
+cat("min score", min(df$score), "\n")
+```
+
+Not very well balanced, goes from 3967 to -302
+
+```{r}
+#build a regression model using SVM
+##splitting
+###select only the columns of interest
+df_split <- df %>%
+  select(score, body) %>%
+  rename(text = body) %>%
+  initial_split()
+
+#create training and test sets
+df_train <- training(df_split)
+df_test <- testing(df_split)
+
+#preprocess the text data
+df_rec <- recipe(score ~ text, data = df_train) %>%
+  step_tokenize(text) %>%
+  step_tokenfilter(text, max_tokens = 1000) %>%
+  #remove stopwords
+  step_stopwords(text) %>%
+  step_tfidf(text)
+
+#create workflow
+df_wf <- workflow() %>%
+  add_recipe(df_rec)
+
+#define model
+svm_spec <- svm_linear() %>%
+  set_engine("LiblineaR") %>%
+  set_mode("regression")
+
+#fit
+svm_fit <- df_wf %>%
+  add_model(svm_spec) %>%
+  fit(data = df_train)
+
+#cv
+set.seed(1234)
+df_folds <- vfold_cv(df_train, v = 10)
+
+#fitting resamples
+svm_res <- fit_resamples(
+  df_wf %>%
+    add_model(svm_spec),
+  df_folds,
+  control = control_resamples(save_pred = TRUE)
+)
+
+##collecting metrics
+collect_metrics(svm_res)
+
+#visualize the results
+svm_res %>%
+  collect_predictions() %>%
+  ggplot(aes(score, .pred, color = id)) +
+  geom_abline(lty = 2, color = "gray80", linewidth = 1.5) +
+  geom_point(alpha = 0.3) +
+  ylim(c(1, 5)) +
+  labs(
+    x = "Truth",
+    y = "Predicted year",
+    color = NULL,
+    title = "Predicted and true comments grades",
+    subtitle = "Each cross-validation fold is shown in a different color"
+  )
+```
 
