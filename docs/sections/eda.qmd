@@ -850,3 +850,56 @@ Only predict from a range 1-5
 - Inbalance in data thus model fail to capture the full range of scores
 
 To improve the performance, experimenting with alternative algorithms that can handle extreme outliers, or resampling techniques to balance the data, may help achieve better predictive accuracy across the entire score range.
+
+### Attempt 6 - Sentiment Analysis
+
+#### AFINN
+
+assgin sentiment score by word through the use of the inner joins
+
+```{r}
+#get top 50 subreddits
+df.top50_subreddit <- df.subreddit %>%
+  arrange(desc(nchar(body))) %>%
+  filter(row_number() <= 50)
+
+df.top50_subreddit.tokens <- df.top50_subreddit %>% unnest_tokens(word, body)
+df.top50_subreddit.tokens
+
+df.top50_subreddit.affin <- inner_join(df.top50_subreddit.tokens, get_sentiments("afinn"),
+ by = c("word" = "word")) %>% group_by(subreddit) %>%
+ summarize(Sentiment = mean(value)) %>% ungroup()
+ ggplot(df.top50_subreddit.affin, aes(x = Sentiment, y = reorder(subreddit, Sentiment))) + geom_col() + ylab("")
+ 
+```
+
+there seems to be more positive subreddits than negative ones.
+
+We interestingly observe that based on the affin dictionnary the `news` and `politics` subreddit are the most negative, which could reflect a state of the world.
+And the `pcmasterrace` is the most positive, by far. 
+
+#### NRC
+
+```{r}
+df.top50_subreddit.nrc <- inner_join(df.top50_subreddit.tokens, get_sentiments("nrc"),
+ by = c("word" = "word")) %>% group_by(subreddit, sentiment) %>%
+ summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>%
+ mutate(Sentiment = positive - negative) %>% select(subreddit, Sentiment)
+ ggplot(df.top50_subreddit.nrc, aes(x = Sentiment, y = reorder(subreddit, Sentiment))) + geom_col() + ylab("")
+```
+
+Through the NRC dictionnary we observe far mor positive subreddits than negative ones. This difference could be explain by the fact that the NRC dictionnary is more balanced than the AFINN dictionnary ?
+
+We still observe quite the same patterns though.
+
+#### BING
+
+```{r}
+df.top50_subreddit.bing <- inner_join(df.top50_subreddit.tokens, get_sentiments("bing"),
+ by = c("word" = "word")) %>% group_by(subreddit, sentiment) %>%
+ summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>%
+ mutate(Sentiment = positive - negative) %>% select(subreddit, Sentiment)
+ ggplot(df.top50_subreddit.bing, aes(x = Sentiment, y = reorder(subreddit, Sentiment))) + geom_col() + ylab("")
+```
+
+BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary. As the BING dictionnary combines both positive and negative words, it may be more balanced than the AFINN dictionnary,which could indicate that the NRC is more biased towards positive words.
