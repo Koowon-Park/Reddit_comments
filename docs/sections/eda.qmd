@@ -839,10 +839,14 @@ svm_res %>%
   ylim(c(1, 5)) +
   labs(
     x = "Truth",
-    y = "Predicted year",
+    y = "Predicted Score",
     color = NULL,
     title = "Predicted and true comments grades",
     subtitle = "Each cross-validation fold is shown in a different color"
   )
 ```
 
+Only predict from a range 1-5
+- Inbalance in data thus model fail to capture the full range of scores
+
+To improve the performance, experimenting with alternative algorithms that can handle extreme outliers, or resampling techniques to balance the data, may help achieve better predictive accuracy across the entire score range.
