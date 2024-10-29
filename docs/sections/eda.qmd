@@ -455,6 +455,377 @@ df.subreddit.km$cluster
 In this part we analyze similarities between words (through documents). We restrict ourselves to a subset corresponding to words with frequency rank less than 40 (it should correspond to the 40 most frequent words but several words have the same frequency rank). We use the cosine similarity and plot the heatmap.
 
 ```{r}
+df.subreddit.freq <- textstat_frequency(df.subreddit.dfm) %>%
+  filter(rank <= 40)
+df.subreddit.freq$feature
+
+df.subreddit.cos <- textstat_simil(
+  df.subreddit.dfm[, df.subreddit.freq$feature],
+  method = "cosine",
+  margin = "feature")
+df.subreddit.cos.mat <- melt(as.matrix(df.subreddit.cos)) # Convert the object to matrix then to data frame
+
+ggplot(data = df.subreddit.cos.mat, aes(x=Var1, y=Var2, fill=value)) +
+  scale_fill_gradient2(
+    low = "blue",
+    high = "red",
+    mid = "white",
+    midpoint = 0.5,
+    limit = c(0, 1),
+    name = "Cosine") +
+  geom_tile() + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 5),
+    axis.text.y = element_text(size = 5)) +
+  xlab("") + 
+  ylab("")
+```
+
+Lots of words are similar in terms of cosine similarity. this is peculiar which means that they are used in a similar proportion through subreddits.
+
+#### Clustering Words
+
+```{r}
+#cluster and rotate labels
+df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos))
+plot(df.subreddit.hc)
+```
+
+### Attempt 4 - Topic Modelling per subrreddit
+#### LSA
+
+```{r}
+#select subset of data of the top 10 subreddits for readability purposes
+df.top10_subreddit <- df.subreddit %>%
+  arrange(desc(nchar(body))) %>%
+  filter(row_number() <= 10)
+
+#corpus
+df.top10_subreddit.cp <- corpus(df.top10_subreddit$body)
+# Assign subreddit names as document identifiers
+docnames(df.top10_subreddit.cp) <- df.top10_subreddit$subreddit
+
+#token
+df.top10_subreddit.tk <- tokens(
+  corpus(df.top10_subreddit$body),
+  remove_numbers = TRUE,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE,
+  remove_hyphens = TRUE,
+  remove_separators = TRUE
+)
+df.top10_subreddit.tk <- df.top10_subreddit.tk %>%
+  tokens_tolower() %>%
+  tokens_remove(stop_words$word) %>%
+  tokens_remove(c("reddit", "subreddit", "amp", "gt", "deleted", "x+")) %>%
+  tokens_replace(
+    pattern = hash_lemmas$token,
+    replacement = hash_lemmas$lemma)
+
+# Create Document-Feature Matrix (DFM)
+df.top10_subreddit.dfm <- dfm(df.top10_subreddit.tk)
+
+# Explicitly set document names in the DFM to the subreddit names
+docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
+df.top10_subreddit.dfm
+
+#use textmodel_lsa() on dfm using n dimensions
+df.subreddit.lsa <- textmodel_lsa(
+  x = df.top10_subreddit.dfm,
+  nd = 5)
+
+head(df.subreddit.lsa$docs)
+#interpretation
+## we look at the five terms with the largest values and the five ones with the lowest value (i.e., largest negative value)
+
+n.terms <- 5
+##for dim 2
+w.order <- sort(df.subreddit.lsa$features[, 2], decreasing = TRUE)
+w.top2 <- c(w.order[1:n.terms], rev(rev(w.order)[1:n.terms]))
+##for dim 3
+w.order <- sort(df.subreddit.lsa$features[, 3], decreasing = TRUE)
+w.top3 <- c(w.order[1:n.terms], rev(rev(w.order)[1:n.terms]))
+
+w.top2
+w.top3
+```
+
+Topic 2 is associated positively with topic like  (game, team, play, games, fuck, ) and negatively with topics like (questions, question, comments, post, people)
+
+```{r}
+#PCA bibplots for links between topics and documents and topcis with terms
+w.subset <-
+  ##restric chart to terms that are mostly related to dim2 and dim3 so w.top2 and w.top3
+  df.subreddit.lsa$features[
+    c(unique(c(names(w.top2), names(w.top3)))), 2:3]
+
+biplot(
+  y = df.subreddit.lsa$docs[, 2:3],
+  x = df.subreddit.lsa$features[,2:3],
+  col = c("black","red"),
+  cex = c(0.5, 0.5),
+  xlab = "Dim 2",
+  ylab = "Dim 3")
+```
+We observe that the word `fuck` is associated with dim 3 and is interestingly negatively associated to `happy` which makes sense.
+
+#### LDA
+
+```{r}
+docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
+set.seed(1234) #To create reproducible results
+df.top10_subbredit.lda <- textmodel_lda(
+  x = df.top10_subbredit.dfm,
+  k = 10)
+
+#extract top 5 terms per topic
+seededlda::terms(df.top10_subbredit.lda, 5)
+
+# Extract subreddits per topic and rename output to match subreddit names
+top_subreddits <- seededlda::topics(df.top10_subbredit.lda)
+names(top_subreddits) <- df.top10_subreddit$subreddit
+top_subreddits
+
+#count the number of documents per topic
+seededlda::topics(df.top10_subbredit.lda) %>% table()
+```
+
+Topic 8 with 3 subreddits ( AskReddit, funny and news) is the most popular topic with words like people, time, fuck, day, feel which may represent human experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human. Indeed, what reddit is about haha
+
+#### Topic-term Analysis
+
+```{r}
+#transform into a long df
+phi.long <- melt(
+  df.top10_subbredit.lda$phi,
+  varnames = c("Topic", "Term"),
+  value.name = "Phi") 
+
+#plot 10 largest prob terms within each subject
+phi.long %>% 
+  group_by(Topic) %>% 
+  top_n(10, Phi) %>% 
+  ggplot(aes(reorder_within(Term, Phi, Topic), Phi)) + 
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  facet_wrap(~ Topic, scales = "free_y") +
+  scale_x_reordered() + 
+  xlab("Term") + 
+  theme(
+    axis.text.y = element_text(size = 5),
+    strip.text = element_text(size = 5))
+```
+Similar analysis as the to the previous but now we see the probs so more precise
+
+But we observe that lots of topics have the same terms. Therefore, adjusting k topics may be necessary.
+
+We try with 7 topics
+
+```{r}
+docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
+set.seed(1234) #To create reproducible results
+df.top10_subbredit.lda <- textmodel_lda(
+  x = df.top10_subbredit.dfm,
+  k = 7)
+
+#extract top 5 terms per topic
+seededlda::terms(df.top10_subbredit.lda, 5)
+
+# Extract subreddits per topic and rename output to match subreddit names
+top_subreddits <- seededlda::topics(df.top10_subbredit.lda)
+names(top_subreddits) <- df.top10_subreddit$subreddit
+top_subreddits
+
+#count the number of documents per topic
+seededlda::topics(df.top10_subbredit.lda) %>% table()
+#transform into a long df
+phi.long <- melt(
+  df.top10_subbredit.lda$phi,
+  varnames = c("Topic", "Term"),
+  value.name = "Phi") 
+
+#plot 10 largest prob terms within each subject
+phi.long %>% 
+  group_by(Topic) %>% 
+  top_n(10, Phi) %>% 
+  ggplot(aes(reorder_within(Term, Phi, Topic), Phi)) + 
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  facet_wrap(~ Topic, scales = "free_y") +
+  scale_x_reordered() + 
+  xlab("Term") + 
+  theme(
+    axis.text.y = element_text(size = 5),
+    strip.text = element_text(size = 5))
+```
+
+the distinction between topics is more clear now. We observe that topic1 may be related to 'hockey' and topic 2 to 'CFB' both sports so they have similar words expect specific ones. Topic 3 might more be related to 'news' as it has words like link (to refer to a source), interview, story, murder. Topic 4 is more related to feelings with words like time, day, feel, shit, pretty,... but harder to distinguish. Topic 5 might be related to government, nations or world maybe ? with words like police, american, russia, war, country. Topic 6 might well be a question topic with words like comment, contact,.... And topic 7 might more be a PC or PC gaming type of topic with words like game, steam, ram, build. we see that they reflect our subreddit which makes sense, now it would be interesting to take more that 10 subreddit as we might have a interesting regrouping of subreddits.
+
+#### Topic document Analysis
+
+```{r}
+set.seed(1234)
+theta.long <- melt(
+  df.top10_subbredit.lda$theta,
+  varnames = c("Doc", "Topic"),
+  value.name = "Theta")
+
+# Ensure `theta.long` has the same document order as `df.top10_subreddit`
+theta.long$Doc <- rep(df.top10_subreddit$subreddit, each = ncol(df.top10_subreddit.dfm$theta))
+
+theta.long %>% 
+  group_by(Topic) %>% 
+  top_n(10, Theta) %>% 
+  ggplot(aes(reorder_within(Doc, Theta, Topic), Theta)) + 
+  geom_col(show.legend = FALSE) +
+  coord_flip()+
+  facet_wrap(~ Topic, scales = "free_y") +
+  scale_x_reordered() + 
+  xlab("Document") + 
+  theme(
+    axis.text.y = element_text(size = 5),
+    strip.text = element_text(size = 5))
+```
+This confirms my previous analysis. we see topic one related to hockey, topic 2 related to CFB but interestingly lol is also here. Topic 3 was in fact reports, topic 4 was indeed feelings as it encompass a large range of subreddits. Topic 5 was indeed related to world news, news in general, topic 6 was indeed questions and topic 7 was indeed PC.
+
+#### LDA diagnostics
+
+```{r}
+#topic prevalence
+rev(sort(colSums(df.top10_subbredit.lda$theta)/sum(df.top10_subbredit.lda$theta)))
+```
+Topic 4 most prevalent.
+
+```{r}
+#using topicmodels
+df.top10_subbredit.LDA <- LDA(
+  convert(df.top10_subbredit.dfm, to = "topicmodels"),
+  k = 7
+)
+
+topicmodels::terms(df.top10_subbredit.LDA, 5)
+topicmodels::topics(df.top10_subbredit.LDA)
+topicmodels::topics(df.top10_subbredit.LDA) %>% table()
+
+topic_diagnostics(
+  topic_model = df.top10_subbredit.LDA, 
+  dtm_data = convert(df.top10_subbredit.dfm, to = "topicmodels"))
+```
+
+```{r}
+#reproduce  term-topic analysis with this package
+beta.long <- tidy(
+  df.top10_subbredit.LDA,
+  matrix = "beta") # equivalent to melt (with this package)
+
+beta.long %>% 
+  group_by(topic) %>% 
+  top_n(10, beta) %>% 
+  ggplot(aes(reorder_within(term, beta, topic), beta)) + 
+  geom_col(show.legend = FALSE) +
+  coord_flip()+
+  facet_wrap(~ topic, scales = "free_y") +
+  scale_x_reordered() + 
+  xlab("Term") +
+  theme(
+    axis.text.y = element_text(size = 5),
+    axis.text.x = element_text(size = 5),
+    strip.text = element_text(size = 5))
+```
+
+### Attempt 5 - Regression
+
+We will try to predict the rating of a comment.
+
+```{r}
+#focus on col 'body' which contains the written comment and 'score' which is the rating
+
+#statistics of ratings/scores
+df %>%
+  group_by(score) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  arrange(score)
+
+#print max and min scores
+cat("max score", max(df$score), "\n")
+cat("min score", min(df$score), "\n")
+```
+
+Not very well balanced, goes from 3967 to -302
+
+```{r}
+#build a regression model using SVM
+##splitting
+###select only the columns of interest
+df_split <- df %>%
+  select(score, body) %>%
+  rename(text = body) %>%
+  initial_split()
+
+#create training and test sets
+df_train <- training(df_split)
+df_test <- testing(df_split)
+
+#preprocess the text data
+df_rec <- recipe(score ~ text, data = df_train) %>%
+  step_tokenize(text) %>%
+  step_tokenfilter(text, max_tokens = 1000) %>%
+  #remove stopwords
+  step_stopwords(text) %>%
+  step_tfidf(text)
+
+#create workflow
+df_wf <- workflow() %>%
+  add_recipe(df_rec)
+
+#define model
+svm_spec <- svm_linear() %>%
+  set_engine("LiblineaR") %>%
+  set_mode("regression")
+
+#fit
+svm_fit <- df_wf %>%
+  add_model(svm_spec) %>%
+  fit(data = df_train)
+
+#cv
+set.seed(1234)
+df_folds <- vfold_cv(df_train, v = 10)
+
+#fitting resamples
+svm_res <- fit_resamples(
+  df_wf %>%
+    add_model(svm_spec),
+  df_folds,
+  control = control_resamples(save_pred = TRUE)
+)
+
+##collecting metrics
+collect_metrics(svm_res)
+
+=======
+
+```{r}
+#hierarchical
+df.subreddit.hc <- hclust(as.dist(df.subreddit.eucl))
+## df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.jac)) # use this line for Jaccard
+## df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos)) # use this line for Cosine
+plot(df.subreddit.hc)
+df.subreddit.clust <- cutree(df.subreddit.hc, k = 3)
+df.subreddit.clust
+#k-means
+
+df.subreddit.km <- kmeans(df.subreddit.tfidf.small, centers = 3)
+df.subreddit.km$cluster
+```
+
+#### Similarities between words
+
+In this part we analyze similarities between words (through documents). We restrict ourselves to a subset corresponding to words with frequency rank less than 40 (it should correspond to the 40 most frequent words but several words have the same frequency rank). We use the cosine similarity and plot the heatmap.
+
+```{r}
 # crude.feat <- textstat_frequency(crude.dfm) %>%
 #   filter(rank <= 40) 
 # crude.feat$feature
@@ -840,6 +1211,7 @@ svm_res %>%
   labs(
     x = "Truth",
     y = "Predicted Score",
+    y = "Predicted year",
     color = NULL,
     title = "Predicted and true comments grades",
     subtitle = "Each cross-validation fold is shown in a different color"
@@ -900,6 +1272,7 @@ df.top50_subreddit.bing <- inner_join(df.top50_subreddit.tokens, get_sentiments(
  summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>%
  mutate(Sentiment = positive - negative) %>% select(subreddit, Sentiment)
  ggplot(df.top50_subreddit.bing, aes(x = Sentiment, y = reorder(subreddit, Sentiment))) + geom_col() + ylab("")
+
 ```
 
 BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary. As the BING dictionnary combines both positive and negative words, it may be more balanced than the AFINN dictionnary,which could indicate that the NRC is more biased towards positive words.
