@@ -196,12 +196,22 @@ nrow(df)
 #remove 3 first character of the col parent_id and create a new column
 df$parent_id_small <- substr(df$parent_id, 4, nchar(df$parent_id))
 
+#remove weblink
+df$body <- gsub("http\\S+", "", df$body)
+
+#remove all quotes or special characters in text fields.
+df$body <- gsub("[^[:alnum:][:space:]]", "", df$body)
+
 #show random sample of df
 set.seed(123)
 df[sample(nrow(df), 1000),]
-
+summary(df)
 #save csv as cleaned (a reecrire qd on clean +)
-#write.csv(df, here("data/reddit_comments_15k_cleaned_v1.csv"), row.names = TRUE)
+write.csv(df, here("data/reddit_comments_15k_cleaned_v1.csv"), row.names = TRUE)
+
+#create new dataset as csv but without col body
+#write.csv(df[, -4], here("data/reddit_comments_15k_cleaned_NOBODY.csv"), row.names = TRUE)
+
 ```
 
 
