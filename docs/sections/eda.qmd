@@ -576,7 +576,7 @@ We observe that the word `fuck` is associated with dim 3 and is interestingly ne
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
 set.seed(1234) #To create reproducible results
 df.top10_subbredit.lda <- textmodel_lda(
-  x = df.top10_subbredit.dfm,
+  x = df.top10_subreddit.dfm,
   k = 10)
 
 #extract top 5 terms per topic
@@ -626,7 +626,7 @@ We try with 7 topics
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
 set.seed(1234) #To create reproducible results
 df.top10_subbredit.lda <- textmodel_lda(
-  x = df.top10_subbredit.dfm,
+  x = df.top10_subreddit.dfm,
   k = 7)
 
 #extract top 5 terms per topic
@@ -700,7 +700,7 @@ Topic 4 most prevalent.
 ```{r}
 #using topicmodels
 df.top10_subbredit.LDA <- LDA(
-  convert(df.top10_subbredit.dfm, to = "topicmodels"),
+  convert(df.top10_subreddit.dfm, to = "topicmodels"),
   k = 7
 )
 
@@ -710,7 +710,7 @@ topicmodels::topics(df.top10_subbredit.LDA) %>% table()
 
 topic_diagnostics(
   topic_model = df.top10_subbredit.LDA, 
-  dtm_data = convert(df.top10_subbredit.dfm, to = "topicmodels"))
+  dtm_data = convert(df.top10_subreddit.dfm, to = "topicmodels"))
 ```
 
 ```{r}
@@ -804,8 +804,7 @@ svm_res <- fit_resamples(
 
 ##collecting metrics
 collect_metrics(svm_res)
-
-=======
+``` 
 
 ```{r}
 #hierarchical

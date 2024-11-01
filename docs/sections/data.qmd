@@ -186,8 +186,6 @@ df[df$body == '[deleted]',]
 #remove rows where 'deleted' in body or author
 df <- df[!(df$body == '[deleted]' | df$author == '[deleted]'),]
 
-head(df, 1000)
-
 # Remove any series of 'x' characters from the 'body' column
 df$body <- gsub("xx+", "", df$body)
 df$body <- gsub("XX+", "", df$body)
@@ -195,8 +193,15 @@ df$body <- gsub("XX+", "", df$body)
 #show number of rows
 nrow(df)
 
+#remove 3 first character of the col parent_id and create a new column
+df$parent_id_small <- substr(df$parent_id, 4, nchar(df$parent_id))
+
+#show random sample of df
+set.seed(123)
+df[sample(nrow(df), 1000),]
+
 #save csv as cleaned (a reecrire qd on clean +)
-#write.csv(df, here("data/reddit_comments_15k_cleaned.csv"), row.names = TRUE)
+#write.csv(df, here("data/reddit_comments_15k_cleaned_v1.csv"), row.names = TRUE)
 ```
 
 
