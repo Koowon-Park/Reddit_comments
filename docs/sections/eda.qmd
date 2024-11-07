@@ -1,7 +1,6 @@
 # EDA
 
 ## Text Mining
-
 ### Attempt 1
 
 ```{r}
@@ -66,7 +65,6 @@ ggplot(top_terms, aes(x = reorder_within(term, beta, topic), y = beta, fill = fa
 ```
 
 ### Second Attempt - A comment = A document or text?
-
 #### Preprocessing
 
 ```{r}
@@ -175,7 +173,6 @@ df.tk %>%
 ```
 
 #### TF and TF-IDF
-
 ##### Term Frequency (TF)
 
 Now, let us compute the word frequencies (TF) and arrange them by decreasing frequencies. For the Document-Term Matrix, quanteda uses dfm() objects like below (for document frequency matrix).
