@@ -1272,3 +1272,36 @@ df.top50_subreddit.bing <- inner_join(df.top50_subreddit.tokens, get_sentiments(
 ```
 
 BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary. As the BING dictionnary combines both positive and negative words, it may be more balanced than the AFINN dictionnary,which could indicate that the NRC is more biased towards positive words.
+
+#### Sentiment by comment
+
+```{r}
+#count number of observation in column 'body'
+df %>% count(body)
+#use bing to analyse sentiment of 100 comments
+df.sentiment <- inner_join(df %>% slice(1:132893) %>% unnest_tokens(word, body),
+ get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id, sentiment = sentiment) %>%
+ summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>% mutate(Sentiment = positive - negative) %>%
+ select(id, Sentiment) %>% inner_join(df, by = "id")
+
+#save the data without body
+# write.csv(df.sentiment %>% select(-body), here("data/reddit_comments_15k_cleaned_NOBODY.csv"), row.names = TRUE)
+
+ggplot(df.sentiment, aes(x = Sentiment, y = score)) + geom_point() + geom_smooth(method = "lm") + xlab("Sentiment") + ylab("Score") 
+ 
+```
+There seem to be two outliers in this plot, let's examine them
+
+```{r}
+df.sentiment %>% filter(Sentiment > 100)
+```
+
+They seem to be due to the fact that one comment just said 'happy new year' over and over. And the other one just put 'GEM' over and over. This is why the sentiment is so high, as both represent highl positive words and they are repeated a lot.
+
+#### Correlation sentiment - score
+
+```{r}
+# assess correlation between sentiment and score
+cor.test(df.sentiment$Sentiment, df.sentiment$score)
+```
+There seems to be no relation between sentiment and score
