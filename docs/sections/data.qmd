@@ -206,8 +206,9 @@ df$body <- gsub("[^[:alnum:][:space:]]", "", df$body)
 set.seed(123)
 df[sample(nrow(df), 1000),]
 summary(df)
+
 #save csv as cleaned (a reecrire qd on clean +)
-write.csv(df, here("data/reddit_comments_15k_cleaned_v1.csv"), row.names = TRUE)
+#write.csv(df, here("data/reddit_comments_15k_cleaned_v1.csv"), row.names = TRUE)
 
 #create new dataset as csv but without col body
 #write.csv(df[, -4], here("data/reddit_comments_15k_cleaned_NOBODY.csv"), row.names = TRUE)
