@@ -212,7 +212,6 @@ summary(df)
 
 #create new dataset as csv but without col body
 #write.csv(df[, -4], here("data/reddit_comments_15k_cleaned_NOBODY.csv"), row.names = TRUE)
-
 ```
 
 
