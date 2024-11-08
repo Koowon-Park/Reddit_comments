@@ -228,6 +228,64 @@ df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos))
 plot(df.subreddit.hc)
 ```
 
+#### Test topic extracted
+```{r, message= FALSE}}
+# Preprocess the text in the body column
+df.subreddit_clean <- df.subreddit %>%
+  mutate(body = tolower(body)) %>%
+  mutate(body = removePunctuation(body)) %>%
+  mutate(body = removeNumbers(body))
+
+# Tokenize words and remove common stop words
+df_words <- df.subreddit_clean %>%
+  unnest_tokens(word, body) %>%
+  anti_join(stop_words)  # Remove common stop words like "the", "is", etc.
+
+# Count the most frequent words
+word_counts <- df_words %>%
+  count(word, sort = TRUE)
+
+# Display the top 20 most common words
+head(word_counts, 20)
+
+```
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(tidytext)
+library(tidyr)
+
+# Preprocess the text data
+df.subreddit_clean <- df.subreddit %>%
+  mutate(body = tolower(body)) %>%
+  mutate(body = removePunctuation(body)) %>%
+  mutate(body = removeNumbers(body))
+
+# Tokenize the text, remove stopwords
+df_words <- df.subreddit_clean %>%
+  unnest_tokens(word, body) %>%
+  anti_join(stop_words)  # Remove common stopwords
+
+# Count word occurrences per subreddit
+df_word_count <- df_words %>%
+  count(subreddit, word, sort = TRUE)
+
+# Concatenate the words and their counts into a single string for each subreddit
+df_combined <- df_word_count %>%
+  group_by(subreddit) %>%
+  summarise(
+    words = paste(word, collapse = ", "),          # Concatenate words with commas
+    word_count = paste(n, collapse = ", ")         # Concatenate word counts
+  ) %>%
+  ungroup()
+
+# Display the results
+print(df_combined)
+
+
+
+```
+
 
 ### Attempt 4 - Topic Modelling per subrreddit
 #### LSA
