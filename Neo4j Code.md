@@ -1,29 +1,30 @@
 # Neo4j Code
 
 ## To be ran Once
-```
+
+```         
 // Index for Authors by id
 CREATE INDEX author_id IF NOT EXISTS FOR (a:Author) ON (a.id);
 ```
 
-```
+```         
 // Index for Subreddits by name
 CREATE INDEX subreddit_name IF NOT EXISTS FOR (s:Subreddit) ON (s.name);
 ```
 
-```
+```         
 // Index for Comments by id
 CREATE INDEX comment_id IF NOT EXISTS FOR (c:Comment) ON (c.id);
 ```
 
-```
+```         
 // Index for Comments by parent_id_small to facilitate parent-child relationships
 CREATE INDEX comment_parent_id_small IF NOT EXISTS FOR (c:Comment) ON (c.parent_id_small);
 ```
 
 ## Load Data
 
-```
+```         
 // Step 1: Load Authors and Subreddits
 :auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_cleaned_NOBODY.csv" AS row CALL {
     WITH row
@@ -32,7 +33,7 @@ CREATE INDEX comment_parent_id_small IF NOT EXISTS FOR (c:Comment) ON (c.parent_
 } IN TRANSACTIONS OF 1000 ROWS;
 ```
 
-```
+```         
 // Step 2: Load Comments and link them to Authors and Subreddits
 :auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_cleaned_NOBODY.csv" AS row CALL {
     WITH row
@@ -51,7 +52,7 @@ CREATE INDEX comment_parent_id_small IF NOT EXISTS FOR (c:Comment) ON (c.parent_
 } IN TRANSACTIONS OF 1000 ROWS;
 ```
 
-```
+```         
 // Step 3: Create relationships between parent and child comments if parent_id is present
 :auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_cleaned_NOBODY.csv" AS row CALL {
     WITH row
