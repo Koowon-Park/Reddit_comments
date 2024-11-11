@@ -623,39 +623,107 @@ There seems to be no relation between sentiment and score
 #numbers of rows in df.sentiment
 nrow(df.sentiment)
 ```
+
 #### create a new column sentiment based on the sentiment score of a comment
 
 ```{r}
 ## create a small dataset for testing purpose
-df.small <- df %>% sample_n(2)
+df.small <- df %>% sample_n(10)
 
-#step 1
+#create a new column sentiment
+df.small$sentiment <- NA
+
+## Start timing the entire loop
+total_start_time <- Sys.time()
+
 ## create a for loop
 for (i in 1:nrow(df.small)) {
   
-  # that tokenize the comment
+  # Start timing this comment
+  comment_start_time <- Sys.time()
+  
+  # show the comment
+  cat("Comment:", df.small$body[i], "\n")
+  
+  # tokenize the comment, remove stopwords, ect
   tokens <- df.small$body[i] %>% 
-    tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE, remove_url = TRUE, remove_hyphens = TRUE, remove_separators = TRUE) %>%
+    tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE, 
+           remove_url = TRUE, remove_separators = TRUE) %>%
     tokens_tolower() %>%
     tokens_remove(stop_words$word) %>%
     tokens_remove(c("reddit", "subreddit", "amp", "gt", "deleted", "xx+")) %>%
     tokens_replace(
       pattern = hash_lemmas$token,
       replacement = hash_lemmas$lemma)
-  print(tokens)
   
   # show error if character or not
   if (!is.character(tokens)) {
     tokens <- as.character(tokens)
   }
-  # Assign a sentiment score to the comment
-  df.small$sentiment[i] <- sum(get_sentiments("bing")$value[get_sentiments("bing")$word %in% tokens])
+  #create a list of tokens
+  tokens <- as.list(tokens)
   
-  #show the sentiment score
-  print(df.small$sentiment[i])
+  #Sentiment Analysis
+  ## create a list to store the sentiment score
+  sentiment_score <- list()
+  
+  ## loop through the tokens list
+  for (j in 1:length(tokens)) {
+    # get the sentiment score of the token using bing lexicon
+    token_sentiment <- get_sentiments("bing") %>%
+      filter(word == tokens[[j]]) %>%
+      pull(sentiment)
+    
+    # if token is found in lexicon, store its sentiment
+    # if not found, assign "neutral"
+    if (length(token_sentiment) > 0) {
+      sentiment_score[[j]] <- token_sentiment
+    } else {
+      sentiment_score[[j]] <- "neutral"
+    }
+
+  }
+
+  ## calculate the overall sentiment
+  # count the number of each sentiment
+  n_positive <- sum(unlist(sentiment_score) == "positive")
+  n_negative <- sum(unlist(sentiment_score) == "negative")
+  
+  # determine final sentiment
+  if (n_positive > n_negative) {
+    df.small$sentiment[i] <- "positive"
+  } else if (n_negative > n_positive) {
+    df.small$sentiment[i] <- "negative"
+  } else {
+    df.small$sentiment[i] <- "neutral"
+  }
+  
+  #show sentiment of the comment
+  cat("Sentiment of Comment", i, ":", df.small$sentiment[i], "\n")
+  
+  # Calculate and display time taken for this comment
+  comment_end_time <- Sys.time()
+  comment_time <- difftime(comment_end_time, comment_start_time, units = "secs")
+  
+  #show a message for completed comment
+  cat("Comment", i, "completed\n")
+  
 }
 
-df.small
+## Calculate and display total time taken
+total_end_time <- Sys.time()
+total_time <- difftime(total_end_time, total_start_time, units = "secs")
+cat("\nTotal time taken:", round(as.numeric(total_time), 2), "seconds\n")
+
+# Calculate average time per comment
+avg_time <- as.numeric(total_time) / nrow(df.small)
+cat("Average time per comment:", round(avg_time, 2), "seconds\n")
+
+#show the df.small with only column body and sentiment
+df.small %>% select(body, sentiment)
+
+#calculate how much time it will take to run the entire dataset by multiplying the average time per comment by 14000 in hours
+cat("Estimated time to run the entire dataset:", round(avg_time * 14000 / 3600, 2), "hours\n")
 ```
 
 
