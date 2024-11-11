@@ -314,7 +314,7 @@ We observe that the word `fuck` is associated with dim 3 and is interestingly ne
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
 set.seed(1234) #To create reproducible results
 df.top10_subbredit.lda <- textmodel_lda(
-  x = df.top10_subbredit.dfm,
+  x = df.top10_subreddit.dfm,
   k = 10)
 
 #extract top 5 terms per topic
@@ -364,7 +364,7 @@ We try with 7 topics
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
 set.seed(1234) #To create reproducible results
 df.top10_subbredit.lda <- textmodel_lda(
-  x = df.top10_subbredit.dfm,
+  x = df.top10_subreddit.dfm,
   k = 7)
 
 #extract top 5 terms per topic
@@ -438,7 +438,7 @@ Topic 4 most prevalent.
 ```{r}
 #using topicmodels
 df.top10_subbredit.LDA <- LDA(
-  convert(df.top10_subbredit.dfm, to = "topicmodels"),
+  convert(df.top10_subreddit.dfm, to = "topicmodels"),
   k = 7
 )
 
@@ -448,7 +448,7 @@ topicmodels::topics(df.top10_subbredit.LDA) %>% table()
 
 topic_diagnostics(
   topic_model = df.top10_subbredit.LDA, 
-  dtm_data = convert(df.top10_subbredit.dfm, to = "topicmodels"))
+  dtm_data = convert(df.top10_subreddit.dfm, to = "topicmodels"))
 ```
 
 ```{r}
@@ -527,13 +527,14 @@ df.top50_subreddit.bing <- inner_join(df.top50_subreddit.tokens, get_sentiments(
 
 BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary. As the BING dictionnary combines both positive and negative words, it may be more balanced than the AFINN dictionnary,which could indicate that the NRC is more biased towards positive words.
 
-#### Sentiment by comment
+#### Sentiment by words in comment
 
 ```{r}
-#count number of observation in column 'body'
-df %>% count(body)
-#use bing to analyse sentiment of 100 comments
-df.sentiment <- inner_join(df %>% slice(1:132893) %>% unnest_tokens(word, body),
+#count number of rows in df
+nrow(df)
+
+#use bing to analyse sentiment all the rows based on column body
+df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
  get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id, sentiment = sentiment) %>%
  summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>% mutate(Sentiment = positive - negative) %>%
  select(id, Sentiment) %>% inner_join(df, by = "id")
@@ -559,3 +560,48 @@ They seem to be due to the fact that one comment just said 'happy new year' over
 cor.test(df.sentiment$Sentiment, df.sentiment$score)
 ```
 There seems to be no relation between sentiment and score
+
+```{r}
+#numbers of rows in df.sentiment
+nrow(df.sentiment)
+```
+#### create a new column sentiment based on the sentiment score of a comment
+
+```{r}
+## create a small dataset for testing purpose
+df.small <- df %>% sample_n(2)
+
+#step 1
+## create a for loop
+for (i in 1:nrow(df.small)) {
+  
+  # that tokenize the comment
+  tokens <- df.small$body[i] %>% 
+    tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE, remove_url = TRUE, remove_hyphens = TRUE, remove_separators = TRUE) %>%
+    tokens_tolower() %>%
+    tokens_remove(stop_words$word) %>%
+    tokens_remove(c("reddit", "subreddit", "amp", "gt", "deleted", "xx+")) %>%
+    tokens_replace(
+      pattern = hash_lemmas$token,
+      replacement = hash_lemmas$lemma)
+  print(tokens)
+  
+  # show error if character or not
+  if (!is.character(tokens)) {
+    tokens <- as.character(tokens)
+  }
+  # Assign a sentiment score to the comment
+  df.small$sentiment[i] <- sum(get_sentiments("bing")$value[get_sentiments("bing")$word %in% tokens])
+  
+  #show the sentiment score
+  print(df.small$sentiment[i])
+}
+
+df.small
+```
+
+
+### Adding Length of comment as a feature
+
+```{r}
+#add length of comment as a feature

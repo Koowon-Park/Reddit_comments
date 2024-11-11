@@ -125,13 +125,17 @@ convert_reddit_to_csv <- function(input_file, output_file) {
   cleaned_data <- data %>%
     select(
       id,                    # unique identifier
-      author,                # username
+      name,                  # full name
+      link_id,               # post ID
+      parent_id,            # parent comment/post ID
       subreddit,             # community
+      subreddit_id,          # community ID
+      author,                # username
+      author_flair_text,     # user flair (ex, male)
       body,                  # comment text
       score,                 # net upvotes
       created_utc,           # timestamp
       controversiality,      # controversy flag
-      parent_id,            # parent comment/post ID
       gilded,               # times gilded
       edited                 # whether edited
     ) %>%
@@ -163,3 +167,34 @@ cat("Total rows processed:", results$total_rows, "\n")
 cat("Columns saved:", paste(results$columns, collapse = ", "), "\n")
 cat("Output file size:", round(results$file_size/1024/1024, 2), "MB\n")
 ```
+```{r}
+#load the data
+df_reddit <- read.csv("reddit_comments_15k.csv")
+
+#show the unique first two letters of link_id
+unique(substr(df_reddit$link_id, 1, 2))
+#show the unique first two letters of parent_id
+unique(substr(df_reddit$parent_id, 1, 2))
+
+# create a new column parent_id_small without 3 first characters
+df_reddit$parent_id_small <- substr(df_reddit$parent_id, 4, nchar(df_reddit$parent_id))
+
+# create a new columnm link_id_small without 3 first characters
+df_reddit$link_id_small <- substr(df_reddit$link_id, 4, nchar(df_reddit$link_id))
+set.seed(123)
+
+#download a random sample of data as a txt file
+#write.table(df_reddit[sample(nrow(df_reddit), 10), ], "reddit_sample.txt", sep = ",", row.names = TRUE, quote = TRUE)
+
+#show random sample of the columns id, link_id, parent_id, created_utc, subreddit
+df_reddit[sample(nrow(df_reddit), 10), c("id", "name", "link_id", "parent_id", "created_utc", "subreddit_id", "subreddit")]
+
+#show rows where link_id and parent_id matches
+df_reddit[df_reddit$link_id == df_reddit$parent_id, c("id", "name", "link_id", "parent_id", "created_utc", "subreddit_id", "subreddit")]
+
+#show rows where subreddit is AskReddit, link_id contains '2qyrje' and parent_id start with t3_ in ascending order of created_utc
+df_reddit[grepl("2qyrje", df_reddit$link_id) & grepl("^t3_", df_reddit$parent_id) & df_reddit$subreddit == "AskReddit", c("id", "name", "link_id", "parent_id", "created_utc", "subreddit_id", "subreddit", "body")]
+
+```
+
+
