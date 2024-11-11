@@ -55,4 +55,13 @@ summary(df)
 #write.csv(df[, -4], here("data/reddit_comments_15k_cleaned_NOBODY.csv"), row.names = TRUE)
 ```
 
+```{r}
+#show every row that correspond to '_2qz348 in `parent_id`
+
+# Assuming df is your dataframe
+filtered_df <- df %>% filter(grepl('2qy8ti', parent_id))
+
+# Display the filtered dataframe
+filtered_df
+```
 
