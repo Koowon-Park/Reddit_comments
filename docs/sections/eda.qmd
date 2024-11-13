@@ -5,7 +5,7 @@
 
 Here i take the idea that a 'document' is a subreddit. It is like all comments that are part of one subreddit will be a document. It is a bit an analysis per subreddit
 
-```{r fig.width=10, fig.height=10}
+```{r overall_analysis, eval=TRUE, echo=TRUE, cache=TRUE}
 #take the df data and group all comments by subreddit
 df.subreddit <- df %>%
   group_by(subreddit) %>%
@@ -108,7 +108,7 @@ we analyze similarities and dissimilarities between the documents (through words
 
 Then use the functions textstat_simil() and textstat_dist() to compute the Jaccard index matrix, the cosine matrix, and the Euclidean distances matrix.
 
-```{r}
+```{r similarity_subreddits, eval=TRUE, echo=TRUE, cache=TRUE}
 #We restrict ourselves to a small subset of the highest tf-idf of the data to avoid memory issues and readability issues in the plots.
 df.subreddit.tfidf.small <- df.subreddit.tfidf[1:50,]
 df.subreddit.tfidf.small
@@ -173,7 +173,7 @@ ggplot( data = df.subreddit.eucl.mat,
 
 Hierarchical clustering and K-means. The first one is applied on the dissimilarities (Euclidean, inverted Jaccard, and inverted cosine). The second one is applied on the features, here, TF-IDF. To illustrate the methods, we decide to create five clusters.
 
-```{r}
+```{r clustering_subreddits, eval=TRUE, echo=TRUE}
 #hierarchical
 df.subreddit.hc <- hclust(as.dist(df.subreddit.eucl))
 ## df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.jac)) # use this line for Jaccard
@@ -191,7 +191,7 @@ df.subreddit.km$cluster
 
 In this part we analyze similarities between words (through documents). We restrict ourselves to a subset corresponding to words with frequency rank less than 40 (it should correspond to the 40 most frequent words but several words have the same frequency rank). We use the cosine similarity and plot the heatmap.
 
-```{r}
+```{r similarity_words, eval=TRUE, echo=TRUE}
 df.subreddit.freq <- textstat_frequency(df.subreddit.dfm) %>%
   filter(rank <= 40)
 df.subreddit.freq$feature
@@ -222,14 +222,15 @@ Lots of words are similar in terms of cosine similarity. this is peculiar which 
 
 #### Clustering Words
 
-```{r}
+```{r clustering_words, eval=TRUE, echo=TRUE}
 #cluster and rotate labels
 df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos))
 plot(df.subreddit.hc)
 ```
 
 #### Test topic extracted
-```{r, message= FALSE}}
+
+```{r leo_test, message= FALSE, eval=TRUE, echo=TRUE}
 # Preprocess the text in the body column
 df.subreddit_clean <- df.subreddit %>%
   mutate(body = tolower(body)) %>%
@@ -249,7 +250,7 @@ word_counts <- df_words %>%
 head(word_counts, 20)
 
 ```
-```{r}
+```{r leo_test2, eval=TRUE, echo=TRUE}
 # Load necessary libraries
 library(dplyr)
 library(tidytext)
@@ -290,7 +291,7 @@ print(df_combined)
 ### Attempt 4 - Topic Modelling per subrreddit
 #### LSA
 
-```{r}
+```{r lsa_subreddit, eval=TRUE, echo=TRUE}
 #select subset of data of the top 10 subreddits for readability purposes
 df.top10_subreddit <- df.subreddit %>%
   arrange(desc(nchar(body))) %>%
@@ -349,7 +350,7 @@ w.top3
 
 Topic 2 is associated positively with topic like  (game, team, play, games, fuck, ) and negatively with topics like (questions, question, comments, post, people)
 
-```{r}
+```{r pca, cache=TRUE, eval=TRUE, echo=TRUE}
 #PCA bibplots for links between topics and documents and topcis with terms
 w.subset <-
   ##restric chart to terms that are mostly related to dim2 and dim3 so w.top2 and w.top3
@@ -368,7 +369,7 @@ We observe that the word `fuck` is associated with dim 3 and is interestingly ne
 
 #### LDA
 
-```{r}
+```{r lda_subreddit, cache=TRUE, eval=TRUE, echo=TRUE}
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
 set.seed(1234) #To create reproducible results
 df.top10_subbredit.lda <- textmodel_lda(
@@ -391,7 +392,7 @@ Topic 8 with 3 subreddits ( AskReddit, funny and news) is the most popular topic
 
 #### Topic-term Analysis
 
-```{r}
+```{r topic_term_analysis, eval=TRUE, echo=TRUE}
 #transform into a long df
 phi.long <- melt(
   df.top10_subbredit.lda$phi,
@@ -418,7 +419,7 @@ But we observe that lots of topics have the same terms. Therefore, adjusting k t
 
 We try with 7 topics
 
-```{r}
+```{r topic_term_with_7, cache=TRUE, eval=TRUE, echo=TRUE}
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
 set.seed(1234) #To create reproducible results
 df.top10_subbredit.lda <- textmodel_lda(
@@ -460,7 +461,7 @@ the distinction between topics is more clear now. We observe that topic1 may be 
 
 #### Topic document Analysis
 
-```{r}
+```{r topic_doc_analysis, eval=TRUE, echo=TRUE}
 set.seed(1234)
 theta.long <- melt(
   df.top10_subbredit.lda$theta,
@@ -487,13 +488,13 @@ This confirms my previous analysis. we see topic one related to hockey, topic 2 
 
 #### LDA diagnostics
 
-```{r}
+```{r topic_diagnostics, eval=TRUE, echo=TRUE}
 #topic prevalence
 rev(sort(colSums(df.top10_subbredit.lda$theta)/sum(df.top10_subbredit.lda$theta)))
 ```
 Topic 4 most prevalent.
 
-```{r}
+```{r topic_diagnostics_2, cache=TRUE, eval=TRUE, echo=TRUE}
 #using topicmodels
 df.top10_subbredit.LDA <- LDA(
   convert(df.top10_subreddit.dfm, to = "topicmodels"),
@@ -509,7 +510,7 @@ topic_diagnostics(
   dtm_data = convert(df.top10_subreddit.dfm, to = "topicmodels"))
 ```
 
-```{r}
+```{r topic_term_analysis_2, eval=TRUE, echo=TRUE}
 #reproduce  term-topic analysis with this package
 beta.long <- tidy(
   df.top10_subbredit.LDA,
@@ -530,14 +531,12 @@ beta.long %>%
     strip.text = element_text(size = 5))
 ```
 
-
 ### Attempt 6 - Sentiment Analysis
-
 #### AFINN
 
 assgin sentiment score by word through the use of the inner joins
 
-```{r}
+```{r sentiment_afinn, eval=TRUE, echo=TRUE}
 #get top 50 subreddits
 df.top50_subreddit <- df.subreddit %>%
   arrange(desc(nchar(body))) %>%
@@ -560,7 +559,7 @@ And the `pcmasterrace` is the most positive, by far.
 
 #### NRC
 
-```{r}
+```{r nrc_sentiment, eval=TRUE, echo=TRUE}
 df.top50_subreddit.nrc <- inner_join(df.top50_subreddit.tokens, get_sentiments("nrc"),
  by = c("word" = "word")) %>% group_by(subreddit, sentiment) %>%
  summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>%
@@ -574,7 +573,7 @@ We still observe quite the same patterns though.
 
 #### BING
 
-```{r}
+```{r bing_sentiment, eval=TRUE, echo=TRUE}
 df.top50_subreddit.bing <- inner_join(df.top50_subreddit.tokens, get_sentiments("bing"),
  by = c("word" = "word")) %>% group_by(subreddit, sentiment) %>%
  summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>%
@@ -587,7 +586,7 @@ BING seems to have a bit the same proporiton of positive and negative as the AFI
 
 #### Sentiment by words in comment
 
-```{r}
+```{r, eval=TRUE, echo=TRUE}
 #count number of rows in df
 nrow(df)
 
@@ -605,7 +604,7 @@ ggplot(df.sentiment, aes(x = Sentiment, y = score)) + geom_point() + geom_smooth
 ```
 There seem to be two outliers in this plot, let's examine them
 
-```{r}
+```{r, eval=TRUE, echo=TRUE}
 df.sentiment %>% filter(Sentiment > 100)
 ```
 
@@ -613,20 +612,20 @@ They seem to be due to the fact that one comment just said 'happy new year' over
 
 #### Correlation sentiment - score
 
-```{r}
+```{r, eval=TRUE, echo=TRUE}
 # assess correlation between sentiment and score
 cor.test(df.sentiment$Sentiment, df.sentiment$score)
 ```
 There seems to be no relation between sentiment and score
 
-```{r}
+```{r, eval=TRUE, echo=TRUE}
 #numbers of rows in df.sentiment
 nrow(df.sentiment)
 ```
 
 #### create a new column sentiment based on the sentiment score of a comment
 
-```{r}
+```{r sentiment_column, eval=TRUE, echo=TRUE}
 ## create a small dataset for testing purpose
 df.small <- df %>% sample_n(10)
 
@@ -729,5 +728,5 @@ cat("Estimated time to run the entire dataset:", round(avg_time * 14000 / 3600, 
 
 ### Adding Length of comment as a feature
 
-```{r}
+```{r, eval=TRUE, echo=TRUE}
 #add length of comment as a feature
