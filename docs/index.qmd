@@ -9,17 +9,14 @@ date: today
 title-block-banner: "#0095C8" #chosen for the university of lausanne
 format:
   html:
+    self-contained: false
     toc: true
     toc_float: true
     code-fold: true
     number-sections: true
     html-math-method: katex
-    self-contained: true
     code-summary: "Click to show code"
     # pdf: default # use this if you want to render pdfs instead
-abstract: |
-  This project applies ...
-
 ---
 
 ```{r, echo = FALSE, message = FALSE, warning= FALSE}
@@ -31,5 +28,5 @@ source(here("src/setup.R"))
 ```
 
 
-```{r child = paste0('sections/', c('intro.qmd', 'data.qmd', 'eda.qmd', 'concl.qmd'))}
+```{r child = paste0('sections/', c('intro.qmd', 'data.qmd', 'eda.qmd'))}
 ```

@@ -1,6 +1,6 @@
 # Introduction
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE, include=FALSE}
+```{r load_package, echo = FALSE, message = FALSE, warning = FALSE, include=FALSE}
 library(here)
 source(here("src/setup.R"))
 ```

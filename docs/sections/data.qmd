@@ -11,16 +11,16 @@ setting eval=FALSE will not run the code when knitting the document
 
 ## check the CSV
 
-```{r load_data}
+```{r load_data, cache=TRUE}
 #load csv with here
 df <- read.csv(here("data/reddit_comments_15k.csv"))
-(head(df, 1000))
+(head(df, 10))
 summary(df)
 ```
 
 ## Clean the data
 
-```{r clean_data}
+```{r clean_data, cache=TRUE, eval=FALSE, echo=TRUE}
 #show column that contains 'deleted'
 df[df$body == '[deleted]',]
 
@@ -49,19 +49,31 @@ df[sample(nrow(df), 1000),]
 summary(df)
 
 #save csv as cleaned (a reecrire qd on clean +)
-#write.csv(df, here("data/reddit_comments_15k_cleaned_v1.csv"), row.names = TRUE)
+#write.csv(df, here("data/15k_cleaned.csv"), row.names = TRUE)
 
 #create new dataset as csv but without col body
-#write.csv(df[, -4], here("data/reddit_comments_15k_cleaned_NOBODY.csv"), row.names = TRUE)
+#write.csv(df[, -9], here("data/15k_cleaned_no_body.csv"), row.names = TRUE)
 ```
 
-```{r}
-#show every row that correspond to '_2qz348 in `parent_id`
+For rendering reasons, we load the cleaned dataset.
+Here is a sample of 20 observations from the dataset. We decided to show only the columns 'author' and 'body' for the sake of simplicity.
 
-# Assuming df is your dataframe
-filtered_df <- df %>% filter(grepl('2qy8ti', parent_id))
+```{r load cleaned data, eval=TRUE, echo=TRUE}
+df <- read.csv(here("data/15k_cleaned.csv"))
 
-# Display the filtered dataframe
-filtered_df
+df.no_body <- read.csv(here("data/15k_cleaned_no_body.csv"))
+
+(head(df.no_body))
+
+#show only columns 'author' and 'body' with reactable
+reactable(
+  head(df[, c("author", "body")], 20),
+  searchable = TRUE,
+  defaultPageSize = 10,
+  sortable = TRUE,
+  resizable = TRUE,
+  highlight = TRUE,
+  paginationType = "numbers")
+
 ```
 
