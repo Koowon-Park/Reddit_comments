@@ -40,7 +40,7 @@ packages <- c(
   "readxl",
   
   # Clustering
-  "cluster", "dendextend",
+  "cluster", "dendextend", "factoextra",
   
   # JSON handling
   "jsonlite",
