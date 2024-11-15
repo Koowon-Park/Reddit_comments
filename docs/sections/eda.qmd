@@ -730,3 +730,194 @@ cat("Estimated time to run the entire dataset:", round(avg_time * 14000 / 3600, 
 
 ```{r, eval=TRUE, echo=TRUE}
 #add length of comment as a feature
+```
+
+
+## Score
+
+```{r}
+df_hugo <- df %>%
+  select(-c("X","author_flair_text","id"))
+
+score_2 <- sum(df_hugo$score==2)
+score_1 <- sum(df_hugo$score==1)
+score_0 <- sum(df_hugo$score==0)
+
+print(paste0("Total number of comments without Up or Downvotes is ", score_1))
+print(paste0("Total number of comments with only one Up or Downvote is ", score_0 + score_2))
+print(paste0(round((100*(score_0 + score_1 + score_2)/138070),digits = 2), "% of the comments have 0 or 1 upvote/downvote"))
+```
+
+```{r}
+# Filtering scores to focus on the range from -10 to 100
+range_filtered <- df_hugo %>%
+  filter(score >= -10 & score <= 20)
+
+# Plotting the distribution of the 'score' column from -10 to 100 using ggplot2
+ggplot(range_filtered, aes(x = score)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Score Column from -10 to 20",
+       x = "Score",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(panel.grid.major = element_line(color = "grey", linetype = "dashed", size = 0.5))
+```
+```{r}
+print(summary(df_hugo$score))
+```
+
+```{r}
+df_high_score <- df_hugo %>%
+  filter(score %in% (10:3967))
+
+ggplot(df_high_score, aes(x = score)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black", alpha = 0.7) +
+  scale_y_log10() +
+  scale_x_log10()+
+  labs(title = "Log-Distribution of High Scoring (10+ upvotes) Comments",
+       x = "Score",
+       y = "Log(Frequency)") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::label_comma())
+```
+
+
+```{r}
+df_low_score <- df_hugo %>%
+  filter(score %in% (-302:-10))
+
+# Plotting the distribution of low scoring comments using ggplot2 with log transformation on both axes
+ggplot(df_low_score, aes(x = score)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black", alpha = 0.7) +
+  scale_y_log10() +
+  scale_x_reverse() +
+  labs(title = "Log-Distribution of Low Scoring (-10 and below) Comments",
+       x = "Score",
+       y = "Log(Frequency)") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::label_comma())
+
+```
+```{r}
+# Counting unique subreddits in the dataset
+unique_subreddits <- n_distinct(df_high_score$subreddit)
+print(paste0("Total number of unique subreddits in the High-score dataset: ", unique_subreddits))
+```
+Only keep the subreddits with 5 or more comments
+```{r}
+# Analyzing subreddit-wise tendency of high scores
+df_subreddit_high_score <- df_high_score %>%
+  group_by(subreddit) %>%
+  summarise(avg_score = mean(score), median_score = median(score), comment_count = n()) %>%
+  filter(comment_count >= 5) %>%
+  arrange(desc(avg_score))
+
+# Printing subreddit analysis
+df_subreddit_high_score
+```
+
+
+```{r}
+# Plotting histogram of the number of comments per subreddit for high scoring comments without subreddit names
+count_distribution <- df_high_score %>%
+  group_by(subreddit) %>%
+  summarise(comment_count = n()) %>%
+  filter(comment_count >= 5) %>%
+  arrange(desc(comment_count))
+
+# Plotting the distribution of number of comments per subreddit
+ggplot(count_distribution, aes(x = comment_count)) +
+  geom_histogram(bins = 30, fill = "darkorange", alpha = 0.8) +
+  labs(title = "Distribution of Number of Comments per Subreddit for High Scoring Comments",
+       x = "Number of Comments",
+       y = "Frequency") +
+  theme_minimal()
+```
+```{r}
+# Plotting average score by subreddit for high scoring comments with 5 or more comments
+ggplot(df_subreddit_high_score, aes(x = reorder(subreddit, avg_score), y = avg_score)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +
+  coord_flip() +
+  labs(title = "Average Score by Subreddit for High Scoring Comments (5 or more comments)",
+       x = "Subreddit",
+       y = "Average Score") +
+  theme_minimal()
+```
+```{r}
+# Analyzing subreddit-wise tendency of low scores
+df_subreddit_low_score <- df_low_score %>%
+  group_by(subreddit) %>%
+  summarise(avg_score = mean(score), median_score = median(score), comment_count = n()) %>%
+  filter(comment_count >= 2) %>%
+  arrange(avg_score)
+
+# Printing subreddit analysis for low scores
+df_subreddit_low_score
+```
+
+```{r}
+ggplot(df_subreddit_low_score, aes(x = avg_score, y = reorder(subreddit, avg_score))) +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.8) +
+  scale_x_reverse(limits = c(0, min(df_subreddit_low_score$avg_score))) +
+  labs(title = "Average Score by Subreddit for Low Scoring Comments (5 or more comments)",
+       x = "Subreddit",
+       y = "Average Score") +
+  theme_minimal()
+```
+
+```{r}
+# Plotting histogram of the number of comments per subreddit for low scoring comments without subreddit names
+count_distribution_low <- df_low_score %>%
+  group_by(subreddit) %>%
+  summarise(comment_count = n()) %>%
+  filter(comment_count >= 2) %>%
+  arrange(desc(comment_count))
+
+# Plotting the distribution of number of comments per subreddit for low scores
+ggplot(count_distribution_low, aes(x = comment_count)) +
+  geom_histogram(bins = 20, fill = "darkred", alpha = 0.8) +
+  labs(title = "Distribution of Number of Comments per Subreddit for Low Scoring Comments",
+       x = "Number of Comments",
+       y = "Frequency") +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+# Clustering analysis based on number of comments and average score for high scoring subreddits
+df_subreddit_cluster <- df_high_score %>%
+  group_by(subreddit) %>%
+  summarise(avg_score = mean(score), comment_count = n())
+
+# Scaling the data for clustering
+cluster_data <- df_subreddit_cluster %>%
+  select(comment_count, avg_score) %>%
+  scale()
+
+# Determining the optimal number of clusters using the elbow method
+set.seed(123)
+fviz_nbclust(cluster_data, kmeans, method = "wss") +
+  labs(title = "Elbow Method for Determining Optimal Number of Clusters",
+       x = "Number of Clusters",
+       y = "Within-Cluster Sum of Squares") +
+  theme_minimal()
+```
+We'll settle with 5 clusters
+
+```{r}
+# Running k-means clustering with 5 clusters
+set.seed(123) # For reproducibility
+kmeans_result <- kmeans(cluster_data, centers = 5)
+df_subreddit_cluster$cluster <- as.factor(kmeans_result$cluster)
+
+# Plotting the clusters
+ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = cluster)) +
+  geom_point(size = 3, alpha = 0.7) +
+  labs(title = "Clustering of Subreddits Based on Number of Comments and Average Score",
+       x = "Number of Comments",
+       y = "Average Score") +
+  theme_minimal() 
+```
+
