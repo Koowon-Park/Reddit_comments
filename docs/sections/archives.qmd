@@ -197,4 +197,103 @@ df_reddit[grepl("2qyrje", df_reddit$link_id) & grepl("^t3_", df_reddit$parent_id
 
 ```
 
+#### Similarities between words
+
+In this part we analyze similarities between words (through documents). We restrict ourselves to a subset corresponding to words with frequency rank less than 40 (it should correspond to the 40 most frequent words but several words have the same frequency rank). We use the cosine similarity and plot the heatmap.
+
+```{r similarity_words, eval=TRUE, echo=TRUE}
+df.subreddit.freq <- textstat_frequency(df.subreddit.dfm) %>%
+  filter(rank <= 40)
+df.subreddit.freq$feature
+
+df.subreddit.cos <- textstat_simil(
+  df.subreddit.dfm[, df.subreddit.freq$feature],
+  method = "cosine",
+  margin = "feature")
+df.subreddit.cos.mat <- melt(as.matrix(df.subreddit.cos)) # Convert the object to matrix then to data frame
+
+ggplot(data = df.subreddit.cos.mat, aes(x=Var1, y=Var2, fill=value)) +
+  scale_fill_gradient2(
+    low = "blue",
+    high = "red",
+    mid = "white",
+    midpoint = 0.5,
+    limit = c(0, 1),
+    name = "Cosine") +
+  geom_tile() + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 5),
+    axis.text.y = element_text(size = 5)) +
+  xlab("") + 
+  ylab("")
+```
+
+Lots of words are similar in terms of cosine similarity. this is peculiar which means that they are used in a similar proportion through subreddits.
+
+#### Clustering Words
+
+```{r clustering_words, eval=TRUE, echo=TRUE}
+#cluster and rotate labels
+df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos))
+plot(df.subreddit.hc)
+```
+
+#### Test topic extracted
+
+```{r leo_test, message= FALSE, eval=TRUE, echo=TRUE}
+# Preprocess the text in the body column
+df.subreddit_clean <- df.subreddit %>%
+  mutate(body = tolower(body)) %>%
+  mutate(body = removePunctuation(body)) %>%
+  mutate(body = removeNumbers(body))
+
+# Tokenize words and remove common stop words
+df_words <- df.subreddit_clean %>%
+  unnest_tokens(word, body) %>%
+  anti_join(stop_words)  # Remove common stop words like "the", "is", etc.
+
+# Count the most frequent words
+word_counts <- df_words %>%
+  count(word, sort = TRUE)
+
+# Display the top 20 most common words
+head(word_counts, 20)
+
+```
+```{r leo_test2, eval=TRUE, echo=TRUE}
+# Load necessary libraries
+library(dplyr)
+library(tidytext)
+library(tidyr)
+
+# Preprocess the text data
+df.subreddit_clean <- df.subreddit %>%
+  mutate(body = tolower(body)) %>%
+  mutate(body = removePunctuation(body)) %>%
+  mutate(body = removeNumbers(body))
+
+# Tokenize the text, remove stopwords
+df_words <- df.subreddit_clean %>%
+  unnest_tokens(word, body) %>%
+  anti_join(stop_words)  # Remove common stopwords
+
+# Count word occurrences per subreddit
+df_word_count <- df_words %>%
+  count(subreddit, word, sort = TRUE)
+
+# Concatenate the words and their counts into a single string for each subreddit
+df_combined <- df_word_count %>%
+  group_by(subreddit) %>%
+  summarise(
+    words = paste(word, collapse = ", "),          # Concatenate words with commas
+    word_count = paste(n, collapse = ", ")         # Concatenate word counts
+  ) %>%
+  ungroup()
+
+# Display the results
+print(df_combined)
+
+
+
+```
 
