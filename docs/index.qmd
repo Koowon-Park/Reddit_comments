@@ -22,8 +22,6 @@ format:
 ```{r, echo = FALSE, message = FALSE, warning= FALSE}
 # loading all the necessary packages
 library(here)
-#check where here is pointing
-here()
 source(here("src/setup.R"))
 ```
 

@@ -5,7 +5,7 @@
 
 Here i take the idea that a 'document' is a subreddit. It is like all comments that are part of one subreddit will be a document. It is a bit an analysis per subreddit
 
-```{r overall_analysis, eval=TRUE, echo=TRUE, cache=TRUE}
+```{r top_10_sub, eval=TRUE, echo=TRUE}
 #take the df data and group all comments by subreddit
 df.subreddit <- df %>%
   group_by(subreddit) %>%
@@ -21,8 +21,16 @@ df.subreddit %>%
   ggplot(aes(x = subreddit, y = nchar(body))) +
   geom_col() +
   coord_flip() +
-  labs(title = "Top 10 Subreddits by Length", x = "Subreddit", y = "Length")
+  labs(title = "Top 10 Subreddits by Length", x = "Subreddit", y = "Length") +
+  #increase text size
+  theme(axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
 
+```
+
+We observe that AskReddit is by far the largest Subreddit
+
+```{r word_freq, eval=TRUE, echo=TRUE, cache=TRUE}
 # preprocess the text data
 df.subreddit.cp <- corpus(df.subreddit$body)
 docnames(df.subreddit.cp) <- df.subreddit$subreddit  # Assign subreddit names as document identifiers
@@ -66,8 +74,16 @@ df.subreddit.freq %>%
   geom_bar(stat = "identity") +
   coord_flip() +
   xlab("Frequency") +
-  ylab("term")
+  ylab("term") +
+  #increase size of text
+  theme(axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
 
+```
+
+We observe here a lot of abbreiations that are not taken into account by the stop words. Indeed, lots of word are just because the author removed the '. So for example. i'm becomes im or you're becomes youre.
+
+```{r textplot_wordcloud, eval=TRUE, echo=TRUE}
 textplot_wordcloud(df.subreddit.dfm)
 
 df.subreddit.freq %>%
@@ -76,26 +92,35 @@ df.subreddit.freq %>%
   geom_text_wordcloud() +
   scale_size_area(max_size = 20) +
   theme_minimal()
+```
 
+We can observe that the most frequent words are 'people', 'time
+
+```{r tf_idf, eval=TRUE, echo=TRUE}
 #tf-idf
 df.subreddit.tfidf <- dfm_tfidf(df.subreddit.dfm)
 df.subreddit.tfidf.tidy <- tidy(df.subreddit.tfidf) %>%
   bind_tf_idf(term = term, document = document, n = count) %>%
   arrange(desc(tf_idf))
 head(df.subreddit.tfidf.tidy, n = 20) %>% flextable() %>% autofit()
+```
 
+So tf_idf shows us rare words that are used in a specific subreddit. So we have here lot's of 'small' and 'rare' subreddit that have specific words that are not used in other subreddit. This is interesting as it shows us the specificity of each subreddit.
+
+```{r tf_idf_plot, eval=TRUE, echo=TRUE}
 #plot per document
 df.subreddit.dfm %>%
   tidy() %>%
-  top_n(30, count) %>%
+  top_n(12, count) %>%
   ggplot(aes(x = term, y = count)) +
   geom_bar(stat = "identity") +
   coord_flip() +
-  theme(axis.text.y = element_text(size = 6),
+  theme(axis.text.y = element_text(size = 10),
         axis.ticks.y = element_blank()) +
-  facet_wrap(~document, ncol = 5)
+  facet_wrap(~document, ncol = 3)
 ```
 
+So in summary: 
 -   We observe that AskReddit has lots of words frequency which makes sense as it is the biggest subreddit by lenght.
 -   We also observe that the term 'game' is associated in term of frequency with sports subreddits like CFB (College Football) and Hockey which makes sense.
 -   Interestingly the subreddits LoL (League of Legends) is associated with the term 'happy', which show us that the community may be the happiest, careful bias here, it is just a word frequency analysis.
@@ -187,108 +212,7 @@ df.subreddit.km <- kmeans(df.subreddit.tfidf.small, centers = 3)
 df.subreddit.km$cluster
 ```
 
-#### Similarities between words
-
-In this part we analyze similarities between words (through documents). We restrict ourselves to a subset corresponding to words with frequency rank less than 40 (it should correspond to the 40 most frequent words but several words have the same frequency rank). We use the cosine similarity and plot the heatmap.
-
-```{r similarity_words, eval=TRUE, echo=TRUE}
-df.subreddit.freq <- textstat_frequency(df.subreddit.dfm) %>%
-  filter(rank <= 40)
-df.subreddit.freq$feature
-
-df.subreddit.cos <- textstat_simil(
-  df.subreddit.dfm[, df.subreddit.freq$feature],
-  method = "cosine",
-  margin = "feature")
-df.subreddit.cos.mat <- melt(as.matrix(df.subreddit.cos)) # Convert the object to matrix then to data frame
-
-ggplot(data = df.subreddit.cos.mat, aes(x=Var1, y=Var2, fill=value)) +
-  scale_fill_gradient2(
-    low = "blue",
-    high = "red",
-    mid = "white",
-    midpoint = 0.5,
-    limit = c(0, 1),
-    name = "Cosine") +
-  geom_tile() + 
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 5),
-    axis.text.y = element_text(size = 5)) +
-  xlab("") + 
-  ylab("")
-```
-
-Lots of words are similar in terms of cosine similarity. this is peculiar which means that they are used in a similar proportion through subreddits.
-
-#### Clustering Words
-
-```{r clustering_words, eval=TRUE, echo=TRUE}
-#cluster and rotate labels
-df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos))
-plot(df.subreddit.hc)
-```
-
-#### Test topic extracted
-
-```{r leo_test, message= FALSE, eval=TRUE, echo=TRUE}
-# Preprocess the text in the body column
-df.subreddit_clean <- df.subreddit %>%
-  mutate(body = tolower(body)) %>%
-  mutate(body = removePunctuation(body)) %>%
-  mutate(body = removeNumbers(body))
-
-# Tokenize words and remove common stop words
-df_words <- df.subreddit_clean %>%
-  unnest_tokens(word, body) %>%
-  anti_join(stop_words)  # Remove common stop words like "the", "is", etc.
-
-# Count the most frequent words
-word_counts <- df_words %>%
-  count(word, sort = TRUE)
-
-# Display the top 20 most common words
-head(word_counts, 20)
-
-```
-```{r leo_test2, eval=TRUE, echo=TRUE}
-# Load necessary libraries
-library(dplyr)
-library(tidytext)
-library(tidyr)
-
-# Preprocess the text data
-df.subreddit_clean <- df.subreddit %>%
-  mutate(body = tolower(body)) %>%
-  mutate(body = removePunctuation(body)) %>%
-  mutate(body = removeNumbers(body))
-
-# Tokenize the text, remove stopwords
-df_words <- df.subreddit_clean %>%
-  unnest_tokens(word, body) %>%
-  anti_join(stop_words)  # Remove common stopwords
-
-# Count word occurrences per subreddit
-df_word_count <- df_words %>%
-  count(subreddit, word, sort = TRUE)
-
-# Concatenate the words and their counts into a single string for each subreddit
-df_combined <- df_word_count %>%
-  group_by(subreddit) %>%
-  summarise(
-    words = paste(word, collapse = ", "),          # Concatenate words with commas
-    word_count = paste(n, collapse = ", ")         # Concatenate word counts
-  ) %>%
-  ungroup()
-
-# Display the results
-print(df_combined)
-
-
-
-```
-
-
-### Attempt 4 - Topic Modelling per subrreddit
+### Topic Modelling per subrreddit
 #### LSA
 
 ```{r lsa_subreddit, eval=TRUE, echo=TRUE}
@@ -531,8 +455,8 @@ beta.long %>%
     strip.text = element_text(size = 5))
 ```
 
-### Attempt 6 - Sentiment Analysis
-#### AFINN
+## Sentiment Analysis
+### AFINN
 
 assgin sentiment score by word through the use of the inner joins
 
@@ -557,7 +481,7 @@ there seems to be more positive subreddits than negative ones.
 We interestingly observe that based on the affin dictionnary the `news` and `politics` subreddit are the most negative, which could reflect a state of the world.
 And the `pcmasterrace` is the most positive, by far. 
 
-#### NRC
+### NRC
 
 ```{r nrc_sentiment, eval=TRUE, echo=TRUE}
 df.top50_subreddit.nrc <- inner_join(df.top50_subreddit.tokens, get_sentiments("nrc"),
@@ -571,7 +495,7 @@ Through the NRC dictionnary we observe far mor positive subreddits than negative
 
 We still observe quite the same patterns though.
 
-#### BING
+### BING
 
 ```{r bing_sentiment, eval=TRUE, echo=TRUE}
 df.top50_subreddit.bing <- inner_join(df.top50_subreddit.tokens, get_sentiments("bing"),
@@ -584,7 +508,7 @@ df.top50_subreddit.bing <- inner_join(df.top50_subreddit.tokens, get_sentiments(
 
 BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary. As the BING dictionnary combines both positive and negative words, it may be more balanced than the AFINN dictionnary,which could indicate that the NRC is more biased towards positive words.
 
-#### Sentiment by words in comment
+### Sentiment by words in comment
 
 ```{r, eval=TRUE, echo=TRUE}
 #count number of rows in df
@@ -602,6 +526,7 @@ df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
 ggplot(df.sentiment, aes(x = Sentiment, y = score)) + geom_point() + geom_smooth(method = "lm") + xlab("Sentiment") + ylab("Score") 
  
 ```
+
 There seem to be two outliers in this plot, let's examine them
 
 ```{r, eval=TRUE, echo=TRUE}
@@ -610,7 +535,7 @@ df.sentiment %>% filter(Sentiment > 100)
 
 They seem to be due to the fact that one comment just said 'happy new year' over and over. And the other one just put 'GEM' over and over. This is why the sentiment is so high, as both represent highl positive words and they are repeated a lot.
 
-#### Correlation sentiment - score
+### Correlation sentiment - score
 
 ```{r, eval=TRUE, echo=TRUE}
 # assess correlation between sentiment and score
@@ -623,7 +548,7 @@ There seems to be no relation between sentiment and score
 nrow(df.sentiment)
 ```
 
-#### create a new column sentiment based on the sentiment score of a comment
+### create a new column sentiment based on the sentiment score of a comment
 
 ```{r sentiment_column, eval=TRUE, echo=TRUE}
 ## create a small dataset for testing purpose
@@ -724,14 +649,6 @@ df.small %>% select(body, sentiment)
 #calculate how much time it will take to run the entire dataset by multiplying the average time per comment by 14000 in hours
 cat("Estimated time to run the entire dataset:", round(avg_time * 14000 / 3600, 2), "hours\n")
 ```
-
-
-### Adding Length of comment as a feature
-
-```{r, eval=TRUE, echo=TRUE}
-#add length of comment as a feature
-```
-
 
 ## Score
 
@@ -921,3 +838,9 @@ ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = clust
   theme_minimal() 
 ```
 
+## Additional Variable
+### Adding Length of comment as a feature
+
+```{r, eval=TRUE, echo=TRUE}
+#add length of comment as a feature
+```
