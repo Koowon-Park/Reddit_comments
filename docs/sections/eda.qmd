@@ -456,6 +456,9 @@ beta.long %>%
 ```
 
 ## Sentiment Analysis
+
+Analyzing the top 50 subreddits as a *whole*, focusing on average sentiment scores for each subreddit.
+
 ### AFINN
 
 assgin sentiment score by word through the use of the inner joins
@@ -513,7 +516,7 @@ BING seems to have a bit the same proporiton of positive and negative as the AFI
 ```{r, eval=TRUE, echo=TRUE}
 #count number of rows in df
 nrow(df)
-
+df
 #use bing to analyse sentiment all the rows based on column body
 df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
  get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id, sentiment = sentiment) %>%
@@ -524,7 +527,10 @@ df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
 # write.csv(df.sentiment %>% select(-body), here("data/reddit_comments_15k_cleaned_NOBODY.csv"), row.names = TRUE)
 
 ggplot(df.sentiment, aes(x = Sentiment, y = score)) + geom_point() + geom_smooth(method = "lm") + xlab("Sentiment") + ylab("Score") 
- 
+
+
+#show author 'DoctorWhookah'  of the data with column 'body' and 'sentiment' using reactable
+reactable(df.sentiment %>% filter(author == "DoctorWhookah") %>% select(body, Sentiment))
 ```
 
 There seem to be two outliers in this plot, let's examine them
@@ -554,6 +560,9 @@ nrow(df.sentiment)
 ## create a small dataset for testing purpose
 df.small <- df %>% sample_n(10)
 
+#filter on author 'DoctorWhookah'
+df.DoctorWhookah <- df %>% filter(author == "DoctorWhookah")
+df.DoctorWhookah
 #create a new column sentiment
 df.small$sentiment <- NA
 
