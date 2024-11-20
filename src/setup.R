@@ -28,7 +28,7 @@ packages <- c(
   "tidyverse", "lubridate", "dplyr", "tidyr",
   
   # Plotting
-  "patchwork", "maps", "scales", "ggmap", "ggplot2", "plotly", "ggrepel",
+  "patchwork", "maps", "scales", "ggmap", "ggplot2", "plotly", "ggrepel", "viridis",
   
   # Reporting
   "knitr", "kableExtra", "rmarkdown", "flextable",
