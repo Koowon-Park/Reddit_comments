@@ -495,21 +495,7 @@ We interestingly observe that based on the affin dictionnary the `news` and `pol
 
 And `pc` Subreddits like  `pcmasterrace` or `builapc` are the most positive.
 
-### NRC
-
-```{r nrc_sentiment, eval=TRUE, echo=TRUE}
-df.top50_subreddit.nrc <- inner_join(df.top50_subreddit.tokens, get_sentiments("nrc"),
- by = c("word" = "word")) %>% group_by(subreddit, sentiment) %>%
- summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>%
- mutate(Sentiment = positive - negative) %>% select(subreddit, Sentiment)
- ggplot(df.top50_subreddit.nrc, aes(x = Sentiment, y = reorder(subreddit, Sentiment))) + geom_col() + ylab("")
-```
-
-Through the NRC dictionnary we observe far mor positive subreddits than negative ones. This difference could be explain by the fact that the NRC dictionnary is more balanced than the AFINN dictionnary ?
-
-We still observe quite the same patterns though.
-
-### BING
+#### BING
 
 The Bing sentiment lexicon categorizes words as either "positive" or "negative."
 
