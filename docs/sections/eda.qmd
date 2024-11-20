@@ -456,86 +456,231 @@ beta.long %>%
 ```
 
 ## Sentiment Analysis
+### Sentiment by Subreddit
 
-Analyzing the top 50 subreddits as a *whole*, focusing on average sentiment scores for each subreddit.
+Analyzing the top *30* subreddits (30 for vizualisation purposes) as a *whole*, focusing on average sentiment scores for each subreddit to get a general idea of the sentiment of the comments in each subreddit. We will use the AFINN, NRC, and BING lexicons to assign sentiment scores to words in the comments. We will then calculate the average sentiment score for each subreddit based on the sentiment scores of the words in the comments.
 
-### AFINN
+#### AFINN
 
-assgin sentiment score by word through the use of the inner joins
+The AFINN lexicon is a list of English words rated for valence with an integer between -5 (negative) and +5 (positive).
+
+- Weaknessess : It may not capture the sentiment of slang, sarcasm, or other informal language. Also limited to the words in the lexicon.
+- Strengths : It is simple and easy to use.
 
 ```{r sentiment_afinn, eval=TRUE, echo=TRUE}
 #get top 50 subreddits
-df.top50_subreddit <- df.subreddit %>%
+df.top30_subreddit <- df.subreddit %>%
   arrange(desc(nchar(body))) %>%
-  filter(row_number() <= 50)
+  filter(row_number() <= 30)
 
-df.top50_subreddit.tokens <- df.top50_subreddit %>% unnest_tokens(word, body)
-df.top50_subreddit.tokens
+df.top30_subreddit.tokens <- df.top30_subreddit %>% unnest_tokens(word, body)
 
-df.top50_subreddit.affin <- inner_join(df.top50_subreddit.tokens, get_sentiments("afinn"),
+df.top30_subreddit.affin <- inner_join(df.top30_subreddit.tokens, get_sentiments("afinn"),
  by = c("word" = "word")) %>% group_by(subreddit) %>%
  summarize(Sentiment = mean(value)) %>% ungroup()
- ggplot(df.top50_subreddit.affin, aes(x = Sentiment, y = reorder(subreddit, Sentiment))) + geom_col() + ylab("")
- 
+
+ggplot(df.top30_subreddit.affin, aes(x = Sentiment, y = reorder(subreddit, Sentiment), fill = Sentiment)) +
+  geom_col() +
+  scale_fill_viridis_c() +
+  ylab("") + 
+  #increase text size
+  theme(axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
 ```
 
-there seems to be more positive subreddits than negative ones.
+There seems to be more positive subreddits than negative ones.
 
 We interestingly observe that based on the affin dictionnary the `news` and `politics` subreddit are the most negative, which could reflect a state of the world.
-And the `pcmasterrace` is the most positive, by far. 
 
-### NRC
+And `pc` Subreddits like  `pcmasterrace` or `builapc` are the most positive.
 
-```{r nrc_sentiment, eval=TRUE, echo=TRUE}
-df.top50_subreddit.nrc <- inner_join(df.top50_subreddit.tokens, get_sentiments("nrc"),
- by = c("word" = "word")) %>% group_by(subreddit, sentiment) %>%
- summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>%
- mutate(Sentiment = positive - negative) %>% select(subreddit, Sentiment)
- ggplot(df.top50_subreddit.nrc, aes(x = Sentiment, y = reorder(subreddit, Sentiment))) + geom_col() + ylab("")
-```
+#### BING
 
-Through the NRC dictionnary we observe far mor positive subreddits than negative ones. This difference could be explain by the fact that the NRC dictionnary is more balanced than the AFINN dictionnary ?
+The Bing sentiment lexicon categorizes words as either "positive" or "negative."
 
-We still observe quite the same patterns though.
-
-### BING
+- Weaknesses: It lacks the granularity of numerical scores and may not capture the intensity of sentiment. It also does not account for neutral words.
+- Strengths: Easy to use and understand. It provides a straightforward classification of words.
 
 ```{r bing_sentiment, eval=TRUE, echo=TRUE}
-df.top50_subreddit.bing <- inner_join(df.top50_subreddit.tokens, get_sentiments("bing"),
- by = c("word" = "word")) %>% group_by(subreddit, sentiment) %>%
- summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>%
- mutate(Sentiment = positive - negative) %>% select(subreddit, Sentiment)
- ggplot(df.top50_subreddit.bing, aes(x = Sentiment, y = reorder(subreddit, Sentiment))) + geom_col() + ylab("")
-
+df.top30_subreddit.bing <- inner_join(df.top30_subreddit.tokens, get_sentiments("bing"),
+ by = c("word" = "word")) %>% group_by(subreddit) %>%
+ summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
+ select(subreddit, Sentiment)
+ 
+ggplot(df.top30_subreddit.bing, aes(x = Sentiment, y = reorder(subreddit, Sentiment), fill = Sentiment)) +
+  geom_col() +
+  scale_fill_viridis_c() +
+  ylab("") + 
+  #increase text size
+  theme(axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
 ```
 
-BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary. As the BING dictionnary combines both positive and negative words, it may be more balanced than the AFINN dictionnary,which could indicate that the NRC is more biased towards positive words.
+BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary. Indeed, we observe the same pattern with `pcmasterrace` at the top and `news` at the bottom, but there is slight variation when compared to the AFINN dictionnary.
 
-### Sentiment by words in comment
+#### NRC
 
-```{r, eval=TRUE, echo=TRUE}
-#count number of rows in df
-nrow(df)
-df
-#use bing to analyse sentiment all the rows based on column body
-df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
- get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id, sentiment = sentiment) %>%
- summarize(n = n()) %>% spread(sentiment, n, fill = 0) %>% mutate(Sentiment = positive - negative) %>%
- select(id, Sentiment) %>% inner_join(df, by = "id")
+The NRC Emotion Lexicon (EmoLex) associates words with eight basic emotions (anger, fear, anticipation, trust, surprise, sadness, joy, and disgust) and two sentiments (positive and negative).
 
-#save the data without body
-# write.csv(df.sentiment %>% select(-body), here("data/reddit_comments_15k_cleaned_NOBODY.csv"), row.names = TRUE)
+- Weaknesses: More complex to implement and interpret. It may require more computational resources.
+- Strengths: Provides a more detailed analysis by categorizing words into multiple emotions. It can capture a wider range of sentiments and emotions.
 
-ggplot(df.sentiment, aes(x = Sentiment, y = score)) + geom_point() + geom_smooth(method = "lm") + xlab("Sentiment") + ylab("Score") 
+```{r nrc_sentiment, eval=TRUE, echo=TRUE}
+df.top30_subreddit.nrc <- inner_join(df.top30_subreddit.tokens, get_sentiments("nrc"),
+ by = c("word" = "word")) %>% group_by(subreddit) %>%
+ summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
+ select(subreddit, Sentiment)
 
-
-#show author 'DoctorWhookah'  of the data with column 'body' and 'sentiment' using reactable
-reactable(df.sentiment %>% filter(author == "DoctorWhookah") %>% select(body, Sentiment))
+ggplot(df.top30_subreddit.nrc, aes(x = Sentiment, y = reorder(subreddit, Sentiment), fill = Sentiment)) +
+  geom_col() +
+  scale_fill_viridis_c() +
+  ylab("") + 
+  #increase text size
+  theme(axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
 ```
+
+Through the NRC dictionnary we observe far more positive subreddits than negative ones. This inbalance could be explain by the fact that the NRC dictionnary is more biased towards positive words.
+
+We still observe quite the same patterns though with `pcmasterrace`  at the top and `news` at the bottom.
+
+#### Summary
+
+To summarize it is interesting to observe that the NRC classification is totally different from the AFINN and BING classification. Indeed, the NRC classification seems to be more biased towards positive words but on the other hand it shall be more precise as it has more categories. 
+
+Why one to choose ? It depends on the goal of the analysis. If we want a simple and easy to use classification we can use AFINN or BING. If we want a more precise classification we can use NRC.
+
+### Sentiment by comment
+
+Now to have a more precise understanding of the sentiment of the comments, we will analyze the sentiment per comment for each dictionary (AFINN, BING, NRC). So that we can choose the best dictionary for our analysis.
+
+We will analyze a sample of small comments to have a better understanding.
+
+#### Afinn
+
+```{r sample_afinn_comment, eval=TRUE, echo=TRUE}
+#define a random sample of 100 comments
+set.seed(1234)
+df.sample <- df %>% sample_n(10) %>%
+  #select only columns 'id' and 'body'
+  select(id, body, subreddit)
+
+# use afinn to analyse sentiment all the rows based on column body
+df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
+ get_sentiments("afinn"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(value)) %>% inner_join(df.sample, by = "id")
+
+# show the sentiment of the comments
+reactable(df.sentiment)
+```
+
+#### Bing
+
+```{r sample_bing_comment, eval=TRUE, echo=TRUE}
+df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
+ get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
+ inner_join(df.sample, by = "id")
+
+#show 
+reactable(df.sentiment)
+```
+
+After reading the comments, we observe that they are mostly right. For example this comment was classified as neutral with a score of 0 : [Dude Congrats Im hoping to lose a large amount of weight in the same amount of time Huge inspiration here Keep kicking ass]
+
+And this comment was classified as quite negative with a score of -2 : [Why did the chicken cross the road It didnt HHAHHAHAHAHHAHAHHA sorry that wasnt funny 472]. It seems, it did not understood the context
+
+#### NRC
+
+```{r sample_NRC_comment}
+#use NRC to analyse sentiment all the rows based on column body
+df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
+ get_sentiments("nrc"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
+ inner_join(df.sample, by = "id")
+
+#show 
+reactable(df.sentiment)
+```
+
+### Vizualising the Sentiment distribution based on a dictionnary
+
+```{r sent_dist}
+# use afinn to analyse sentiment all the rows based on column body
+df.sentiment.a <- inner_join(df %>% unnest_tokens(word, body),
+ get_sentiments("afinn"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(value)) %>% inner_join(df.sample, by = "id")
+
+# use bing to analyse sentiment all the rows based on column body
+df.sentiment.b <- inner_join(df %>% unnest_tokens(word, body),
+ get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
+ inner_join(df, by = "id")
+
+#use NRC to analyse sentiment all the rows based on column body
+df.sentiment.c <- inner_join(df %>% unnest_tokens(word, body),
+ get_sentiments("nrc"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
+ inner_join(df, by = "id")
+
+#plot the three sentiment distribution on one using viridis color
+ggplot() +
+  geom_density(data = df.sentiment.a, aes(x = Sentiment, fill = "AFINN"), alpha = 0.5) +
+  geom_density(data = df.sentiment.b, aes(x = Sentiment, fill = "BING"), alpha = 0.5) +
+  geom_density(data = df.sentiment.c, aes(x = Sentiment, fill = "NRC"), alpha = 0.5) +
+  scale_fill_viridis_d() +
+  theme_minimal()
+```
+
+- The AFINN method shows a relatively flat distribution with a slight peak around 0. This suggests that the sentiment scores are spread out, with a slight tendency towards neutrality.
+
+- The Bing method displays a bimodal distribution with two distinct peaks, one around -1 and another around 1. This indicates that the sentiment scores are polarized, with many comments being classified as either quite negative or quite positive. Which is logical based on the previous analysis
+
+- The NRC method has a sharp peak at 0, suggesting that most of the sentiment scores are neutral. This implies that the NRC method tends to classify a large number of comments as neutral, with fewer comments being classified as strongly positive or negative. But we note that the NRC is also quite condensed
+
+#### Normalization to correctly compare
+
+```{r norm_sent_dist, eval=TRUE, echo=TRUE}
+# Normalize AFINN sentiment scores
+mean_afinn <- mean(df.sentiment.a$Sentiment)
+sd_afinn <- sd(df.sentiment.a$Sentiment)
+df.sentiment.a$Normalized_Sentiment <- (df.sentiment.a$Sentiment - mean_afinn) / sd_afinn
+
+# Normalize Bing sentiment scores
+mean_bing <- mean(df.sentiment.b$Sentiment)
+sd_bing <- sd(df.sentiment.b$Sentiment)
+df.sentiment.b$Normalized_Sentiment <- (df.sentiment.b$Sentiment - mean_bing) / sd_bing
+
+# Normalize NRC sentiment scores
+mean_nrc <- mean(df.sentiment.c$Sentiment)
+sd_nrc <- sd(df.sentiment.c$Sentiment)
+df.sentiment.c$Normalized_Sentiment <- (df.sentiment.c$Sentiment - mean_nrc) / sd_nrc
+
+# Create the ggplot object
+p <- ggplot() +
+  geom_density(data = df.sentiment.a, aes(x = Normalized_Sentiment, fill = "AFINN"), alpha = 0.3) +
+  geom_density(data = df.sentiment.b, aes(x = Normalized_Sentiment, fill = "BING"), alpha = 0.5) +
+  geom_density(data = df.sentiment.c, aes(x = Normalized_Sentiment, fill = "NRC"), alpha = 0.5) +
+  scale_fill_viridis_d() +
+  theme_minimal()
+
+# Convert the ggplot object to an interactive plotly object
+interactive_plot <- ggplotly(p)
+
+# Adjust the height and width 
+interactive_plot <- layout(interactive_plot, width = 800, height = 600)
+# Display the interactive plot
+interactive_plot
+```
+
+We might choose one method over the others. For example, if we need a method that captures strong sentiments, Bing might be more suitable. For a more balanced view, AFINN could be the way to go. With more neutral comments, NRC might be the best choice.
+
+## Analyzing the relationship between sentiment and score
+
 
 There seem to be two outliers in this plot, let's examine them
 
-```{r, eval=TRUE, echo=TRUE}
+```{r, eval=FALSE, echo=TRUE}
 df.sentiment %>% filter(Sentiment > 100)
 ```
 
@@ -543,20 +688,20 @@ They seem to be due to the fact that one comment just said 'happy new year' over
 
 ### Correlation sentiment - score
 
-```{r, eval=TRUE, echo=TRUE}
+```{r, eval=FALSE, echo=TRUE}
 # assess correlation between sentiment and score
 cor.test(df.sentiment$Sentiment, df.sentiment$score)
 ```
 There seems to be no relation between sentiment and score
 
-```{r, eval=TRUE, echo=TRUE}
+```{r, eval=FALSE, echo=TRUE}
 #numbers of rows in df.sentiment
 nrow(df.sentiment)
 ```
 
 ### create a new column sentiment based on the sentiment score of a comment
 
-```{r sentiment_column, eval=TRUE, echo=TRUE}
+```{r sentiment_column, eval=FALSE, echo=TRUE}
 ## create a small dataset for testing purpose
 df.small <- df %>% sample_n(10)
 
