@@ -571,11 +571,11 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
  summarize(Sentiment = mean(value)) %>% inner_join(df.sample, by = "id")
 
 # Normalize the sentiment scores
-df.sentiment <- df.sentiment %>%
+df.sentiment.a <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
 # show the sentiment of the comments
-reactable(df.sentiment,
+reactable(df.sentiment.a,
           resizable = TRUE,
           defaultPageSize = 2,
           sortable = TRUE,
@@ -599,11 +599,11 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
  inner_join(df.sample, by = "id")
 
 # Normalize the sentiment scores
-df.sentiment <- df.sentiment %>%
+df.sentiment.b <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
 #show 
-reactable(df.sentiment,
+reactable(df.sentiment.b,
           resizable = TRUE,
           defaultPageSize = 2,
           sortable = TRUE,
@@ -633,11 +633,11 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
  inner_join(df.sample, by = "id")
 
 # Normalize the sentiment scores
-df.sentiment <- df.sentiment %>%
+df.sentiment.n <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
 #show 
-reactable(df.sentiment,
+reactable(df.sentiment.n,
           resizable = TRUE,
           defaultPageSize = 2,
           sortable = TRUE,
@@ -650,7 +650,7 @@ reactable(df.sentiment,
           )
 
 #save data as 'AFINN_sentiment_sample.csv'
-write_csv(df.sentiment, "../../data/NRC_sentiment_sample.csv")
+#write_csv(df.sentiment, "../../data/NRC_sentiment_sample.csv")
 ```
 
 #### VADER
@@ -673,16 +673,17 @@ df.sentiment.b <- inner_join(df %>% unnest_tokens(word, body),
  inner_join(df, by = "id")
 
 #use NRC to analyse sentiment all the rows based on column body
-df.sentiment.c <- inner_join(df %>% unnest_tokens(word, body),
+df.sentiment.n <- inner_join(df %>% unnest_tokens(word, body),
  get_sentiments("nrc"), by = c("word" = "word")) %>% group_by(id) %>%
  summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
  inner_join(df, by = "id")
+
 
 #plot the three sentiment distribution on one using viridis color
 ggplot() +
   geom_density(data = df.sentiment.a, aes(x = Sentiment, fill = "AFINN"), alpha = 0.5) +
   geom_density(data = df.sentiment.b, aes(x = Sentiment, fill = "BING"), alpha = 0.5) +
-  geom_density(data = df.sentiment.c, aes(x = Sentiment, fill = "NRC"), alpha = 0.5) +
+  geom_density(data = df.sentiment.n, aes(x = Sentiment, fill = "NRC"), alpha = 0.5) +
   scale_fill_viridis_d() +
   theme_minimal()
 ```
@@ -693,38 +694,24 @@ ggplot() +
 
 - The NRC method has a sharp peak at 0, suggesting that most of the sentiment scores are neutral. This implies that the NRC method tends to classify a large number of comments as neutral, with fewer comments being classified as strongly positive or negative. But we note that the NRC is also quite condensed
 
-### Using Vader
-
-```{r}
-#use Vader to analyse sentiment all the rows based on column body
-df.sentiment.d <- inner_join(df %>% unnest_tokens(word, body),
- get_sentiments("vader"), by = c("word" = "word")) %>% group_by(id) %>%
- summarize(Sentiment = mean(value)) %>% inner_join(df, by = "id")
-```
-
 #### Normalization to correctly compare
 
 ```{r norm_sent_dist, eval=TRUE, echo=TRUE}
-# Normalize AFINN sentiment scores
-mean_afinn <- mean(df.sentiment.a$Sentiment)
-sd_afinn <- sd(df.sentiment.a$Sentiment)
-df.sentiment.a$Normalized_Sentiment <- (df.sentiment.a$Sentiment - mean_afinn) / sd_afinn
+# Normalize the sentiment scores
+df.sentiment.a <- df.sentiment.a %>%
+  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
-# Normalize Bing sentiment scores
-mean_bing <- mean(df.sentiment.b$Sentiment)
-sd_bing <- sd(df.sentiment.b$Sentiment)
-df.sentiment.b$Normalized_Sentiment <- (df.sentiment.b$Sentiment - mean_bing) / sd_bing
+df.sentiment.b <- df.sentiment.b %>%
+  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
-# Normalize NRC sentiment scores
-mean_nrc <- mean(df.sentiment.c$Sentiment)
-sd_nrc <- sd(df.sentiment.c$Sentiment)
-df.sentiment.c$Normalized_Sentiment <- (df.sentiment.c$Sentiment - mean_nrc) / sd_nrc
+df.sentiment.n <- df.sentiment.n %>%
+  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
 # Create the ggplot object
 p <- ggplot() +
   geom_density(data = df.sentiment.a, aes(x = Normalized_Sentiment, fill = "AFINN"), alpha = 0.3) +
   geom_density(data = df.sentiment.b, aes(x = Normalized_Sentiment, fill = "BING"), alpha = 0.5) +
-  geom_density(data = df.sentiment.c, aes(x = Normalized_Sentiment, fill = "NRC"), alpha = 0.5) +
+  geom_density(data = df.sentiment.n, aes(x = Normalized_Sentiment, fill = "NRC"), alpha = 0.5) +
   scale_fill_viridis_d() +
   theme_minimal()
 
@@ -732,7 +719,7 @@ p <- ggplot() +
 interactive_plot <- ggplotly(p)
 
 # Adjust the height and width 
-interactive_plot <- layout(interactive_plot, width = 800, height = 600)
+interactive_plot <- layout(interactive_plot, width = 600, height = 400)
 # Display the interactive plot
 interactive_plot
 ```
