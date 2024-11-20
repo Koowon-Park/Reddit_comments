@@ -53,3 +53,5 @@ workflows
 parsnip
 yardstick
 factoextra
+viridisLite
+viridis

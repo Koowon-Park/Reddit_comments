@@ -561,7 +561,7 @@ We will analyze a sample of small comments to have a better understanding.
 ```{r sample_afinn_comment, eval=TRUE, echo=TRUE}
 #define a random sample of 100 comments
 set.seed(1234)
-df.sample <- df %>% sample_n(10) %>%
+df.sample <- df %>% sample_n(100) %>%
   #select only columns 'id' and 'body'
   select(id, body, subreddit)
 
@@ -570,8 +570,24 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
  get_sentiments("afinn"), by = c("word" = "word")) %>% group_by(id) %>%
  summarize(Sentiment = mean(value)) %>% inner_join(df.sample, by = "id")
 
+# Normalize the sentiment scores
+df.sentiment <- df.sentiment %>%
+ mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
+
 # show the sentiment of the comments
-reactable(df.sentiment)
+reactable(df.sentiment,
+          resizable = TRUE,
+          defaultPageSize = 2,
+          sortable = TRUE,
+          searchable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          highlight = TRUE,
+          #add possibility to increase rows per page
+          pageSizeOptions = c(5, 10, 15, 20)
+          )
+#save data as 'AFINN_sentiment_sample.csv'
+#write_csv(df.sentiment, "../../data/AFINN_sentiment_sample.csv")
 ```
 
 #### Bing
@@ -582,8 +598,25 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
  summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
  inner_join(df.sample, by = "id")
 
+# Normalize the sentiment scores
+df.sentiment <- df.sentiment %>%
+ mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
+
 #show 
-reactable(df.sentiment)
+reactable(df.sentiment,
+          resizable = TRUE,
+          defaultPageSize = 2,
+          sortable = TRUE,
+          searchable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          highlight = TRUE,
+          #add possibility to increase rows per page
+          pageSizeOptions = c(5, 10, 15, 20)
+          )
+
+#save data as 'AFINN_sentiment_sample.csv'
+#write_csv(df.sentiment, "../../data/BING_sentiment_sample.csv")
 ```
 
 After reading the comments, we observe that they are mostly right. For example this comment was classified as neutral with a score of 0 : [Dude Congrats Im hoping to lose a large amount of weight in the same amount of time Huge inspiration here Keep kicking ass]
@@ -599,13 +632,35 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
  summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
  inner_join(df.sample, by = "id")
 
+# Normalize the sentiment scores
+df.sentiment <- df.sentiment %>%
+ mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
+
 #show 
-reactable(df.sentiment)
+reactable(df.sentiment,
+          resizable = TRUE,
+          defaultPageSize = 2,
+          sortable = TRUE,
+          searchable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          highlight = TRUE,
+          #add possibility to increase rows per page
+          pageSizeOptions = c(5, 10, 15, 20)
+          )
+
+#save data as 'AFINN_sentiment_sample.csv'
+write_csv(df.sentiment, "../../data/NRC_sentiment_sample.csv")
 ```
+
+#### VADER
+
+VADER is a lexicon and rule-based sentiment analysis tool specifically designed for social media texts. It is effective at capturing the sentiment expressed in short, informal texts, such as tweets and comments.
+
 
 ### Vizualising the Sentiment distribution based on a dictionnary
 
-```{r sent_dist}
+```{r sent_dist, cache=TRUE}
 # use afinn to analyse sentiment all the rows based on column body
 df.sentiment.a <- inner_join(df %>% unnest_tokens(word, body),
  get_sentiments("afinn"), by = c("word" = "word")) %>% group_by(id) %>%
@@ -637,6 +692,15 @@ ggplot() +
 - The Bing method displays a bimodal distribution with two distinct peaks, one around -1 and another around 1. This indicates that the sentiment scores are polarized, with many comments being classified as either quite negative or quite positive. Which is logical based on the previous analysis
 
 - The NRC method has a sharp peak at 0, suggesting that most of the sentiment scores are neutral. This implies that the NRC method tends to classify a large number of comments as neutral, with fewer comments being classified as strongly positive or negative. But we note that the NRC is also quite condensed
+
+### Using Vader
+
+```{r}
+#use Vader to analyse sentiment all the rows based on column body
+df.sentiment.d <- inner_join(df %>% unnest_tokens(word, body),
+ get_sentiments("vader"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(value)) %>% inner_join(df, by = "id")
+```
 
 #### Normalization to correctly compare
 
