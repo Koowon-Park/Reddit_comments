@@ -653,12 +653,9 @@ reactable(df.sentiment.n,
 #write_csv(df.sentiment, "../../data/NRC_sentiment_sample.csv")
 ```
 
-#### VADER
+We observe here that comments like "Night time moon light and a light snow The glow of the moon and the silence is amazing", which evokes a serene and appreciative tone for natural beauty suggest a strong positive emotion. The three dictionaries seem to have classified this comment as positive with the BING and AFINN dicitonnary attributing a higher score than the NRC.
 
-VADER is a lexicon and rule-based sentiment analysis tool specifically designed for social media texts. It is effective at capturing the sentiment expressed in short, informal texts, such as tweets and comments.
-
-
-### Vizualising the Sentiment distribution based on a dictionnary
+#### Vizualising the Sentiment distribution based on a dictionnary
 
 ```{r sent_dist, cache=TRUE}
 # use afinn to analyse sentiment all the rows based on column body
@@ -724,10 +721,19 @@ interactive_plot <- layout(interactive_plot, width = 600, height = 400)
 interactive_plot
 ```
 
+#### Summary
+
 We might choose one method over the others. For example, if we need a method that captures strong sentiments, Bing might be more suitable. For a more balanced view, AFINN could be the way to go. With more neutral comments, NRC might be the best choice.
 
-## Analyzing the relationship between sentiment and score
+#### LLM interpretation
 
+We are going to use some LLM on a random sample to judge the accuracy of each dictionnary and judge which one to take.
+
+prompt : 'Assign a sentiment score to this reddit comment from 0 (extremely negative) to 1 (extremely positive)'
+
+Loop through the comments and assign a sentiment score 
+
+## Analyzing the relationship between sentiment and score
 
 There seem to be two outliers in this plot, let's examine them
 
