@@ -58,6 +58,8 @@ summary(df)
 For rendering reasons, we load the cleaned dataset.
 Here is a sample of 20 observations from the dataset. We decided to show only the columns 'author' and 'body' for the sake of simplicity.
 
+### Load cleaned data
+
 ```{r load cleaned data, eval=TRUE, echo=TRUE}
 df <- read.csv(here("data/15k_cleaned.csv"))
 

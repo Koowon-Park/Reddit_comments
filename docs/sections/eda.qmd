@@ -741,6 +741,24 @@ There seem to be two outliers in this plot, let's examine them
 
 There seems to be no relation between sentiment and score
 
+### Apply The findings on the whole dataset
+
+- investigate why it reduces the number of comment
+
+```{r}
+# use afinn to analyse sentiment all the rows based on column body
+df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
+ get_sentiments("afinn"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(value)) %>% inner_join(df, by = "id")
+
+# Normalize the sentiment scores
+df.sentiment <- df.sentiment %>%
+ mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
+
+# save the data as a .csv file
+#write_csv(df.sentiment, "../../data/AFINN_sentiment.csv")
+```
+
 ## Score
 
 ```{r}
