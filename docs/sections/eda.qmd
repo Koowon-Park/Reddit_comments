@@ -957,5 +957,15 @@ ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = clust
 ### Adding Length of comment as a feature
 
 ```{r, eval=TRUE, echo=TRUE}
+#show length of one random comment
+df$body[1] %>% nchar() #char shows the number of characters in a string
+#to show the number of words in a comment we can use str_count
+df$body[1] %>% str_count("\\w+")
+df$body[1]
 #add length of comment as a feature
+df$length <- str_count(df$body, "\\w+")
+head(df)
+
+#get summary statistics on column length
+summary(df$length)
 ```
