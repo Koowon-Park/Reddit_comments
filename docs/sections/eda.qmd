@@ -455,6 +455,214 @@ beta.long %>%
     strip.text = element_text(size = 5))
 ```
 
+
+### Extract description and display name of subreddit
+
+```{r, eval=FALSE}
+# Load necessary libraries
+library(rvest)
+library(dplyr)
+
+# Example list of subreddit names (replace this with your dataframe column)
+#subreddit_names <- head(df.subreddit$subreddit, 1000)
+# Select rows 1001 to 3500
+subreddit_names <- df.subreddit$subreddit[3501:nrow(df.subreddit)]
+#subreddit_names <- c("100yearsago", "AskReddit", "nonexistent_subreddit", "private_subreddit")
+
+# Function to scrape display-name and description
+get_subreddit_metadata <- function(subreddit) {
+  # Construct the URL
+  url <- paste0("https://www.reddit.com/r/", subreddit, "/")
+  
+  # Try to scrape the metadata
+  tryCatch({
+    # Read the HTML content of the subreddit page
+    page <- read_html(url)
+    
+    # Extract the <shreddit-subreddit-header> element
+    header_element <- page %>%
+      html_node("shreddit-subreddit-header")  # Target the specific element
+    
+    # Extract the attributes
+    display_name <- header_element %>% html_attr("display-name")
+    description <- header_element %>% html_attr("description")
+    
+    # Return the results
+    return(data.frame(
+      subreddit = subreddit,
+      display_name = display_name,
+      description = description,
+      stringsAsFactors = FALSE
+    ))
+  }, error = function(e) {
+    # If an error occurs (e.g., subreddit doesn't exist), return NA
+    return(data.frame(
+      subreddit = subreddit,
+      display_name = NA,
+      description = NA,
+      stringsAsFactors = FALSE
+    ))
+  })
+}
+
+# Introduce a delay between requests
+subreddit_metadata <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
+  # Randomize sleep time between 3 and 5 seconds
+  sleep_time <- runif(1, min = 2, max = 4)
+
+# Sleep for the random duration
+  Sys.sleep(sleep_time) # Wait 2 seconds between requests
+  get_subreddit_metadata(subreddit)
+}))
+
+# Save the cleaned dataset to a new CSV file
+#write_csv(subreddit_metadata, "subreddit_metadata.csv")
+# View the results
+print(subreddit_metadata)
+
+```
+
+put data in a csv file
+```{r}
+#write_csv(subreddit_metadata, "subreddit_metadata_first1000.csv")
+write_csv(subreddit_metadata, "subreddit_metadata_last2500.csv")
+
+```
+for computational purpose we don't run the code above as it takes a lot of time to scrape the data. We will use the data that we have already scraped.
+
+remove NA
+```{r, message=FALSE}
+subreddit_first1000 <- read_csv("subreddit_metadata_first1000.csv")
+subreddit_first1000 <- na.omit(subreddit_first1000)
+subreddit_next2500 <- read_csv("subreddit_metadata_next2500.csv")
+subreddit_next2500 <- na.omit(subreddit_next2500)
+# Combine the two dataframes
+combined_subreddit_theme <- rbind(subreddit_first1000, subreddit_next2500)
+
+
+```
+clustering test similarity
+```{r, warning=FALSE}
+library(tm)
+corpus <- Corpus(VectorSource(combined_subreddit_theme$description))
+corpus <- tm_map(corpus, content_transformer(tolower))
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeWords, stopwords("en"))
+dtm <- DocumentTermMatrix(corpus)
+
+```
+clusters
+```{r}
+set.seed(123)
+k <- 30  # Choose the number of clusters
+clusters <- kmeans(as.matrix(dtm), centers = k)
+combined_subreddit_theme$theme <- as.factor(clusters$cluster)
+# Rename the column
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  rename(`theme (cluster number)` = theme)
+
+```
+
+merge df with combined_subreddit_theme
+```{r}
+# Perform a left join to add the columns to 'df'
+df <- df %>%
+  left_join(combined_subreddit_theme, by = "subreddit")
+```
+
+
+using reddit api
+```{r}
+# # Load necessary libraries
+# library(httr)
+# library(jsonlite)
+# 
+# # Replace these with your actual Reddit app's client ID, client secret, and redirect URI
+# client_id <- "Qw1A2hzjh5bsUpKvvTSM-A"
+# client_secret <- "_tk5YYxoVjiZqMmAFx3SfE9tF8rlZg"
+# redirect_uri <- "http://localhost:8000"  # Make sure this matches the redirect URI you set in Reddit
+# 
+# # Step 1: Get the authorization URL
+# authorize_url <- paste0("https://www.reddit.com/api/v1/authorize?client_id=", client_id,
+#                        "&response_type=code&state=some_random_string&redirect_uri=", redirect_uri,
+#                        "&scope=read")
+# 
+# # Print the URL and manually visit it to authorize the app
+# cat("Visit this URL to authorize the app:\n", authorize_url, "\n")
+# 
+# # Once authorized, you will be redirected to the redirect_uri with a 'code' parameter in the URL
+# # You need to capture the 'code' parameter, which you will use to obtain an access token
+# 
+# # Step 2: User visits the URL and grants permission, then gets the 'code' from the URL
+# 
+# # Prompt user to enter the code received after authorization
+# auth_code <- readline(prompt = "Enter the code you received from Reddit: ")
+# 
+# # Step 3: Use the code to get an access token
+# token_response <- POST("https://www.reddit.com/api/v1/access_token",
+#                        authenticate(client_id, client_secret),
+#                        body = list(
+#                          grant_type = "authorization_code",
+#                          code = auth_code,
+#                          redirect_uri = redirect_uri
+#                        ),
+#                        encode = "form")
+# 
+# # Parse the response to get the access token
+# token_data <- fromJSON(content(token_response, "text"))
+# access_token <- token_data$access_token
+# 
+# # Step 4: Use the access token to make authorized API requests
+# # Now you can make authenticated requests to Reddit's API
+# 
+# # Example: Get subreddit metadata (e.g., display name and description)
+# get_subreddit_metadata <- function(subreddit) {
+#   url <- paste0("https://www.reddit.com/r/", subreddit, "/about.json")
+#   
+#   # Send a GET request to Reddit API with the authorization header
+#   response <- GET(url, add_headers(Authorization = paste("Bearer", access_token)))
+#   
+#   if (status_code(response) != 200) {
+#     return(data.frame(
+#       subreddit = subreddit,
+#       display_name = NA,
+#       description = NA,
+#       stringsAsFactors = FALSE
+#     ))
+#   }
+#   
+#   # Parse the JSON response
+#   data <- fromJSON(content(response, "text"))
+#   
+#   # Extract metadata
+#   display_name <- data$data$display_name
+#   description <- data$data$public_description
+#   
+#   # Return the result
+#   return(data.frame(
+#     subreddit = subreddit,
+#     display_name = display_name,
+#     description = description,
+#     stringsAsFactors = FALSE
+#   ))
+# }
+# 
+# # Example list of subreddits to get metadata for
+# subreddit_names <- c("r/programming", "r/learnprogramming")
+# 
+# # Get metadata for the subreddits
+# subreddit_metadata <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
+#   Sys.sleep(2)  # Optional: add a delay between requests to avoid rate limiting
+#   get_subreddit_metadata(subreddit)
+# }))
+# 
+# # View the results
+# print(subreddit_metadata)
+
+
+```
+
+
 ## Sentiment Analysis
 
 ### Sentiment by Subreddit
