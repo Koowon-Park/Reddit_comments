@@ -504,7 +504,7 @@ get_subreddit_metadata <- function(subreddit) {
 # Introduce a delay between requests
 subreddit_metadata <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
   # Randomize sleep time between 3 and 5 seconds
-  sleep_time <- runif(1, min = 2, max = 4)
+  sleep_time <- runif(1, min = 1.5, max = 3)
 
 # Sleep for the random duration
   Sys.sleep(sleep_time) # Wait 2 seconds between requests
@@ -528,10 +528,12 @@ for computational purpose we don't run the code above as it takes a lot of time 
 
 remove NA
 ```{r, message=FALSE}
-subreddit_first1000 <- read_csv("subreddit_metadata_first1000.csv")
+subreddit_first1000 <- read_csv("../../data/subreddit_metadata_first1000.csv")
 subreddit_first1000 <- na.omit(subreddit_first1000)
-subreddit_next2500 <- read_csv("subreddit_metadata_next2500.csv")
+subreddit_next2500 <- read_csv("../../data/subreddit_metadata_next2500.csv")
 subreddit_next2500 <- na.omit(subreddit_next2500)
+# subreddit_last <-read_csv("../../data/subreddit_metadata_last.csv")
+# subreddit_last <- na.omit(subreddit_last)
 # Combine the two dataframes
 combined_subreddit_theme <- rbind(subreddit_first1000, subreddit_next2500)
 ```
