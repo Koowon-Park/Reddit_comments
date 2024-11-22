@@ -63,9 +63,12 @@ Here is a sample of 20 observations from the dataset. We decided to show only th
 ```{r load cleaned data, eval=TRUE, echo=TRUE}
 df <- read.csv(here("data/15k_cleaned.csv"))
 
-df.no_body <- read.csv(here("data/15k_cleaned_no_body.csv"))
+#show comment with 0 words
+df[df$body == "",]
+#remove them
+df <- df[df$body != "",]
 
-(head(df.no_body))
+df.no_body <- read.csv(here("data/15k_cleaned_no_body.csv"))
 
 #show only columns 'author' and 'body' with reactable
 reactable(
@@ -76,6 +79,5 @@ reactable(
   resizable = TRUE,
   highlight = TRUE,
   paginationType = "numbers")
-
 ```
 
