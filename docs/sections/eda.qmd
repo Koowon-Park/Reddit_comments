@@ -660,7 +660,7 @@ merge df with combined_subreddit_theme
 ```{r}
 # Perform a left join to add the columns to 'df'
 df <- df %>%
-  left_join(combined_subreddit_theme, by = "subreddit"
+  left_join(combined_subreddit_theme, by = "subreddit")
 ```
 
 ### other way to cluster
