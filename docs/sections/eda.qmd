@@ -755,6 +755,12 @@ df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
 df.sentiment <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
+#new column for sentiment category
+df.sentiment$sentiment_category <- ifelse(df.sentiment$Sentiment >= 1, "positive",
+ ifelse(df.sentiment$Sentiment <= -1, "negative", "neutral"))
+
+df.sentiment$sentiment_category
+
 # save the data as a .csv file
 #write_csv(df.sentiment, "../../data/AFINN_sentiment.csv")
 ```
