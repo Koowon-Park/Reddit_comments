@@ -660,7 +660,7 @@ merge df with combined_subreddit_theme
 ```{r}
 # Perform a left join to add the columns to 'df'
 df <- df %>%
-  left_join(combined_subreddit_theme, by = "subreddit")
+  left_join(combined_subreddit_theme, by = "subreddit"
 ```
 
 ### other way to cluster
@@ -1064,7 +1064,7 @@ df.sentiment <- df.sentiment %>%
 df.sentiment$sentiment_category <- ifelse(df.sentiment$Sentiment >= 1, "positive",
  ifelse(df.sentiment$Sentiment <= -1, "negative", "neutral"))
 
-df.sentiment$sentiment_category
+df <- df.sentiment 
 
 # save the data as a .csv file
 #write_csv(df.sentiment, "../../data/AFINN_sentiment.csv")
@@ -1274,3 +1274,26 @@ head(df)
 #get summary statistics on column length
 summary(df$length)
 ```
+
+### Adding 'related subreddit' 
+
+Add columns, friends1, friends2, friends3, ... by scrapping it from the subreddit page
+
+## Final Dataset
+
+```{r}
+head(df)
+#rename column 'theme (cluster number)' to 'theme'
+df <- df %>%
+  rename(theme = `theme (cluster number)`)
+# Save the final dataset to a CSV file
+# select only columns ; 'id','author' ,'subreddit', 'display_name', 'body', 'score', 'sentiment_category', 'length', 'description', 'theme'
+df <- df %>%
+  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme)
+#write_csv(df, "../../data/reddit_comments_15k_v2.csv")
+#load the data
+df <- read_csv("../../data/reddit_comments_15k_v2.csv")
+#count nunber of rows
+nrow(df)
+```
+
