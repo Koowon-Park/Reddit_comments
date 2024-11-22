@@ -1,0 +1,30 @@
+---
+title: "test theme"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+subreddit_first1000 <- read_csv("subreddit_metadata_first1000.csv")
+subreddit_first1000 <- na.omit(subreddit_first1000)
+subreddit_next2500 <- read_csv("subreddit_metadata_next2500.csv")
+subreddit_next2500 <- na.omit(subreddit_next2500)
+
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
