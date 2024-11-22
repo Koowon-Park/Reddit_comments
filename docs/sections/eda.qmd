@@ -1177,6 +1177,10 @@ head(df)
 summary(df$length)
 ```
 
+### Adding 'related subreddit' 
+
+Add columns, friends1, friends2, friends3, ... by scrapping it from the subreddit page
+
 ## Final Dataset
 
 ```{r}
@@ -1189,5 +1193,9 @@ df <- df %>%
 df <- df %>%
   select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme)
 #write_csv(df, "../../data/reddit_comments_15k_v2.csv")
+#load the data
+df <- read_csv("../../data/reddit_comments_15k_v2.csv")
+#count nunber of rows
+nrow(df)
 ```
 
