@@ -459,10 +459,6 @@ beta.long %>%
 ### Extract description and display name of subreddit
 
 ```{r, eval=FALSE}
-# Load necessary libraries
-library(rvest)
-library(dplyr)
-
 # Example list of subreddit names (replace this with your dataframe column)
 #subreddit_names <- head(df.subreddit$subreddit, 1000)
 # Select rows 1001 to 3500
@@ -519,15 +515,15 @@ subreddit_metadata <- do.call(rbind, lapply(subreddit_names, function(subreddit)
 #write_csv(subreddit_metadata, "subreddit_metadata.csv")
 # View the results
 print(subreddit_metadata)
-
 ```
 
 put data in a csv file
+
 ```{r}
 #write_csv(subreddit_metadata, "subreddit_metadata_first1000.csv")
-write_csv(subreddit_metadata, "subreddit_metadata_last2500.csv")
-
+#write_csv(subreddit_metadata, "subreddit_metadata_last2500.csv")
 ```
+
 for computational purpose we don't run the code above as it takes a lot of time to scrape the data. We will use the data that we have already scraped.
 
 remove NA
@@ -538,21 +534,21 @@ subreddit_next2500 <- read_csv("subreddit_metadata_next2500.csv")
 subreddit_next2500 <- na.omit(subreddit_next2500)
 # Combine the two dataframes
 combined_subreddit_theme <- rbind(subreddit_first1000, subreddit_next2500)
-
-
 ```
+
 clustering test similarity
+
 ```{r, warning=FALSE}
-library(tm)
 corpus <- Corpus(VectorSource(combined_subreddit_theme$description))
 corpus <- tm_map(corpus, content_transformer(tolower))
 corpus <- tm_map(corpus, removePunctuation)
 corpus <- tm_map(corpus, removeWords, stopwords("en"))
 dtm <- DocumentTermMatrix(corpus)
-
 ```
-clusters
-```{r}
+
+### clusters
+
+```{r, cache=TRUE}
 set.seed(123)
 k <- 30  # Choose the number of clusters
 clusters <- kmeans(as.matrix(dtm), centers = k)
@@ -560,10 +556,10 @@ combined_subreddit_theme$theme <- as.factor(clusters$cluster)
 # Rename the column
 combined_subreddit_theme <- combined_subreddit_theme %>%
   rename(`theme (cluster number)` = theme)
-
 ```
 
 merge df with combined_subreddit_theme
+
 ```{r}
 # Perform a left join to add the columns to 'df'
 df <- df %>%
@@ -572,7 +568,8 @@ df <- df %>%
 
 
 using reddit api
-```{r}
+
+```{r echo=FALSE}
 # # Load necessary libraries
 # library(httr)
 # library(jsonlite)

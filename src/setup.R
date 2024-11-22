@@ -49,7 +49,7 @@ packages <- c(
   "quanteda", "quanteda.textstats", "quanteda.textplots", 
   "quanteda.textmodels","tidytext", 
   "stringr", "tm", "wordcloud", "SnowballC", "stopwords", 
-  "ggwordcloud", "broom", "igraph", "reshape2",
+  "ggwordcloud", "broom", "igraph", "reshape2", "tm",
   
   # Data splitting
   "caTools",
@@ -60,7 +60,10 @@ packages <- c(
   "lexicon",
   
   #ML
-  "textrecipes", "rsample", "tune", "workflows", "parsnip", "yardstick", "recipes"
+  "textrecipes", "rsample", "tune", "workflows", "parsnip", "yardstick", "recipes",
+  
+  # Web Scrap
+  "rvest"
 )
 
 
