@@ -800,10 +800,8 @@ df <- df %>%
   left_join(combined_subreddit_related, by = "subreddit")
 ```
 
-plot graph of matching related subreddits
+### plot graph of matching related subreddits
 ```{r}
-library(visNetwork)
-library(dplyr)
 
 # Filter rows where `matching_related_subreddits` is not empty
 filtered_data <- combined_subreddit_related[
@@ -811,7 +809,7 @@ filtered_data <- combined_subreddit_related[
 ]
 
 # Take only the first 100 rows
-filtered_data <- head(filtered_data, 100)
+filtered_data <- head(filtered_data, 200)
 
 # Prepare the edges for the graph
 edges <- do.call(rbind, lapply(1:nrow(filtered_data), function(i) {
@@ -842,6 +840,57 @@ visNetwork(nodes, edges) %>%
 
 ```
 
+other graph with everything
+```{r}
+
+# Filter rows where `matching_related_subreddits` is not empty
+filtered_data <- combined_subreddit_related[
+  combined_subreddit_related$matching_related_subreddits != "", 
+]
+
+# Take the first 1000 rows
+filtered_data <- head(filtered_data, 1000)
+
+# Prepare the edges for the graph
+edges <- do.call(rbind, lapply(1:nrow(filtered_data), function(i) {
+  source <- filtered_data$subreddit[i]
+  targets <- unlist(strsplit(filtered_data$matching_related_subreddits[i], ",\\s*"))
+  if (length(targets) > 0) {
+    data.frame(from = source, to = targets, stringsAsFactors = FALSE)
+  }
+}))
+
+# Ensure no duplicates in edges
+edges <- unique(edges)
+
+# Create the igraph object
+graph <- graph_from_data_frame(
+  d = edges,  # Edge list
+  directed = TRUE # Directional relationships
+)
+
+# Use Kamada-Kawai layout for better node spacing
+set.seed(42) # For consistent layout
+layout <- layout_with_kk(graph)
+
+# Scale layout to further spread nodes
+layout <- layout * 2
+# Plot the graph with spacing
+plot(
+  graph,
+  vertex.size = 0.2,                      # Node size
+  vertex.label = NA,                    # Disable labels
+  # vertex.label.cex = 0.1,               # Reduced label text size
+  # vertex.label.color = "black",         # Label color
+  # vertex.label.dist = 1,                # Distance of label from node
+  edge.arrow.size = 0.05,                # Smaller arrow size
+  edge.color = "gray50",                # Edge color
+  layout = layout,                      # Use the scaled layout
+  main = "Subreddit Relationship Graph" # Add a title
+)
+
+
+```
 
 
 
