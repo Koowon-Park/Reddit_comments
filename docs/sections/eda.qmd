@@ -3,7 +3,7 @@
 viridis_1 <- viridis(10)[1]
 viridis_2 <- viridis(10)[2]
 viridis_3 <- viridis(10)[3]
-virisdis_4 <- viridis(10)[4]
+viridis_4 <- viridis(10)[4]
 viridis_5 <- viridis(10)[5]
 viridis_6 <- viridis(10)[6]
 viridis_7 <- viridis(10)[7]
@@ -35,7 +35,7 @@ df.subreddit %>%
   mutate(subreddit = reorder(subreddit, nchar(body), fill = nchar(body))) %>%
   top_n(10, nchar(body)) %>%
   ggplot(aes(x = subreddit, y = nchar(body))) +
-  geom_col(fill = viridis_4) +
+  geom_col(fill = viridis_1) +
   coord_flip() +
   labs(title = "Top 10 Subreddits by Length", x = "Subreddit", y = "Length") +
   #increase text size
@@ -86,7 +86,7 @@ df.subreddit.freq %>%
   ggplot(aes(
     x = reorder(feature, frequency),
     y = frequency)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", fill = viridis_2) +
   coord_flip() +
   xlab("Frequency") +
   ylab("term") +
@@ -96,20 +96,21 @@ df.subreddit.freq %>%
 
 ```
 
-We observe here a lot of abbreiations that are not taken into account by the stop words. Indeed, lots of word are just because the author removed the '. So for example. i'm becomes im or you're becomes youre.
+We observe here a lot of abbreviations that are not taken into account by the stop words. Indeed, lots of word are just because the author removed the '. So for example. i'm becomes im or you're becomes youre.
 
 ```{r textplot_wordcloud, eval=TRUE, echo=TRUE}
-textplot_wordcloud(df.subreddit.dfm)
+#textplot_wordcloud(df.subreddit.dfm)
 
 df.subreddit.freq %>%
-  top_n(20, frequency) %>%
-  ggplot(aes(label = feature, size = frequency)) +
+  top_n(30, frequency) %>%
+  ggplot(aes(label = feature, size = frequency, color = frequency)) +
   geom_text_wordcloud() +
-  scale_size_area(max_size = 20) +
+  scale_size_area(max_size = 14) +
+  scale_color_viridis_c() +
   theme_minimal()
 ```
 
-We can observe that the most frequent words are 'people', 'time
+We can observe that the most frequent words are 'people', 'time', 'game'.
 
 ```{r tf_idf, eval=TRUE, echo=TRUE}
 #tf-idf
@@ -128,7 +129,7 @@ df.subreddit.dfm %>%
   tidy() %>%
   top_n(12, count) %>%
   ggplot(aes(x = term, y = count)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", fill = viridis_3) +
   coord_flip() +
   theme(axis.text.y = element_text(size = 10),
         axis.ticks.y = element_blank()) +
@@ -146,72 +147,54 @@ So in summary:
 
 we analyze similarities and dissimilarities between the documents (through words) in the data. We use quanteda extensively. We’ll use the objects created previously in the exercises.
 
-Then use the functions textstat_simil() and textstat_dist() to compute the Jaccard index matrix, the cosine matrix, and the Euclidean distances matrix.
+Then use the functions textstat_simil() and textstat_dist() to compute the Jaccard index matrix. We choose the Jaccard index  because it is a good measure of similarity between two documents.
 
 ```{r similarity_subreddits, eval=TRUE, echo=TRUE, cache=TRUE}
 #We restrict ourselves to a small subset of the highest tf-idf of the data to avoid memory issues and readability issues in the plots.
-df.subreddit.tfidf.small <- df.subreddit.tfidf[1:50,]
+df.subreddit.tfidf.small <- df.subreddit.tfidf[1:1000,]
 df.subreddit.tfidf.small
 
-df.subreddit.jac <- textstat_simil(
-  df.subreddit.tfidf.small, method = "jaccard", margin = "documents")
+#compute the jaccard index
+#comment out the next line to avoid recomputing the jaccard index
+# df.subreddit.jac <- textstat_simil(
+#   df.subreddit.tfidf.small, method = "jaccard", margin = "documents")
 
-df.subreddit.cos <- textstat_simil(
-  df.subreddit.tfidf.small, method = "cosine", margin = "documents")
+#save the resulted jac so for the next time we don't have to recompute it
+#write.csv(df.subreddit.jac, "../../data/jac_1000.csv")
 
-df.subreddit.eucl <- textstat_dist(
-  df.subreddit.tfidf.small, method = "euclidean", margin = "documents")
+#LOAD THE DATA
+df.subreddit.jac <- read.csv("../../data/jac_1000.csv")
 
 #heatmap representation of similariteis between subreddits
 ## jaccard
-df.subreddit.jac.mat <- melt(as.matrix(df.subreddit.jac))
-ggplot( data = df.subreddit.jac.mat, 
-        mapping = aes(x = Var1, y = Var2, fill = value)) +
+p <- ggplot(data = df.subreddit.jac.mat, 
+            mapping = aes(x = Var1, y = Var2, fill = value, text = paste("Subreddit 1:", Var1, "<br>Subreddit 2:", Var2, "<br>Jaccard:", round(value, 2)))) +
   scale_fill_gradient2(
-    low = "blue", 
-    high = "red", 
-    mid = 'white', 
+    low = viridis_1, 
+    high = viridis_5, 
+    mid = viridis_10, 
     midpoint = 0.5, 
-    limit = c(0,1), 
+    limit = c(0, 1), 
     name = "Jaccard") +
-  geom_tile() + xlab("") + ylab("") +
-  #incline x-axis labels
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_tile() + 
+  xlab("") + 
+  ylab("") +
+  theme(axis.text.x = element_blank(),  # Remove x-axis text
+        axis.text.y = element_blank(),  # Remove y-axis text
+        axis.ticks = element_blank())   # Remove axis ticks
 
-## cosine
-df.subreddit.cos.mat <- melt(as.matrix(df.subreddit.cos))
-ggplot( data = df.subreddit.cos.mat, 
-        mapping = aes(x = Var1, y = Var2, fill = value)) +
-  scale_fill_gradient2(
-    low = "blue", 
-    high = "red", 
-    mid = 'white', 
-    midpoint = 0.5, 
-    limit = c(0,1), 
-    name = "Cosine") +
-  geom_tile() + xlab("") + ylab("") +
-  #incline x-axis labels
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Convert ggplot to plotly for interactivity
+p_interactive <- ggplotly(p, tooltip = "text")
 
-## euclidean
-df.subreddit.eucl.mat <- melt(as.matrix(df.subreddit.eucl))
-ggplot( data = df.subreddit.eucl.mat, 
-        mapping = aes(x = Var1, y = Var2, fill = value)) +
-  scale_fill_gradient2(
-    low = "blue", 
-    high = "red", 
-    mid = 'white', 
-    midpoint = 0.5, 
-    limit = c(0,1), 
-    name = "Euclidean") +
-  geom_tile() + xlab("") + ylab("") +
-  #incline x-axis labels
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Display the interactive plot
+p_interactive
 ```
+
+We observe that similarity using Jaccard index on the top 1000 tf-idf words is inconclusive. Indeed, we do not observe any clear pattern. This is due to the fact that we have a lot of words that are specific to each subreddit. Therefore, we will try to cluster the subreddits to see if we can regroup them in a more meaningful way.
 
 #### Clustering of Documents
 
-Hierarchical clustering and K-means. The first one is applied on the dissimilarities (Euclidean, inverted Jaccard, and inverted cosine). The second one is applied on the features, here, TF-IDF. To illustrate the methods, we decide to create five clusters.
+Hierarchical clustering and K-means. The first one is applied on the dissimilarities (Euclidean). The second one is applied on the features, here, TF-IDF. To illustrate the methods, we decide to create 3 clusters.
 
 ```{r clustering_subreddits, eval=TRUE, echo=TRUE}
 #hierarchical
@@ -226,6 +209,8 @@ df.subreddit.clust
 df.subreddit.km <- kmeans(df.subreddit.tfidf.small, centers = 3)
 df.subreddit.km$cluster
 ```
+
+Again, we observe that the clustering is not very clear. We have a lot of subreddits that are not well regrouped. This is due to the fact that we have a lot of specific words in each subreddit. Therefore, we will try to use topic modeling to see if we can regroup the subreddits in a more meaningful way.
 
 ### Topic Modelling per subrreddit
 #### LSA
@@ -289,22 +274,44 @@ w.top3
 
 Topic 2 is associated positively with topic like  (game, team, play, games, fuck, ) and negatively with topics like (questions, question, comments, post, people)
 
-```{r pca, cache=TRUE, eval=TRUE, echo=TRUE}
-#PCA bibplots for links between topics and documents and topcis with terms
-w.subset <-
-  ##restric chart to terms that are mostly related to dim2 and dim3 so w.top2 and w.top3
-  df.subreddit.lsa$features[
-    c(unique(c(names(w.top2), names(w.top3)))), 2:3]
+We restrict here the PCA for links between subreddits and topics to only dimension 2 and 3 to obersve the efficacy of it.
 
-biplot(
-  y = df.subreddit.lsa$docs[, 2:3],
-  x = df.subreddit.lsa$features[,2:3],
-  col = c("black","red"),
-  cex = c(0.5, 0.5),
-  xlab = "Dim 2",
-  ylab = "Dim 3")
+```{r pca, cache=TRUE, eval=TRUE, echo=TRUE}
+# Restrict chart to terms that are mostly related to dim2 and dim3 
+w.subset <- df.subreddit.lsa$features[ c(unique(c(names(w.top2), names(w.top3)))), 2:3]
+# Create data frames for documents and features
+docs_df <- as.data.frame(df.subreddit.lsa$docs[, 2:3])
+features_df <- as.data.frame(w.subset) # to show all features (words) use instead : #features_df <- as.data.frame(df.subreddit.lsa$features[, 2:3])
+
+# Rename columns for clarity
+colnames(docs_df) <- c("Dim2", "Dim3")
+colnames(features_df) <- c("Dim2", "Dim3")
+
+# Create the ggplot biplot
+p <- ggplot() +
+  geom_segment(data = docs_df, 
+               aes(x = 0, y = 0, xend = Dim2, yend = Dim3, text = rownames(docs_df)), 
+               arrow = arrow(length = unit(0.2, "cm")), 
+               color = "red") +
+  geom_point(data = features_df, 
+             aes(x = Dim2, y = Dim3, text = rownames(features_df)), 
+             color = "black", size = 1) +
+  xlab("Dim 2") +
+  ylab("Dim 3") +
+  theme_minimal()
+
+# Convert ggplot to plotly for interactivity
+p_interactive <- ggplotly(p, tooltip = "text")
+
+# Display the interactive plot
+p_interactive
 ```
-We observe that the word `fuck` is associated with dim 3 and is interestingly negatively associated to `happy` which makes sense.
+
+We only show the features (words) that are mostly related to dim2 and dim3 so that the chart is not overcrowded.
+
+We observe that the word `fuck` on the top right is associated with dim 3 and is interestingly negatively associated to `happy` on the bottom left which makes sense in a sense.
+
+This is more convincing than the similarity and clustering analysis we did before. We observe that the subreddits are well regrouped in a more meaningful way.
 
 #### LDA
 
@@ -316,18 +323,21 @@ df.top10_subbredit.lda <- textmodel_lda(
   k = 10)
 
 #extract top 5 terms per topic
-seededlda::terms(df.top10_subbredit.lda, 5)
-
+top_terms <- seededlda::terms(df.top10_subbredit.lda, 5)
+top_terms
 # Extract subreddits per topic and rename output to match subreddit names
 top_subreddits <- seededlda::topics(df.top10_subbredit.lda)
 names(top_subreddits) <- df.top10_subreddit$subreddit
 top_subreddits
 
 #count the number of documents per topic
-seededlda::topics(df.top10_subbredit.lda) %>% table()
+topic_counts <- seededlda::topics(df.top10_subbredit.lda) %>% table
+topic_counts
 ```
 
-Topic 8 with 3 subreddits ( AskReddit, funny and news) is the most popular topic with words like people, time, fuck, day, feel which may represent human experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human. Indeed, what reddit is about haha
+Topic 5 with 4 subreddits ( AskReddit, funny, pics and news) is the most popular topic with words like people, time, im, youre which may represent human experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human. 
+Lol
+However, the distinction between topics is not very clear. We observe that lots of topics have the same terms.
 
 #### Topic-term Analysis
 
@@ -352,6 +362,7 @@ phi.long %>%
     axis.text.y = element_text(size = 5),
     strip.text = element_text(size = 5))
 ```
+
 Similar analysis as the to the previous but now we see the probs so more precise
 
 But we observe that lots of topics have the same terms. Therefore, adjusting k topics may be necessary.
@@ -385,20 +396,25 @@ phi.long <- melt(
 phi.long %>% 
   group_by(Topic) %>% 
   top_n(10, Phi) %>% 
-  ggplot(aes(reorder_within(Term, Phi, Topic), Phi)) + 
+  ggplot(aes(reorder_within(Term, Phi, Topic), Phi, fill = as.factor(Topic))) + 
   geom_col(show.legend = FALSE) +
   coord_flip() +
   facet_wrap(~ Topic, scales = "free_y") +
   scale_x_reordered() + 
+  scale_fill_viridis_d() +
   xlab("Term") + 
   theme(
     axis.text.y = element_text(size = 5),
     strip.text = element_text(size = 5))
 ```
 
-the distinction between topics is more clear now. We observe that topic1 may be related to 'hockey' and topic 2 to 'CFB' both sports so they have similar words expect specific ones. Topic 3 might more be related to 'news' as it has words like link (to refer to a source), interview, story, murder. Topic 4 is more related to feelings with words like time, day, feel, shit, pretty,... but harder to distinguish. Topic 5 might be related to government, nations or world maybe ? with words like police, american, russia, war, country. Topic 6 might well be a question topic with words like comment, contact,.... And topic 7 might more be a PC or PC gaming type of topic with words like game, steam, ram, build. we see that they reflect our subreddit which makes sense, now it would be interesting to take more that 10 subreddit as we might have a interesting regrouping of subreddits.
+the distinction between topics is more clear now. We observe that topic 1 may be related to 'pc games'. Topic 2 is quite difficult to name, might be something related to Lifestyle or Achievements. Topic 5 might more be related to crime, societal issues, or law enforcement so something like 'Crime and Justice' as it has words like country, polics, story, law, or  world maybe ?  Topic 4 is more related to feelings with words like time, day, feel,... but harder to distinguish. Topic 6 might well be a question topic with words like question, contact, moderator, answer. And topic 7 and 3 might be more related to sports like hockey or CFB.
+
+We see that they reflect our subreddit which makes sense, now it would be interesting to take more that 10 subreddit as we might have a interesting regrouping of subreddits but it wouldn't be feasible as it is quite computational intensive
 
 #### Topic document Analysis
+
+Now we will analyze the distribution of topics across the documents (subreddits). This differs from the previous analysis, where we looked at the distribution of terms (words) across topics. Here, we look at the distribution of topics across documents (subreddits).
 
 ```{r topic_doc_analysis, eval=TRUE, echo=TRUE}
 set.seed(1234)
@@ -423,7 +439,8 @@ theta.long %>%
     axis.text.y = element_text(size = 5),
     strip.text = element_text(size = 5))
 ```
-This confirms my previous analysis. we see topic one related to hockey, topic 2 related to CFB but interestingly lol is also here. Topic 3 was in fact reports, topic 4 was indeed feelings as it encompass a large range of subreddits. Topic 5 was indeed related to world news, news in general, topic 6 was indeed questions and topic 7 was indeed PC.
+
+This confirms my previous analysis. we see topic one related to pc / games, topic 2 related to funny and pics. Topic 3 and 7 to sports, topic 4 was indeed feelings as it encompass a large range of subreddits. Topic 5 was indeed related to world, news in general, topic 6 was indeed questions.
 
 #### LDA diagnostics
 
@@ -431,53 +448,22 @@ This confirms my previous analysis. we see topic one related to hockey, topic 2 
 #topic prevalence
 rev(sort(colSums(df.top10_subbredit.lda$theta)/sum(df.top10_subbredit.lda$theta)))
 ```
-Topic 4 most prevalent.
+Topic 4 most prevalent by far which makes sense as it is related to feelings and human experience that people often use in their comments.
 
-```{r topic_diagnostics_2, cache=TRUE, eval=TRUE, echo=TRUE}
-#using topicmodels
-df.top10_subbredit.LDA <- LDA(
-  convert(df.top10_subreddit.dfm, to = "topicmodels"),
-  k = 7
-)
+#### Summary
 
-topicmodels::terms(df.top10_subbredit.LDA, 5)
-topicmodels::topics(df.top10_subbredit.LDA)
-topicmodels::topics(df.top10_subbredit.LDA) %>% table()
+So so far we can fairly say that the LDA is more efficient than the clustering and similarity analysis we did before. We observe that the subreddits are well regrouped in a more meaningful way. We observe that the topics are well defined and that they reflect our subreddit which makes sense. We can see that the topics are well distributed across the documents (subreddits) which is a good sign.
 
-topic_diagnostics(
-  topic_model = df.top10_subbredit.LDA, 
-  dtm_data = convert(df.top10_subreddit.dfm, to = "topicmodels"))
-```
+However, regrouping ALL the coments per Subreddit is not the best way to analyze the data. Indeed, we have a lot of specific words that are not taken into account by the stop words. 
 
-```{r topic_term_analysis_2, eval=TRUE, echo=TRUE}
-#reproduce  term-topic analysis with this package
-beta.long <- tidy(
-  df.top10_subbredit.LDA,
-  matrix = "beta") # equivalent to melt (with this package)
+Therefore, we will try to regroup the comments in a more meaningful way.
 
-beta.long %>% 
-  group_by(topic) %>% 
-  top_n(10, beta) %>% 
-  ggplot(aes(reorder_within(term, beta, topic), beta)) + 
-  geom_col(show.legend = FALSE) +
-  coord_flip()+
-  facet_wrap(~ topic, scales = "free_y") +
-  scale_x_reordered() + 
-  xlab("Term") +
-  theme(
-    axis.text.y = element_text(size = 5),
-    axis.text.x = element_text(size = 5),
-    strip.text = element_text(size = 5))
-```
-
+Indeed, we have observed a 'description' and 'display name' of the subreddit. We will use this information to regroup the subreddits in a more meaningful way via web scraping.
 
 ### Extract description and display name of subreddit
 
 better method to scrape data
 ```{r, eval=FALSE}
-library(rvest)
-library(httr)
-
 # Function to scrape display-name and description
 get_subreddit_metadata <- function(subreddit) {
   # Construct the URL
