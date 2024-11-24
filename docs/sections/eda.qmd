@@ -1,5 +1,21 @@
-# EDA
+```{r viridis, eval=FALSE, echo=FALSE}
+#save some viridis colors
+viridis_1 <- viridis(10)[1]
+viridis_2 <- viridis(10)[2]
+viridis_3 <- viridis(10)[3]
+virisdis_4 <- viridis(10)[4]
+viridis_5 <- viridis(10)[5]
+viridis_6 <- viridis(10)[6]
+viridis_7 <- viridis(10)[7]
+viridis_8 <- viridis(10)[8]
+viridis_9 <- viridis(10)[9]
+viridis_10 <- viridis(10)[10]
 
+#plot each color side by side to observe them
+plot(1:10, rep(1, 10), col = viridis(10), pch = 19, cex = 2, xlab = "Color", ylab = "Color", xlim = c(0, 11), ylim = c(0, 2), xaxt = "n", yaxt = "n")
+```
+
+# EDA
 ## Text Mining
 ### A subreddit = A document
 
@@ -16,16 +32,15 @@ cat("Number of subreddits:", nrow(df.subreddit), "\n")
 
 # show top 10 subreddits by length in a bar plot
 df.subreddit %>%
-  mutate(subreddit = reorder(subreddit, nchar(body))) %>%
+  mutate(subreddit = reorder(subreddit, nchar(body), fill = nchar(body))) %>%
   top_n(10, nchar(body)) %>%
   ggplot(aes(x = subreddit, y = nchar(body))) +
-  geom_col() +
+  geom_col(fill = viridis_4) +
   coord_flip() +
   labs(title = "Top 10 Subreddits by Length", x = "Subreddit", y = "Length") +
   #increase text size
   theme(axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10))
-
 ```
 
 We observe that AskReddit is by far the largest Subreddit
