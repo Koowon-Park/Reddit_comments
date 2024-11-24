@@ -5,7 +5,8 @@ editor: visual
 ---
 
 # LEO CODE
-```{r eval=FALSE, echo=FALSE} 
+
+```{r eval=FALSE, echo=FALSE}
 # Load the necessary library
 #install.packages("jsonlite") 
 #install.packages("plyr") # Run this 2 lines in console only if not installed
@@ -44,6 +45,7 @@ cat("Conversion complete! CSV saved as reddit_small.csv\n")
 ```
 
 # URS CODE
+
 ## Check consistency accross txt file
 
 ```{r echo=FALSE, eval=FALSE}
@@ -167,6 +169,7 @@ cat("Total rows processed:", results$total_rows, "\n")
 cat("Columns saved:", paste(results$columns, collapse = ", "), "\n")
 cat("Output file size:", round(results$file_size/1024/1024, 2), "MB\n")
 ```
+
 ```{r}
 #load the data
 df_reddit <- read.csv("reddit_comments_15k.csv")
@@ -226,6 +229,65 @@ ggplot(data = df.subreddit.cos.mat, aes(x=Var1, y=Var2, fill=value)) +
     axis.text.y = element_text(size = 5)) +
   xlab("") + 
   ylab("")
+
+#We restrict ourselves to a small subset of the highest tf-idf of the data to avoid memory issues and readability issues in the plots.
+df.subreddit.tfidf.small <- df.subreddit.tfidf[1:50,]
+df.subreddit.tfidf.small
+
+df.subreddit.jac <- textstat_simil(
+  df.subreddit.tfidf.small, method = "jaccard", margin = "documents")
+
+df.subreddit.cos <- textstat_simil(
+  df.subreddit.tfidf.small, method = "cosine", margin = "documents")
+
+df.subreddit.eucl <- textstat_dist(
+  df.subreddit.tfidf.small, method = "euclidean", margin = "documents")
+
+#heatmap representation of similariteis between subreddits
+## jaccard
+df.subreddit.jac.mat <- melt(as.matrix(df.subreddit.jac))
+ggplot( data = df.subreddit.jac.mat, 
+        mapping = aes(x = Var1, y = Var2, fill = value)) +
+  scale_fill_gradient2(
+    low = "blue", 
+    high = "red", 
+    mid = 'white', 
+    midpoint = 0.5, 
+    limit = c(0,1), 
+    name = "Jaccard") +
+  geom_tile() + xlab("") + ylab("") +
+  #incline x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+## cosine
+df.subreddit.cos.mat <- melt(as.matrix(df.subreddit.cos))
+ggplot( data = df.subreddit.cos.mat, 
+        mapping = aes(x = Var1, y = Var2, fill = value)) +
+  scale_fill_gradient2(
+    low = "blue", 
+    high = "red", 
+    mid = 'white', 
+    midpoint = 0.5, 
+    limit = c(0,1), 
+    name = "Cosine") +
+  geom_tile() + xlab("") + ylab("") +
+  #incline x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+## euclidean
+df.subreddit.eucl.mat <- melt(as.matrix(df.subreddit.eucl))
+ggplot( data = df.subreddit.eucl.mat, 
+        mapping = aes(x = Var1, y = Var2, fill = value)) +
+  scale_fill_gradient2(
+    low = "blue", 
+    high = "red", 
+    mid = 'white', 
+    midpoint = 0.5, 
+    limit = c(0,1), 
+    name = "Euclidean") +
+  geom_tile() + xlab("") + ylab("") +
+  #incline x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 Lots of words are similar in terms of cosine similarity. this is peculiar which means that they are used in a similar proportion through subreddits.
@@ -260,6 +322,7 @@ word_counts <- df_words %>%
 head(word_counts, 20)
 
 ```
+
 ```{r leo_test2, eval=TRUE, echo=TRUE}
 # Load necessary libraries
 library(dplyr)
@@ -296,4 +359,3 @@ print(df_combined)
 
 
 ```
-
