@@ -11,7 +11,7 @@ setting eval=FALSE will not run the code when knitting the document
 
 ## check the CSV
 
-```{r load_data, cache=TRUE}
+```{r load_data, cache=TRUE, eval=FALSE}
 #load csv with here
 df <- read.csv(here("data/reddit_comments_15k.csv"))
 (head(df, 10))
