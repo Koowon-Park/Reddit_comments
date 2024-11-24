@@ -644,7 +644,7 @@ corpus <- tm_map(corpus, removeWords, stopwords("en"))
 dtm <- DocumentTermMatrix(corpus)
 ```
 
-### clusters
+#### clusters
 
 ```{r, cache=TRUE}
 set.seed(123)
@@ -658,18 +658,188 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
 combined_subreddit_theme <- combined_subreddit_theme[!duplicated(combined_subreddit_theme$subreddit), ]
 ```
 
-merge df with combined_subreddit_theme
+#### other way to cluster
+topic modeling with LDA 
 
 ```{r}
+# Define irrelevant words
+irrelevant_words <- c("reddit", "reddit's","www.reddit.com","https","http", "subreddit", "redditors","related", "community", "dedicated", "discussion", "discuss", "discussed")
+
+# Remove irrelevant words during the cleaning process
+data_clean <- combined_subreddit_theme %>%
+  unnest_tokens(word, description) %>%    # Tokenize the text into words
+  anti_join(stop_words, by = "word") %>%  # Remove stopwords
+  filter(!word %in% irrelevant_words) %>% # Exclude specific words
+  filter(!str_detect(word, "^[0-9]+$"))   # Remove numbers
+
+# Create a document-term matrix
+dtm <- data_clean %>%
+  count(subreddit, word) %>%                     # Count words per subreddit
+  cast_dtm(subreddit, word, n)                  # Create the DTM
+# Fit the LDA model
+num_topics <- 5  # Adjust based on your dataset
+lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
+
+```
+
+```{r}
+# Get the terms associated with each topic
+topics <- tidy(lda_model, matrix = "beta")
+
+# Top terms for each topic
+top_terms <- topics %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+print(top_terms)
+
+# Get the topic distribution for each subreddit
+subreddit_topics <- tidy(lda_model, matrix = "gamma")
+
+print(subreddit_topics)
+
+```
+```{r}
+# Visualize the top terms in each topic
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()
+
+```
+
+#### using LDA to cluster
+```{r}
+# Fit an LDA model
+library(topicmodels)
+
+num_topics <- 30  # Choose the number of topics you want to extract
+lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
+
+# View the fitted LDA model
+lda_model
+
+```
+
+
+```{r}
+# Extract term-topic probabilities
+
+topics <- tidy(lda_model, matrix = "beta")
+
+# Top terms for each topic
+top_terms <- topics %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+print(top_terms)
+# Extract subreddit-topic distributions
+subreddit_topics <- tidy(lda_model, matrix = "gamma")
+
+print(subreddit_topics)
+
+```
+vizualize the top terms in each topic
+```{r}
+
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(title = "Top Terms in Each Topic",
+       x = "Terms",
+       y = "Beta")
+
+```
+
+extract dominant topic
+```{r}
+# Extract subreddit-topic probabilities
+subreddit_topics <- tidy(lda_model, matrix = "gamma")
+
+# Find the topic with the highest probability for each subreddit
+dominant_topics <- subreddit_topics %>%
+  group_by(document) %>%
+  slice_max(gamma, n = 1) %>%
+  ungroup() %>%
+  rename(subreddit = document, dominant_topic = topic)
+
+# View dominant topics
+print(dominant_topics)
+
+```
+
+merge
+```{r}
+# Add dominant topic to the original dataframe
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  left_join(dominant_topics, by = c("subreddit" = "subreddit"))
+
+# Create a named vector for topic mapping
+topic_names <- c(
+  "Sports and Team Gaming", 
+  "Casual Chat and Relationships", 
+  "Discord Communities and Gaming Servers", 
+  "Wiki and Information Sharing", 
+  "Anime and Manga Discussions", 
+  "Tech Enthusiasts and Linux Support", 
+  "Privacy and Dark Web Discussions", 
+  "Comics, GIFs, and Visual Media", 
+  "Mobile Apps and Development", 
+  "Rules and Moderation", 
+  "E-Commerce and Product Questions", 
+  "Home Improvement and Quality Discussions", 
+  "History and Political Discussions", 
+  "University Life and Study Tips", 
+  "Professional Advice and Design Projects", 
+  "Gaming and Survival Threads", 
+  "Fan Communities and Sports", 
+  "Personal Advice and Social Experiences", 
+  "Video Games and Gaming Franchises", 
+  "Sci-Fi and Entertainment Discussions", 
+  "Social Identity and Online Communities", 
+  "News and Current Events", 
+  "Art and Creative Reviews", 
+  "Women and LGBTQ+ Creative Spaces", 
+  "Lifestyle and Social Conversations", 
+  "Music and Pop Culture", 
+  "Tech Forums and Online Collaboration", 
+  "Local Experiences and Lifestyle", 
+  "Global Culture and Ideas", 
+  "College Life and Sports"
+)
+
+# Replace the dominant_topic column with topic names
+
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  mutate(dominant_topic = topic_names[dominant_topic])
+
+# View updated dataframe
+head(combined_subreddit_theme)
+
+
+```
+
+merge df with combined_subreddit_theme
+
+```{r, warning=FALSE}
 # Perform a left join to add the columns to 'df'
 df <- df %>%
   left_join(combined_subreddit_theme, by = "subreddit")
 ```
 
-### other way to cluster
-topic modeling with LDA / similarity
 
-### scrap related subreddits
+### Scrap related subreddits
 ```{r, eval=FALSE}
 
 # Function to scrape related subreddits
@@ -801,7 +971,7 @@ df <- df %>%
   left_join(combined_subreddit_related, by = "subreddit")
 ```
 
-### plot graph of matching related subreddits
+### Plot graph of matching related subreddits
 ```{r}
 
 # Filter rows where `matching_related_subreddits` is not empty
@@ -892,100 +1062,57 @@ plot(
 
 
 ```
+top 20 most related
 
+```{r}
+# Filter rows where `matching_related_subreddits` is not empty
+filtered_data <- combined_subreddit_related[
+  combined_subreddit_related$matching_related_subreddits != "", 
+]
 
+# Take only the first 1000 rows (for performance reasons)
+filtered_data <- head(filtered_data, 1000)
 
-using reddit api
+# Prepare the edges for the graph
+edges <- do.call(rbind, lapply(1:nrow(filtered_data), function(i) {
+  source <- filtered_data$subreddit[i]
+  targets <- unlist(strsplit(filtered_data$matching_related_subreddits[i], ",\\s*"))
+  if (length(targets) > 0) {
+    data.frame(from = source, to = targets, stringsAsFactors = FALSE)
+  }
+}))
 
-```{r echo=FALSE}
-# # Load necessary libraries
-# library(httr)
-# library(jsonlite)
-# 
-# # Replace these with your actual Reddit app's client ID, client secret, and redirect URI
-# client_id <- "Qw1A2hzjh5bsUpKvvTSM-A"
-# client_secret <- "_tk5YYxoVjiZqMmAFx3SfE9tF8rlZg"
-# redirect_uri <- "http://localhost:8000"  # Make sure this matches the redirect URI you set in Reddit
-# 
-# # Step 1: Get the authorization URL
-# authorize_url <- paste0("https://www.reddit.com/api/v1/authorize?client_id=", client_id,
-#                        "&response_type=code&state=some_random_string&redirect_uri=", redirect_uri,
-#                        "&scope=read")
-# 
-# # Print the URL and manually visit it to authorize the app
-# cat("Visit this URL to authorize the app:\n", authorize_url, "\n")
-# 
-# # Once authorized, you will be redirected to the redirect_uri with a 'code' parameter in the URL
-# # You need to capture the 'code' parameter, which you will use to obtain an access token
-# 
-# # Step 2: User visits the URL and grants permission, then gets the 'code' from the URL
-# 
-# # Prompt user to enter the code received after authorization
-# auth_code <- readline(prompt = "Enter the code you received from Reddit: ")
-# 
-# # Step 3: Use the code to get an access token
-# token_response <- POST("https://www.reddit.com/api/v1/access_token",
-#                        authenticate(client_id, client_secret),
-#                        body = list(
-#                          grant_type = "authorization_code",
-#                          code = auth_code,
-#                          redirect_uri = redirect_uri
-#                        ),
-#                        encode = "form")
-# 
-# # Parse the response to get the access token
-# token_data <- fromJSON(content(token_response, "text"))
-# access_token <- token_data$access_token
-# 
-# # Step 4: Use the access token to make authorized API requests
-# # Now you can make authenticated requests to Reddit's API
-# 
-# # Example: Get subreddit metadata (e.g., display name and description)
-# get_subreddit_metadata <- function(subreddit) {
-#   url <- paste0("https://www.reddit.com/r/", subreddit, "/about.json")
-#   
-#   # Send a GET request to Reddit API with the authorization header
-#   response <- GET(url, add_headers(Authorization = paste("Bearer", access_token)))
-#   
-#   if (status_code(response) != 200) {
-#     return(data.frame(
-#       subreddit = subreddit,
-#       display_name = NA,
-#       description = NA,
-#       stringsAsFactors = FALSE
-#     ))
-#   }
-#   
-#   # Parse the JSON response
-#   data <- fromJSON(content(response, "text"))
-#   
-#   # Extract metadata
-#   display_name <- data$data$display_name
-#   description <- data$data$public_description
-#   
-#   # Return the result
-#   return(data.frame(
-#     subreddit = subreddit,
-#     display_name = display_name,
-#     description = description,
-#     stringsAsFactors = FALSE
-#   ))
-# }
-# 
-# # Example list of subreddits to get metadata for
-# subreddit_names <- c("r/programming", "r/learnprogramming")
-# 
-# # Get metadata for the subreddits
-# subreddit_metadata <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
-#   Sys.sleep(2)  # Optional: add a delay between requests to avoid rate limiting
-#   get_subreddit_metadata(subreddit)
-# }))
-# 
-# # View the results
-# print(subreddit_metadata)
+# Ensure no duplicates in edges
+edges <- unique(edges)
 
+# Count the number of links to each subreddit
+link_counts <- table(edges$to)
+link_counts <- sort(link_counts, decreasing = TRUE) # Sort by most links
+
+# Extract the top 20 subreddits with the most links
+top_20_subreddits <- head(link_counts, 20)
+
+# Convert to a data frame for better readability
+top_20_df <- as.data.frame(top_20_subreddits)
+colnames(top_20_df) <- c("Subreddit", "Number_of_Links")
+
+# Display the top 20 subreddits
+print(top_20_df)
+
+# Optionally, create a barplot
+barplot(
+  top_20_df$Number_of_Links, 
+  names.arg = top_20_df$Subreddit, 
+  las = 2, # Rotate labels for better readability
+  col = "steelblue", 
+  main = "Top 20 Subreddits with Most Links to Them",
+  ylab = "Number of Links",
+  cex.names = 0.8 # Adjust label size
+)
 
 ```
+
+
 
 
 ## Sentiment Analysis
