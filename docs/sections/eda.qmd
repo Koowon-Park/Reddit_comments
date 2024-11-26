@@ -749,14 +749,12 @@ combined_subreddit_theme %>%
   theme_minimal()
 ```
 
-no interest to see
+The k-means clustering method does not present interesting results.
 
 
-#### lda test 5
+#### Further tests with the LDA method
 
-topic modeling with LDA
-
-Test to see if it works
+Based on the data we scrapped, we test our most promising method (LDA) on small scale of our new, more precise, dataset.
 
 ```{r cache=TRUE}
 # Define irrelevant words
@@ -774,7 +772,7 @@ dtm <- data_clean %>%
   count(subreddit, word) %>%                     # Count words per subreddit
   cast_dtm(subreddit, word, n)                  # Create the DTM
 # Fit the LDA model
-num_topics <- 5  # Adjust based on your dataset
+num_topics <- 5  
 lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
 
 # Get the terms associated with each topic
@@ -807,20 +805,13 @@ top_terms %>%
   scale_x_reordered()
 ```
 
-higher the better We see that it works
-
-#### LDA 30
-
-real test with 30 topics 30 topics becaucause...
+We see that the results are promising, we keep analyzing further.We now test with 30 topics. We use this incremental method because of the heavy computational resources needed for this method.
 
 ```{r, cache=TRUE}
 num_topics <- 30  # Choose the number of topics you want to extract
 lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
 
-lda_model
-```
 
-```{r}
 # Extract term-topic probabilities
 topics <- tidy(lda_model, matrix = "beta")
 
@@ -839,8 +830,7 @@ subreddit_topics <- tidy(lda_model, matrix = "gamma")
 print(subreddit_topics)
 ```
 
-vizualize the top terms in each topic
-
+Visualize:
 ```{r}
 top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
@@ -999,8 +989,8 @@ ggplot(df.top30_subreddit.bing, aes(x = Sentiment, y = reorder(subreddit, Sentim
         axis.text.x = element_text(size = 10))
 ```
 
-BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary.
-Indeed, we observe the same pattern with `pcmasterrace` at the top and `news` at the bottom, but there is slight variation when compared to the AFINN dictionnary.
+BING seems to reflect the same proportion of positive and negative as the AFINN dictionary.
+Indeed, we observe the same pattern with `pcmasterrace` at the top and `news` at the bottom, but there is slight variation when compared to the AFINN dictionary.
 
 #### NRC
 
@@ -1024,10 +1014,10 @@ ggplot(df.top30_subreddit.nrc, aes(x = Sentiment, y = reorder(subreddit, Sentime
         axis.text.x = element_text(size = 10))
 ```
 
-Through the NRC dictionnary we observe far more positive subreddits than negative ones.
-This inbalance could be explain by the fact that the NRC dictionnary is more biased towards positive words.
+Through the NRC dictionary we observe far more positive subreddits than negative ones.
+This imbalance could be explain by the fact that the NRC dictionnary is more biased towards positive words.
 
-We still observe quite the same patterns though with `pcmasterrace` at the top and `news` at the bottom.
+We still observe quite the same patterns though with `pcmasterrace` at the top and `news` near the bottom.
 
 #### Summary
 
@@ -1109,11 +1099,11 @@ reactable(df.sentiment.b,
 #write_csv(df.sentiment, "../../data/BING_sentiment_sample.csv")
 ```
 
-After reading the comments, we observe that they are mostly right.
-For example this comment was classified as neutral with a score of 0 : \[Dude Congrats Im hoping to lose a large amount of weight in the same amount of time Huge inspiration here Keep kicking ass\]
+After reading the comments, we observe mixed results.
 
-And this comment was classified as quite negative with a score of -2 : \[Why did the chicken cross the road It didnt HHAHHAHAHAHHAHAHHA sorry that wasnt funny 472\].
-It seems, it did not understood the context
+  -  \[Dude Congrats Im hoping to lose a large amount of weight in the same amount of time Huge inspiration here Keep kicking ass\] was classified as neutral with a score of 0.
+
+  - \[Why did the chicken cross the road It didnt HHAHHAHAHAHHAHAHHA sorry that wasnt funny 472\] was classified as quite negative with a score of -2; it seems, it did not understand the full context
 
 #### NRC
 
@@ -1146,7 +1136,7 @@ reactable(df.sentiment.n,
 ```
 
 We observe here that comments like "Night time moon light and a light snow The glow of the moon and the silence is amazing", which evokes a serene and appreciative tone for natural beauty suggest a strong positive emotion.
-The three dictionaries seem to have classified this comment as positive with the BING and AFINN dicitonnary attributing a higher score than the NRC.
+The three dictionaries seem to have classified this comment as positive with the BING and AFINN dictionary attributing a higher score than the NRC.
 
 #### Vizualising the Sentiment distribution based on a dictionnary
 
@@ -1228,9 +1218,9 @@ With more neutral comments, NRC might be the best choice.
 
 #### LLM interpretation
 
-We are going to use some LLM on a random sample to judge the accuracy of each dictionnary and judge which one to take.
+We are going to use some LLM on a random sample to judge the accuracy of each dictionary and judge which one to take.
 
-prompt : 'Assign a sentiment score to this reddit comment from 0 (extremely negative) to 1 (extremely positive)'
+prompt : 'Assign a sentiment score to this Reddit comment from 0 (extremely negative) to 1 (extremely positive)'
 
 Loop through the comments and assign a sentiment score
 
@@ -1456,6 +1446,8 @@ ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = clust
 ```
 
 ## Additional Variable
+
+We now refine our dataset to explore some more relationships, as well as plotting a first knowledge graph.
 
 ### related subreddits
 
