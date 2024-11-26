@@ -1320,6 +1320,23 @@ ggplot(df_low_score, aes(x = score)) +
 
 ```
 
+#### Score categoreis
+```{r}
+df <- df %>%
+  mutate(score_category = case_when(
+    score >= 100 ~ "extremely_positive",
+    score >= 20 & score < 100 ~ "very_positive",
+    score >= 10 & score < 20 ~ "positive",
+    score >= 2 & score < 10 ~ "somewhat_positive",
+    score == 1 ~ "untouched",
+    score > -10 & score <= 0 ~ "somewhat_negative",
+    score >= -20 & score <= -10 ~ "negative",
+    score < -20 ~ "very_negative"
+  ))
+```
+
+
+
 ```{r}
 # Counting unique subreddits in the dataset
 unique_subreddits <- n_distinct(df_high_score$subreddit)
@@ -1758,8 +1775,21 @@ df <- df %>%
 # Save the final dataset to a CSV file
 # select only columns ; 'id','author' ,'subreddit', 'display_name', 'body', 'score', 'sentiment_category', 'length', 'description', 'theme'
 df <- df %>%
-  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme)
-#write_csv(df, "../../data/reddit_comments_15k_v2.csv")
+  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, score_category)
+
+# Adding score categories
+df <- df %>%
+  mutate(score_category = case_when(
+    score >= 100 ~ "extremely_positive",
+    score >= 20 & score < 100 ~ "very_positive",
+    score >= 10 & score < 20 ~ "positive",
+    score >= 2 & score < 10 ~ "somewhat_positive",
+    score == 1 ~ "untouched",
+    score > -10 & score <= 0 ~ "somewhat_negative",
+    score >= -20 & score <= -10 ~ "negative",
+    score < -20 ~ "very_negative"
+  ))
+write_csv(df, "../../data/reddit_comments_15k_v2.csv")
 #load the data
 df <- read_csv("../../data/reddit_comments_15k_v2.csv")
 #count nunber of rows
