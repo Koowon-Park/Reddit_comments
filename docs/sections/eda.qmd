@@ -830,7 +830,7 @@ topics <- tidy(lda_model, matrix = "beta")
 # Top terms for each topic
 top_terms <- topics %>%
   group_by(topic) %>%
-  slice_max(beta, n = 10) %>%
+  slice_max(beta, n = 15) %>%
   ungroup() %>%
   arrange(topic, -beta)
 
@@ -858,19 +858,21 @@ top_terms %>%
 
 chosen method because best so far
 
+below is just the graph in text
+
 ```{r}
 library(dplyr)
 
 # Assuming your data is stored in a dataframe called `top_terms`
 top_terms_text <- top_terms %>%
   group_by(topic) %>%                # Group by topic
-  slice_max(order_by = beta, n = 10) %>% # Select top 10 terms by beta for each topic
+  slice_max(order_by = beta, n = 15) %>% # Select top 15 terms by beta for each topic
   arrange(topic, desc(beta)) %>%     # Arrange terms by topic and beta
   summarise(top_words = paste(term, collapse = ", ")) %>% # Combine the top 10 terms into a single string
   ungroup()
 
 # View the result
-print(top_terms_text)
+#print(top_terms_text)
 
 ```
 
@@ -904,37 +906,38 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
   left_join(dominant_topics, by = c("subreddit" = "subreddit"))
 
 topic_names <- c(
-  "Gaming and Role-Playing Communities", 
-  "Mobile Apps and Fan Communities", 
-  "Creative Content Sharing", 
-  "Comics and Literature Communities", 
-  "Football and Social Discussions", 
-  "Hobbies and Food Enthusiasts", 
-  "Tech and Product Enthusiasts", 
-  "NSFW and Adult Content", 
-  "Tech and VR Appreciation", 
-  "Beauty and Women’s Discussions", 
-  "Music and Art Culture", 
-  "Visual Content and Cars", 
-  "Science and Ideas", 
-  "Entertainment and TV Shows", 
-  "Gaming Worlds and Nintendo", 
-  "Memes and Social Chats", 
-  "Football, Sports Discussions, College", 
-  "Art and Magic Enthusiasts", 
-  "Anime and Manga Fandoms", 
-  "Survival and Animal Fans", 
-  "Fandoms and Cosplay", 
-  "Online Media and Programming", 
-  "Fictional Stories and Family", 
-  "Rules and Discussions", 
-  "News and Local Events", 
-  "Lifestyle and Living Advice", 
-  "Reddit Moderation and Policies", 
-  "Sports and Team Discussions", 
-  "Minecraft and Life Tips", 
-  "Home and Internet Communities"
+  "Trading, Learning, and Community Chats", 
+  "Mobile Apps, Gaming, and Fan Art", 
+  "Creative Content Sharing and Technology", 
+  "Comics, Books, and Safe Spaces", 
+  "Football, Stories, and Social Clubs", 
+  "Hobbies, Food, and Enthusiast Groups", 
+  "Tech, Hardware, and Gaming Products", 
+  "NSFW and Adult Content Communities", 
+  "Tech Enthusiasts and VR Communities", 
+  "Beauty, Women, and Professional Advice", 
+  "Music, Art, and Cultural Events", 
+  "Visual Media and Car Enthusiasts", 
+  "Science, Research, and Fiction", 
+  "TV Shows, University Life, and Writing", 
+  "Video Games and Nintendo Focus", 
+  "Memes, Projects, and Recipe Sharing", 
+  "Football, College, and Team Discussions", 
+  "Creative Artwork and Magic Enthusiasts", 
+  "Anime, Manga, and Visual Media", 
+  "Animal Fans and Survival Communities", 
+  "Star Wars, Cosplay, and Global Analysis", 
+  "Social Media, Programming, and Roleplaying", 
+  "Family, Fictional Worlds, and Storytelling", 
+  "Rules, Moderation, and Wiki Communities", 
+  "Local News, Events, and Politics", 
+  "Lifestyle, Fashion, and Living Advice", 
+  "Reddit Issues, Policies, and Protests", 
+  "Sports, Team Discussions, and Strategies", 
+  "Life Tips, Minecraft, and Industry Skills", 
+  "Home, Forums, and Internet Enthusiasts"
 )
+
 
 
 # Replace the dominant_topic column with topic names
@@ -945,6 +948,7 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
 # View updated dataframe
 head(combined_subreddit_theme)
 ```
+In the table combined_subreddit_theme, the subreddit are regrouped in a more meaningful way only when beta is closer from 1. But it's far from perfect, in the end the best method is probably to find a theme manually for each subreddit.
 
 merge df with combined_subreddit_theme
 
