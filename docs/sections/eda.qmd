@@ -716,6 +716,18 @@ subreddit_last <-read_csv("../../data/subreddit_metadata_last2500.csv")
 subreddit_last <- na.omit(subreddit_last)
 # Combine the two dataframes
 combined_subreddit_theme <- rbind(subreddit_first1000, subreddit_next2500,subreddit_last)
+# Replace "/r/" with "subreddit" in the 'description' column of the 'combined_subreddit_theme' dataframe
+combined_subreddit_theme$description <- gsub("/r/", "subreddit ", combined_subreddit_theme$description)
+
+# Remove emojis and special characters from the 'description' column
+combined_subreddit_theme$description <- gsub("[^[:alnum:][:space:]]", "", 
+                                             iconv(combined_subreddit_theme$description, 
+                                                   from = "UTF-8", to = "ASCII", sub = ""))
+
+# View the cleaned dataframe
+head(combined_subreddit_theme)
+
+
 ```
 
 clustering test similarity
@@ -831,7 +843,7 @@ print(subreddit_topics)
 ```
 
 Visualize:
-```{r}
+```{r, warning=FALSE}
 top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(term, beta, fill = as.factor(topic))) +
