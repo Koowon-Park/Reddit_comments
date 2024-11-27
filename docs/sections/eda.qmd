@@ -1,4 +1,4 @@
-```{r viridis, eval=FALSE, echo=FALSE}
+```{r viridis, eval=TRUE, echo=FALSE}
 #save some viridis colors
 viridis_1 <- viridis(10)[1]
 viridis_2 <- viridis(10)[2]
