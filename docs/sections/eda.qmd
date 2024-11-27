@@ -858,6 +858,23 @@ top_terms %>%
 
 chosen method because best so far
 
+```{r}
+library(dplyr)
+
+# Assuming your data is stored in a dataframe called `top_terms`
+top_terms_text <- top_terms %>%
+  group_by(topic) %>%                # Group by topic
+  slice_max(order_by = beta, n = 10) %>% # Select top 10 terms by beta for each topic
+  arrange(topic, desc(beta)) %>%     # Arrange terms by topic and beta
+  summarise(top_words = paste(term, collapse = ", ")) %>% # Combine the top 10 terms into a single string
+  ungroup()
+
+# View the result
+print(top_terms_text)
+
+```
+
+
 ### extract dominant topic
 
 to see more granularity
@@ -886,39 +903,39 @@ merge
 combined_subreddit_theme <- combined_subreddit_theme %>%
   left_join(dominant_topics, by = c("subreddit" = "subreddit"))
 
-# Create a named vector for topic mapping
 topic_names <- c(
-  "Sports and Team Gaming", 
-  "Casual Chat and Relationships", 
-  "Discord Communities and Gaming Servers", 
-  "Wiki and Information Sharing", 
-  "Anime and Manga Discussions", 
-  "Tech Enthusiasts and Linux Support", 
-  "Privacy and Dark Web Discussions", 
-  "Comics, GIFs, and Visual Media", 
-  "Mobile Apps and Development", 
-  "Rules and Moderation", 
-  "E-Commerce and Product Questions", 
-  "Home Improvement and Quality Discussions", 
-  "History and Political Discussions", 
-  "University Life and Study Tips", 
-  "Professional Advice and Design Projects", 
-  "Gaming and Survival Threads", 
-  "Fan Communities and Sports", 
-  "Personal Advice and Social Experiences", 
-  "Video Games and Gaming Franchises", 
-  "Sci-Fi and Entertainment Discussions", 
-  "Social Identity and Online Communities", 
-  "News and Current Events", 
-  "Art and Creative Reviews", 
-  "Women and LGBTQ+ Creative Spaces", 
-  "Lifestyle and Social Conversations", 
-  "Music and Pop Culture", 
-  "Tech Forums and Online Collaboration", 
-  "Local Experiences and Lifestyle", 
-  "Global Culture and Ideas", 
-  "College Life and Sports"
+  "Gaming and Role-Playing Communities", 
+  "Mobile Apps and Fan Communities", 
+  "Creative Content Sharing", 
+  "Comics and Literature Communities", 
+  "Football and Social Discussions", 
+  "Hobbies and Food Enthusiasts", 
+  "Tech and Product Enthusiasts", 
+  "NSFW and Adult Content", 
+  "Tech and VR Appreciation", 
+  "Beauty and Women’s Discussions", 
+  "Music and Art Culture", 
+  "Visual Content and Cars", 
+  "Science and Ideas", 
+  "Entertainment and TV Shows", 
+  "Gaming Worlds and Nintendo", 
+  "Memes and Social Chats", 
+  "Football, Sports Discussions, College", 
+  "Art and Magic Enthusiasts", 
+  "Anime and Manga Fandoms", 
+  "Survival and Animal Fans", 
+  "Fandoms and Cosplay", 
+  "Online Media and Programming", 
+  "Fictional Stories and Family", 
+  "Rules and Discussions", 
+  "News and Local Events", 
+  "Lifestyle and Living Advice", 
+  "Reddit Moderation and Policies", 
+  "Sports and Team Discussions", 
+  "Minecraft and Life Tips", 
+  "Home and Internet Communities"
 )
+
 
 # Replace the dominant_topic column with topic names
 
