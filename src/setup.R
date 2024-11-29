@@ -79,9 +79,9 @@ purrr::walk(packages, function(pkg) {
 ########################################
 ## The following sets the python path ##
 ########################################
-#library(reticulate)
-#use_python("C:/Python312/python.exe")
-#py_config()
+# library(reticulate)
+# use_python("C:/Python312/python.exe")
+# py_config()
 # reticulate::use_condaenv("NAME_OF_YOUR_ENVIRONMENT")
 
 

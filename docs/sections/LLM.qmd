@@ -1,0 +1,81 @@
+# LLM Integration
+
+```{r}
+library(reticulate)
+library(here)
+use_virtualenv(here("venv"), required = TRUE)
+#use_python("C:/Python312/python.exe")
+#py_config()
+```
+
+# NEO4J problem
+##drop col description
+
+```{python}
+import csv
+import pandas as pd
+
+file_path = "../../data/reddit_comments_15k_v2.csv"
+
+# Step 1: Load the data into pandas
+df = pd.read_csv(file_path)
+
+#drop column 'body'
+df = df.drop(columns=['description'])
+
+#save
+df.to_csv("../../data/reddit_comments_15k_v3.csv", index=False)
+```
+
+
+## NEO4J
+
+```{python}
+#install neo4j
+from neo4j import GraphDatabase
+uri = "bolt://localhost:7687"
+#connect to the database
+driver = GraphDatabase.driver(uri, auth=("neo4j", "11111111"))
+
+def fetch_data(query):
+    with driver.session() as session:
+        result = session.run(query)
+        return [record for record in result]
+
+# Query example
+query = """
+MATCH (s:Sentiment)<-[:HAS_SENTIMENT]-(c:Comment)
+RETURN s.type AS sentiment_type, c.id AS comment_id, c.score AS score, c.sentiment_category AS sentiment_category
+LIMIT 10
+"""
+data = fetch_data(query)
+
+# Extract data in a usable format
+comments = [
+    {
+        "comment_id": record["comment_id"],
+        "score": record["score"],
+        "sentiment_type": record["sentiment_type"],
+        "sentiment_category": record["sentiment_category"],
+    }
+    for record in data
+]
+
+# Display formatted results
+for comment in comments:
+    print(comment)
+```
+# LLM Integration
+
+```{python}
+from transformers import pipeline
+
+messages = [
+    {"role": "user", "content": "Who are you?"},
+]
+pipe = pipeline("text-generation", model="mistralai/Mistral-7B-Instruct-v0.2")
+pipe(messages)
+```
+
+
+
