@@ -16,9 +16,16 @@ plot(1:10, rep(1, 10), col = viridis(10), pch = 19, cex = 2, xlab = "Color", yla
 ```
 
 # EDA
-## Intro- A subreddit = A document
 
-Here i take the idea that a 'document' is a subreddit. It is like all comments that are part of one subreddit will be a document. It is a bit an analysis per subreddit
+## Intro: General exploration
+
+### Subreddits
+
+For further discussions: a subreddit = A document
+
+Here we take the idea that a 'document' is a subreddit.
+It is like all comments that are part of one subreddit will be a document, this will help for text mining analysis down the line.
+Here is a visualization of comments per subreddit
 
 ```{r top_10_sub, eval=TRUE, echo=TRUE}
 #take the df data and group all comments by subreddit
@@ -42,7 +49,12 @@ df.subreddit %>%
         axis.text.x = element_text(size = 10))
 ```
 
-We observe that AskReddit is by far the largest Subreddit
+We observe that AskReddit is by far the largest Subreddit.
+Half of the top 10 subreddits are for large audiences (i.e. news/worldnews, funny, etc.), while the other half is for more niche subjects.
+
+### Words
+
+Here, we have a look at the most used words within comments while controlling for "meaningless" words, such as common stopwords (the, it, etc.) and reddit-related redundant words (reddit, subreddit, etc.)
 
 ```{r word_freq, eval=TRUE, echo=TRUE, cache=TRUE}
 # preprocess the text data
@@ -95,7 +107,10 @@ df.subreddit.freq %>%
 
 ```
 
-We observe here a lot of abbreviations that are not taken into account by the stop words. Indeed, lots of word are just because the author removed the '. So for example. i'm becomes im or you're becomes youre.
+We observe here a lot of abbreviations that are not taken into account by the stop words.
+Indeed, a lot of word are still meaningless without context (I'm, You're, etc.)
+
+We then produce a word cloud for better visualization of the most common words
 
 ```{r textplot_wordcloud, eval=TRUE, echo=TRUE}
 #textplot_wordcloud(df.subreddit.dfm)
@@ -111,6 +126,16 @@ df.subreddit.freq %>%
 
 We can observe that the most frequent words are 'people', 'time', 'game'.
 
+#### Term-frequency - Inverse document frequency (TF-IDF)
+
+This methods allows for an exploration of unique word usage per subreddits.
+
+$$TF=\frac{Number\ of\ times\ the\ term\ appears\ in\ the\ document}{Total\ number\ of\ terms\ in\ the\ document}$$
+
+$$IDF=\log{\frac{Number\ of\ times\ the\ term\ appears\ in\ the\ document}{Total\ number\ of\ terms\ in\ the\ document}}$$
+
+These two equations combined show when a word is important within a single subreddit, they balance the commonality within a document (a subreddit) and the rarity within the entire corpus (reddit as a whole)
+
 ```{r tf_idf, eval=TRUE, echo=TRUE}
 #tf-idf
 df.subreddit.tfidf <- dfm_tfidf(df.subreddit.dfm)
@@ -120,7 +145,8 @@ df.subreddit.tfidf.tidy <- tidy(df.subreddit.tfidf) %>%
 head(df.subreddit.tfidf.tidy, n = 20) %>% flextable() %>% autofit()
 ```
 
-So tf_idf shows us rare words that are used in a specific subreddit. So we have here lot's of 'small' and 'rare' subreddit that have specific words that are not used in other subreddit. This is interesting as it shows us the specificity of each subreddit.
+So we have here lots of 'small' and 'rare' subreddit that have specific words that are not used in other subreddit.
+This is interesting as it shows us the specificity of each subreddit.
 
 ```{r tf_idf_plot, eval=TRUE, echo=TRUE}
 #plot per document
@@ -135,18 +161,25 @@ df.subreddit.dfm %>%
   facet_wrap(~document, ncol = 3)
 ```
 
-So in summary: 
--   We observe that AskReddit has lots of words frequency which makes sense as it is the biggest subreddit by lenght.
--   We also observe that the term 'game' is associated in term of frequency with sports subreddits like CFB (College Football) and Hockey which makes sense.
--   Interestingly the subreddits LoL (League of Legends) is associated with the term 'happy', which show us that the community may be the happiest, careful bias here, it is just a word frequency analysis.
-- In the subreddits 'pics' we observe a lot of 'gem' term which indicates treasure or something valuable. This is interesting as it is a subreddit for sharing pictures.
-- The subreddits 'news' is associated in terms of frequency with the term 'people' which is logical as news is about people.
+So in summary: - We observe that AskReddit has lots of words frequency which makes sense as it is the largest subreddit.
+
+-   We also observe that the term 'game' is associated in term of frequency with sports subreddits like CFB (College Football) and Hockey.
+
+-   Interestingly the subreddit for the game League of Legends is associated with the term 'happy', which show us that the community may be the happiest, careful bias here, it is just a word frequency analysis.
+
+-   In the subreddits 'pics' we observe a lot of 'gem' term which indicates treasure or something valuable.
+    This is interesting as it is a subreddit for sharing pictures.
+
+-   The subreddits 'news' is associated in terms of frequency with the term 'people' which is logical as news is about people.
 
 #### Similarity between Subreddits/Documents
 
-we analyze similarities and dissimilarities between the documents (through words) in the data. We use quanteda extensively. We’ll use the objects created previously in the exercises.
+we analyze similarities and dissimilarities between the documents (through words) in the data.
+For this, we will extensively use the quanteda package and the objects created above.
 
-Then use the functions textstat_simil() and textstat_dist() to compute the Jaccard index matrix. We choose the Jaccard index  because it is a good measure of similarity between two documents.
+Then use the functions textstat_simil() and textstat_dist() to compute the Jaccard index matrix.
+
+We choose the Jaccard index because it is a good measure of similarity between two documents.
 
 ```{r similarity_subreddits, eval=TRUE, echo=TRUE, cache=TRUE}
 #We restrict ourselves to a small subset of the highest tf-idf of the data to avoid memory issues and readability issues in the plots.
@@ -192,11 +225,17 @@ p_interactive <- ggplotly(p, tooltip = "text")
 p_interactive
 ```
 
-We observe that similarity using Jaccard index on the top 1000 tf-idf words is inconclusive. Indeed, we do not observe any clear pattern. This is due to the fact that we have a lot of words that are specific to each subreddit. Therefore, we will try to cluster the subreddits to see if we can regroup them in a more meaningful way.
+We observe that similarity using Jaccard index on the top 1000 tf-idf words is inconclusive.
+Indeed, we do not observe any clear pattern.
+This is due to the fact that we have a lot of words that are specific to each subreddit.
+Therefore, we will try to cluster the subreddits to see if we can regroup them in a more meaningful way.
 
 #### Clustering of Documents
 
-Hierarchical clustering and K-means. The first one is applied on the dissimilarities (Euclidean). The second one is applied on the features, here, TF-IDF. To illustrate the methods, we decide to create 3 clusters.
+Hierarchical clustering and K-means.
+The first one is applied on the dissimilarities (Euclidean).
+The second one is applied on the features, here, TF-IDF.
+To illustrate the methods, we decide to create 3 clusters.
 
 ```{r clustering_subreddits, eval=TRUE, echo=TRUE}
 df.subreddit.tfidf.small <- df.subreddit.tfidf[1:50,]
@@ -216,10 +255,16 @@ df.subreddit.km$cluster
 ```
 
 Only 50 where selected to show, but same applies to all subreddits.
-Again, we observe that the clustering is not very clear, even worse. We have a lot of subreddits that are not well regrouped. This is due to the fact that we have a lot of specific words in each subreddit. Therefore, we will try to use topic modeling to see if we can regroup the subreddits in a more meaningful way.
+Again, we observe that the clustering is not very clear, even worse.
+We have a lot of subreddits that are not well regrouped.
+his is due to the fact that we have a lot of specific words in each subreddit.
+Therefore, we will try to use topic modeling to see if we can regroup the subreddits in a more meaningful way.
 
-## Theme
-### LSA
+## Themes and topics
+
+### Latent Semantic Analysis
+
+LSA is a core technique in topic modelling, it uses matrices to separate topics and terms.
 
 ```{r lsa_subreddit, eval=TRUE, echo=TRUE}
 #select subset of data of the top 10 subreddits for readability purposes
@@ -239,7 +284,6 @@ df.top10_subreddit.tk <- tokens(
   remove_punct = TRUE,
   remove_symbols = TRUE,
   remove_url = TRUE,
-  remove_hyphens = TRUE,
   remove_separators = TRUE
 )
 df.top10_subreddit.tk <- df.top10_subreddit.tk %>%
@@ -277,29 +321,30 @@ w.top3 <- c(w.order[1:n.terms], rev(rev(w.order)[1:n.terms]))
 w.top2
 w.top3
 ```
-We restrict to 10 subreddit just to test how good it is.
 
-- AskReddit is strongly associated with terms like "people" and "job," indicating discussions about personal experiences and employment.
-- funny has a moderate association with "people" and "post," suggesting content related to social interactions and posts.
-- CFB and leagueoflegends are associated with terms like "team" and "game," indicating discussions about sports and gaming.
+For readability, we apply it first on the top 10 subreddits to assess its application in our context.
 
-The terms are associated with different dimensions, indicating their importance in the context of the documents. Here are some key terms and their associations:
+-   AskReddit is strongly associated with terms like "people" and "job," indicating discussions about personal experiences and employment.
+-   funny has a moderate association with "people" and "post," suggesting content related to social interactions and posts.
+-   CFB and league of legends are associated with terms like "team" and "game," indicating discussions about sports and gaming.
 
-- Dimension 1: "people" (0.1511), "question" (0.1346), "post" (0.1174)
-- Dimension 2: "team" (-0.2862), "play" (-0.2991), "game" (-0.5395)
-- Dimension 3: "fuck" (0.1837), "team" (0.1602), "call" (0.1255)
-- Dimension 4: "bowl" (0.1155), "boise" (0.0894), "steam" (-0.1784)
-- Dimension 5: "awesome" (-0.2124), "card" (-0.2553), "pc" (-0.2608)
+The terms are associated with different dimensions, indicating their importance in the context of the documents.
+Here are some key terms and their associations:
 
-We see that it is no good. dim 4 and 2 and 3 seems quite similar..
+-   Dimension 1: "people" (0.1511), "question" (0.1346), "post" (0.1174)
+-   Dimension 2: "team" (-0.2862), "play" (-0.2991), "game" (-0.5395)
+-   Dimension 3: "fuck" (0.1837), "team" (0.1602), "call" (0.1255)
+-   Dimension 4: "bowl" (0.1155), "boise" (0.0894), "steam" (-0.1784)
+-   Dimension 5: "awesome" (-0.2124), "card" (-0.2553), "pc" (-0.2608)
 
-Let's inspect further
+However, we can see that it is not precise in our use-case, dim 4 and 2 and 3 seems quite similar..
 
-The SVD coordinates help visualize the positioning of documents in the reduced-dimensional space, showing how closely related they are based on the terms they contain.
+We therefore inspect further with Singular Value Decomposition (SVD). The SVD coordinates help visualize the positioning of documents in the reduced-dimensional space, showing how closely related they are based on the terms they contain.
 
-We restrict here the PCA for links between subreddits and topics to only dimension 2 and 3 to obersve the efficacy of it.
+We restrict here the PCA for links between subreddits and topics to only dimension 2 and 3 to obverse its efficacy.
 
 ```{r pca, cache=TRUE, eval=TRUE, echo=TRUE}
+set.seed(123)
 # Restrict chart to terms that are mostly related to dim2 and dim3 
 w.subset <- df.subreddit.lsa$features[ c(unique(c(names(w.top2), names(w.top3)))), 2:3]
 # Create data frames for documents and features
@@ -332,11 +377,14 @@ p_interactive
 
 We only show the features (words) that are mostly related to dim2 and dim3 so that the chart is not overcrowded.
 
-We observe that the word `fuck` on the top right is associated with dim 3 and is interestingly negatively associated to `happy` on the bottom left which makes sense in a sense.
+We observe for example that the word `fuck` is associated with dim 3 and is interestingly inversly correlated to the word `happy` which makes sense.
+This is more convincing than the similarity and clustering analysis we did before.
+The subreddits are indeed better regrouped, in a more meaningful way.
 
-This is more convincing than the similarity and clustering analysis we did before. We observe that the subreddits are well regrouped in a more meaningful way.
+### Latent Dirichlet Allocation
 
-### LDA
+LDA is a Bayesian version of the probabilistic Latent Semantic Analysis.
+It answers the question "*Given this type of distribution, what are some actual probability distributions I am likely to see?*"
 
 ```{r lda_subreddit, cache=TRUE, eval=TRUE, echo=TRUE}
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
@@ -358,9 +406,18 @@ topic_counts <- seededlda::topics(df.top10_subbredit.lda) %>% table
 topic_counts
 ```
 
-Topic 5 with 4 subreddits ( AskReddit, funny, pics and news) is the most popular topic with words like people, time, im, youre which may represent human experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human. 
-Lol
-However, the distinction between topics is not very clear. We observe that lots of topics have the same terms.
+Topic 7 with  subreddits such as AskReddit, funny, pics and news is the most popular topic with words like "people", "time", "im", "youre" which may represent human experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human.
+
+However, the distinction between topics is still not very clear. We observe a lot of overlapping terms within the differnt topics.
+
+#### LDA diagnostics
+
+```{r topic_diagnostics, eval=TRUE, echo=TRUE}
+#topic prevalence
+rev(sort(colSums(df.top10_subbredit.lda$theta)/sum(df.top10_subbredit.lda$theta)))
+```
+
+Topic 4 most prevalent by far which makes sense as it is related to feelings and human experience that people often use in their comments.
 
 ### Topic-term Analysis
 
@@ -387,11 +444,9 @@ phi.long %>%
     strip.text = element_text(size = 5))
 ```
 
-Similar analysis as the to the previous but now we see the probs so more precise
+The Topic-Term Analysis produces similar results as the LDA. However this plot provides the probabilities, therefore refining our understanding.
 
-But we observe that lots of topics have the same terms. Therefore, adjusting k topics may be necessary.
-
-We try with 7 topics
+We still observe that lots of topics have the same terms.Therefore, adjusting k topics may be helpful. We first try with 7 topics
 
 ```{r topic_term_with_7, cache=TRUE, eval=TRUE, echo=TRUE}
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
@@ -432,13 +487,20 @@ phi.long %>%
     strip.text = element_text(size = 5))
 ```
 
-the distinction between topics is more clear now. We observe that topic 1 may be related to 'pc games'. Topic 2 is quite difficult to name, might be something related to Lifestyle or Achievements. Topic 5 might more be related to crime, societal issues, or law enforcement so something like 'Crime and Justice' as it has words like country, polics, story, law, or  world maybe ?  Topic 4 is more related to feelings with words like time, day, feel,... but harder to distinguish. Topic 6 might well be a question topic with words like question, contact, moderator, answer. And topic 7 and 3 might be more related to sports like hockey or CFB.
+The distinction between topics is clearer now, we observe that:
+  - Topic 1 may be related to 'pc games' ("game", "pc", "steam", "play", etc.)
+  - Topic 2 seems to also be related to pc games, but more precisely to the game League of Legends, where terms such as "champions", "ping", "riot" and "team" are prevalent.
+  - Topic 3 is also related to some sorts of games, we can maybe infer that it related to sports more specifically, with the presence of words such as "fan".
+  - Topic 4 is harder to distinguish with the presence of conflicting words such as "play", "kill", "run", and "raid".
+  - Topic 5 seems to be related to feelings with words like "im", time", "day", "feel", etc.
+  - Topic 6 seems to be related to Crime and Justice with the presence of words such as "murder", "evidence", and "interview".
+  - Topic 7 seems to be related to news and world event with the presence of words such as "country", "american", "russia," "war".
+  
+We see that they reflect our subreddit which makes sense. It would be interesting to take more that 10 subreddit as we might uncover interesting grouping of subreddits but it is so computationally intensive that we refrain from doing that for now.
 
-We see that they reflect our subreddit which makes sense, now it would be interesting to take more that 10 subreddit as we might have a interesting regrouping of subreddits but it wouldn't be feasible as it is quite computational intensive
+### Topic document Analysis
 
-#### Topic document Analysis
-
-Now we will analyze the distribution of topics across the documents (subreddits). This differs from the previous analysis, where we looked at the distribution of terms (words) across topics. Here, we look at the distribution of topics across documents (subreddits).
+We will now analyze the distribution of topics across the documents (subreddits). This differs from the previous analysis, where we looked at the distribution of terms (words) across topics. Here, we look at the distribution of topics across documents (subreddits).
 
 ```{r topic_doc_analysis, eval=TRUE, echo=TRUE}
 set.seed(1234)
@@ -464,32 +526,83 @@ theta.long %>%
     strip.text = element_text(size = 5))
 ```
 
-This confirms my previous analysis. we see topic one related to pc / games, topic 2 related to funny and pics. Topic 3 and 7 to sports, topic 4 was indeed feelings as it encompass a large range of subreddits. Topic 5 was indeed related to world, news in general, topic 6 was indeed questions.
+This confirms our previous analysis. We see topic 1 related to pc/games, topic 2 related to league of legends, etc.
 
-#### LDA diagnostics
+### Topic modelling summary
 
-```{r topic_diagnostics, eval=TRUE, echo=TRUE}
-#topic prevalence
-rev(sort(colSums(df.top10_subbredit.lda$theta)/sum(df.top10_subbredit.lda$theta)))
+For our first analysis, we regrouped ALL comments per subreddit. From the results we obtained, we can argue that the LDA produced the best results:
+
+  - It was more efficient that the clustering and similarity analysis.
+  - The subreddits are well regrouped, in a meaningful way.
+  - The topics are well defined and they reflect our subreddits.
+  - The topics are well dsitributed across the documents (subreddits), which is a good sign.
+
+However, regrouping ALL the comments per subreddits is not the best way to analyze the data. Indeed, we have a lot of specific words that are not taken into account by the stop words. Therefore, we will try to group in a more meaningful way, using the 'description' and 'display name' of each subreddit, obtained  via web scraping.
+
+### Web Scraping (Description and name)
+
+First attempt to scrape data
+```{r, eval=FALSE}
+# Example list of subreddit names (replace this with your dataframe column)
+#subreddit_names <- head(df.subreddit$subreddit, 1000)
+# Select rows 1001 to 3500
+subreddit_names <- df.subreddit$subreddit[5715:nrow(df.subreddit)]
+#subreddit_names <- c("100yearsago", "AskReddit", "nonexistent_subreddit", "private_subreddit")
+
+# Function to scrape display-name and description
+get_subreddit_metadata <- function(subreddit) {
+  # Construct the URL
+  url <- paste0("https://www.reddit.com/r/", subreddit, "/")
+  
+  # Try to scrape the metadata
+  tryCatch({
+    # Read the HTML content of the subreddit page
+    page <- read_html(url)
+    
+    # Extract the <shreddit-subreddit-header> element
+    header_element <- page %>%
+      html_node("shreddit-subreddit-header")  # Target the specific element
+    
+    # Extract the attributes
+    display_name <- header_element %>% html_attr("display-name")
+    description <- header_element %>% html_attr("description")
+    
+    # Return the results
+    return(data.frame(
+      subreddit = subreddit,
+      print("sub"),
+      display_name = display_name,
+      description = description,
+      stringsAsFactors = FALSE
+    ))
+  }, error = function(e) {
+    # If an error occurs (e.g., subreddit doesn't exist), return NA
+    return(data.frame(
+      subreddit = subreddit,
+      display_name = NA,
+      description = NA,
+      stringsAsFactors = FALSE
+    ))
+  })
+}
+
+# Introduce a delay between requests
+subreddit_metadata <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
+  # Randomize sleep time between 3 and 5 seconds
+  sleep_time <- runif(1, min = 2, max = 4)
+
+# Sleep for the random duration
+  Sys.sleep(sleep_time) # Wait 2 seconds between requests
+  get_subreddit_metadata(subreddit)
+}))
+
+# Save the cleaned dataset to a new CSV file
+#write_csv(subreddit_metadata, "subreddit_metadata.csv")
+# View the results
+print(subreddit_metadata)
 ```
-Topic 4 most prevalent by far which makes sense as it is related to feelings and human experience that people often use in their comments.
 
-### Summary First analysis
-
-We regrouped ALL comments per subreddit..
-
-So so far we can fairly say that the LDA is more efficient than the clustering and similarity analysis we did before. We observe that the subreddits are well regrouped in a more meaningful way. We observe that the topics are well defined and that they reflect our subreddit which makes sense. We can see that the topics are well distributed across the documents (subreddits) which is a good sign.
-
-However, regrouping ALL the coments per Subreddit is not the best way to analyze the data. Indeed, we have a lot of specific words that are not taken into account by the stop words. 
-
-Therefore, we will try to regroup the comments in a more meaningful way.
-
-Indeed, we have observed a 'description' and 'display name' of the subreddit. We will use this information to regroup the subreddits in a more meaningful way via web scraping.
-
-### Extract description and display name of subreddit
-
-better method to scrape data
-
+Second attempt, better way to scrape data.
 ```{r, eval=FALSE}
 # Function to scrape display-name and description
 get_subreddit_metadata <- function(subreddit) {
@@ -579,79 +692,15 @@ print(results)
 
 ```
 
-old method to scrape data
-
-```{r, eval=FALSE}
-# Example list of subreddit names (replace this with your dataframe column)
-#subreddit_names <- head(df.subreddit$subreddit, 1000)
-# Select rows 1001 to 3500
-subreddit_names <- df.subreddit$subreddit[5715:nrow(df.subreddit)]
-#subreddit_names <- c("100yearsago", "AskReddit", "nonexistent_subreddit", "private_subreddit")
-
-# Function to scrape display-name and description
-get_subreddit_metadata <- function(subreddit) {
-  # Construct the URL
-  url <- paste0("https://www.reddit.com/r/", subreddit, "/")
-  
-  # Try to scrape the metadata
-  tryCatch({
-    # Read the HTML content of the subreddit page
-    page <- read_html(url)
-    
-    # Extract the <shreddit-subreddit-header> element
-    header_element <- page %>%
-      html_node("shreddit-subreddit-header")  # Target the specific element
-    
-    # Extract the attributes
-    display_name <- header_element %>% html_attr("display-name")
-    description <- header_element %>% html_attr("description")
-    
-    # Return the results
-    return(data.frame(
-      subreddit = subreddit,
-      print("sub"),
-      display_name = display_name,
-      description = description,
-      stringsAsFactors = FALSE
-    ))
-  }, error = function(e) {
-    # If an error occurs (e.g., subreddit doesn't exist), return NA
-    return(data.frame(
-      subreddit = subreddit,
-      display_name = NA,
-      description = NA,
-      stringsAsFactors = FALSE
-    ))
-  })
-}
-
-# Introduce a delay between requests
-subreddit_metadata <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
-  # Randomize sleep time between 3 and 5 seconds
-  sleep_time <- runif(1, min = 2, max = 4)
-
-# Sleep for the random duration
-  Sys.sleep(sleep_time) # Wait 2 seconds between requests
-  get_subreddit_metadata(subreddit)
-}))
-
-# Save the cleaned dataset to a new CSV file
-#write_csv(subreddit_metadata, "subreddit_metadata.csv")
-# View the results
-print(subreddit_metadata)
-```
-
-put data in a csv file
-
+Store in csv file
 ```{r}
 #write_csv(subreddit_metadata, "subreddit_metadata_first1000.csv")
 #write_csv(results, "subreddit_metadata_last2500.csv")
 ```
 
-for computational purpose we don't run the code above as it takes a lot of time to scrape the data. We will use the data that we have already scraped.
+For computational purpose we don't run the code above as it takes a lot of time to scrape the data. We will use the data that we have already scraped.
 
 remove NA
-
 ```{r, message=FALSE}
 subreddit_first1000 <- read_csv("../../data/subreddit_metadata_first1000.csv")
 subreddit_first1000 <- na.omit(subreddit_first1000)
@@ -661,10 +710,32 @@ subreddit_last <-read_csv("../../data/subreddit_metadata_last2500.csv")
 subreddit_last <- na.omit(subreddit_last)
 # Combine the two dataframes
 combined_subreddit_theme <- rbind(subreddit_first1000, subreddit_next2500,subreddit_last)
+# Replace "/r/" with "subreddit" in the 'description' column of the 'combined_subreddit_theme' dataframe
+combined_subreddit_theme$description <- gsub("/r/", "subreddit ", combined_subreddit_theme$description)
+
+# Remove emojis and special characters from the 'description' column
+combined_subreddit_theme$description <- gsub("[^[:alnum:][:space:]]", "", 
+                                             iconv(combined_subreddit_theme$description, 
+                                                   from = "UTF-8", to = "ASCII", sub = ""))
+# Remove observations with empty or whitespace-only descriptions
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  filter(str_trim(description) != "")
+
+# Remove observations with "weird" descriptions
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  filter(
+    str_trim(description) != "" &            # Remove empty or whitespace-only descriptions
+    nchar(str_trim(description)) > 3 &       # Keep descriptions longer than 3 characters
+    str_detect(description, "[A-Za-z0-9]")   # Ensure descriptions contain alphanumeric characters
+  )
+
+# View the cleaned dataframe
+head(combined_subreddit_theme)
+
+
 ```
 
 clustering test similarity
-
 ```{r, warning=FALSE}
 corpus <- Corpus(VectorSource(combined_subreddit_theme$description))
 corpus <- tm_map(corpus, content_transformer(tolower))
@@ -673,8 +744,7 @@ corpus <- tm_map(corpus, removeWords, stopwords("en"))
 dtm <- DocumentTermMatrix(corpus)
 ```
 
-### clusters
-
+### Clusters
 ```{r, cache=TRUE}
 set.seed(123)
 k <- 30  # Choose the number of clusters
@@ -696,17 +766,16 @@ combined_subreddit_theme %>%
   theme_minimal()
 ```
 
-no interest to see
+The k-means clustering method does not present interesting results.
 
-### other way to get theme
-#### lda test 5
-topic modeling with LDA 
 
-Test to see if it works
+#### Further tests with the LDA method
+
+Based on the data we scrapped, we test our most promising method (LDA) on small scale of our new, more precise, dataset.
 
 ```{r cache=TRUE}
 # Define irrelevant words
-irrelevant_words <- c("reddit", "reddit's","www.reddit.com","https","http", "subreddit", "redditors","related", "community", "dedicated", "discussion", "discuss", "discussed")
+irrelevant_words <- c("reddit","reddits", "reddit's","www.reddit.com","https","http", "subreddit", "redditors","related", "community", "dedicated", "discussion", "discuss", "discussed","post", "content", "questions", "discussions", "share", "stories", "httpswwwredditcomsubreddit")
 
 # Remove irrelevant words during the cleaning process
 data_clean <- combined_subreddit_theme %>%
@@ -720,7 +789,7 @@ dtm <- data_clean %>%
   count(subreddit, word) %>%                     # Count words per subreddit
   cast_dtm(subreddit, word, n)                  # Create the DTM
 # Fit the LDA model
-num_topics <- 5  # Adjust based on your dataset
+num_topics <- 5  
 lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
 
 # Get the terms associated with each topic
@@ -753,29 +822,20 @@ top_terms %>%
   scale_x_reordered()
 ```
 
-higher the better
-We see that it works
-
-#### LDA 30
-
-real test with 30 topics
-30 topics becaucause...
+We see that the results are promising, we keep analyzing further.We now test with 30 topics. We use this incremental method because of the heavy computational resources needed for this method.
 
 ```{r, cache=TRUE}
-num_topics <- 30  # Choose the number of topics you want to extract
+num_topics <- 20  # Choose the number of topics you want to extract
 lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
 
-lda_model
-```
 
-```{r}
 # Extract term-topic probabilities
 topics <- tidy(lda_model, matrix = "beta")
 
 # Top terms for each topic
 top_terms <- topics %>%
   group_by(topic) %>%
-  slice_max(beta, n = 10) %>%
+  slice_max(beta, n = 15) %>%
   ungroup() %>%
   arrange(topic, -beta)
 
@@ -787,9 +847,8 @@ subreddit_topics <- tidy(lda_model, matrix = "gamma")
 print(subreddit_topics)
 ```
 
-vizualize the top terms in each topic
-
-```{r}
+Visualize:
+```{r, warning=FALSE}
 top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(term, beta, fill = as.factor(topic))) +
@@ -803,6 +862,25 @@ top_terms %>%
 ```
 
 chosen method because best so far
+
+below is just the graph in text
+
+```{r}
+library(dplyr)
+
+# Assuming your data is stored in a dataframe called `top_terms`
+top_terms_text <- top_terms %>%
+  group_by(topic) %>%                # Group by topic
+  slice_max(order_by = beta, n = 15) %>% # Select top 15 terms by beta for each topic
+  arrange(topic, desc(beta)) %>%     # Arrange terms by topic and beta
+  summarise(top_words = paste(term, collapse = ", ")) %>% # Combine the top 10 terms into a single string
+  ungroup()
+
+# View the result
+#print(top_terms_text)
+
+```
+
 
 ### extract dominant topic
 
@@ -825,46 +903,36 @@ print(dominant_topics)
 
 ### add name
 
-merge
-
 ```{r}
 # Add dominant topic to the original dataframe
 combined_subreddit_theme <- combined_subreddit_theme %>%
   left_join(dominant_topics, by = c("subreddit" = "subreddit"))
 
-# Create a named vector for topic mapping
+# Define meaningful names for each topic
 topic_names <- c(
-  "Sports and Team Gaming", 
-  "Casual Chat and Relationships", 
-  "Discord Communities and Gaming Servers", 
-  "Wiki and Information Sharing", 
-  "Anime and Manga Discussions", 
-  "Tech Enthusiasts and Linux Support", 
-  "Privacy and Dark Web Discussions", 
-  "Comics, GIFs, and Visual Media", 
-  "Mobile Apps and Development", 
-  "Rules and Moderation", 
-  "E-Commerce and Product Questions", 
-  "Home Improvement and Quality Discussions", 
-  "History and Political Discussions", 
-  "University Life and Study Tips", 
-  "Professional Advice and Design Projects", 
-  "Gaming and Survival Threads", 
-  "Fan Communities and Sports", 
-  "Personal Advice and Social Experiences", 
-  "Video Games and Gaming Franchises", 
-  "Sci-Fi and Entertainment Discussions", 
-  "Social Identity and Online Communities", 
-  "News and Current Events", 
-  "Art and Creative Reviews", 
-  "Women and LGBTQ+ Creative Spaces", 
-  "Lifestyle and Social Conversations", 
-  "Music and Pop Culture", 
-  "Tech Forums and Online Collaboration", 
-  "Local Experiences and Lifestyle", 
-  "Global Culture and Ideas", 
-  "College Life and Sports"
+  "Rules, Information, and Wiki Communities", 
+  "Language, Sports, and Club Communities", 
+  "Discord, Servers, and Safe Spaces", 
+  "Gaming, TV Shows, and Strategy", 
+  "University, Work, and Support Groups", 
+  "NSFW, Visual Media, and Photography", 
+  "City, Policy, and Political Communities", 
+  "Food, Environment, and Social Selling", 
+  "Sports, Teams, and Player Discussions", 
+  "RPG, Fire, and Online Roleplaying", 
+  "Advice, Forums, and Technical Help", 
+  "Music, Tech, and Enthusiast Groups", 
+  "Fans, Comics, and Book Discussions", 
+  "Advice, Pokémon, and Basic Tips", 
+  "Art, Social Media, and Tactics", 
+  "Learning, Projects, and Flair Sharing", 
+  "Politics, Science, and Star Wars", 
+  "Sharing Tips, Events, and Hardcore Music", 
+  "Visual Media, Fans, and Rock Music", 
+  "Gaming Systems, PC, and Friends"
 )
+
+
 
 # Replace the dominant_topic column with topic names
 
@@ -874,6 +942,7 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
 # View updated dataframe
 head(combined_subreddit_theme)
 ```
+In the table combined_subreddit_theme, the subreddit are regrouped in a more meaningful way only when beta is closer from 1. But it's far from perfect, in the end the best method is probably to find a theme manually for each subreddit.
 
 merge df with combined_subreddit_theme
 
@@ -883,6 +952,7 @@ merge df with combined_subreddit_theme
 
 #read data
 combined_subreddit_theme <- read.csv("../../data/combined_subreddit_theme.csv")
+
 # Perform a left join to add the columns to 'df'
 df <- df %>%
   left_join(combined_subreddit_theme, by = "subreddit")
@@ -893,14 +963,16 @@ df <- df %>%
 
 ### Sentiment by Subreddit
 
-Analyzing the top *30* subreddits (30 for vizualisation purposes) as a *whole*, focusing on average sentiment scores for each subreddit to get a general idea of the sentiment of the comments in each subreddit. We will use the AFINN, NRC, and BING lexicons to assign sentiment scores to words in the comments. We will then calculate the average sentiment score for each subreddit based on the sentiment scores of the words in the comments.
+Analyzing the top *30* subreddits (30 for vizualisation purposes) as a *whole*, focusing on average sentiment scores for each subreddit to get a general idea of the sentiment of the comments in each subreddit.
+We will use the AFINN, NRC, and BING lexicons to assign sentiment scores to words in the comments.
+We will then calculate the average sentiment score for each subreddit based on the sentiment scores of the words in the comments.
 
 #### AFINN
 
 The AFINN lexicon is a list of English words rated for valence with an integer between -5 (negative) and +5 (positive).
 
-- Weaknessess : It may not capture the sentiment of slang, sarcasm, or other informal language. Also limited to the words in the lexicon.
-- Strengths : It is simple and easy to use.
+-   Weaknessess : It may not capture the sentiment of slang, sarcasm, or other informal language. Also limited to the words in the lexicon.
+-   Strengths : It is simple and easy to use.
 
 ```{r sentiment_afinn, eval=TRUE, echo=TRUE}
 #get top 50 subreddits
@@ -927,14 +999,14 @@ There seems to be more positive subreddits than negative ones.
 
 We interestingly observe that based on the affin dictionnary the `news` and `politics` subreddit are the most negative, which could reflect a state of the world.
 
-And `pc` Subreddits like  `pcmasterrace` or `builapc` are the most positive.
+And `pc` Subreddits like `pcmasterrace` or `builapc` are the most positive.
 
 #### BING
 
 The Bing sentiment lexicon categorizes words as either "positive" or "negative."
 
-- Weaknesses: It lacks the granularity of numerical scores and may not capture the intensity of sentiment. It also does not account for neutral words.
-- Strengths: Easy to use and understand. It provides a straightforward classification of words.
+-   Weaknesses: It lacks the granularity of numerical scores and may not capture the intensity of sentiment. It also does not account for neutral words.
+-   Strengths: Easy to use and understand. It provides a straightforward classification of words.
 
 ```{r bing_sentiment, eval=TRUE, echo=TRUE}
 df.top30_subreddit.bing <- inner_join(df.top30_subreddit.tokens, get_sentiments("bing"),
@@ -951,14 +1023,15 @@ ggplot(df.top30_subreddit.bing, aes(x = Sentiment, y = reorder(subreddit, Sentim
         axis.text.x = element_text(size = 10))
 ```
 
-BING seems to have a bit the same proporiton of positive and negative as the AFINN dictionnary. Indeed, we observe the same pattern with `pcmasterrace` at the top and `news` at the bottom, but there is slight variation when compared to the AFINN dictionnary.
+BING seems to reflect the same proportion of positive and negative as the AFINN dictionary.
+Indeed, we observe the same pattern with `pcmasterrace` at the top and `news` at the bottom, but there is slight variation when compared to the AFINN dictionary.
 
 #### NRC
 
 The NRC Emotion Lexicon (EmoLex) associates words with eight basic emotions (anger, fear, anticipation, trust, surprise, sadness, joy, and disgust) and two sentiments (positive and negative).
 
-- Weaknesses: More complex to implement and interpret. It may require more computational resources.
-- Strengths: Provides a more detailed analysis by categorizing words into multiple emotions. It can capture a wider range of sentiments and emotions.
+-   Weaknesses: More complex to implement and interpret. It may require more computational resources.
+-   Strengths: Provides a more detailed analysis by categorizing words into multiple emotions. It can capture a wider range of sentiments and emotions.
 
 ```{r nrc_sentiment, eval=TRUE, echo=TRUE}
 df.top30_subreddit.nrc <- inner_join(df.top30_subreddit.tokens, get_sentiments("nrc"),
@@ -975,19 +1048,25 @@ ggplot(df.top30_subreddit.nrc, aes(x = Sentiment, y = reorder(subreddit, Sentime
         axis.text.x = element_text(size = 10))
 ```
 
-Through the NRC dictionnary we observe far more positive subreddits than negative ones. This inbalance could be explain by the fact that the NRC dictionnary is more biased towards positive words.
+Through the NRC dictionary we observe far more positive subreddits than negative ones.
+This imbalance could be explain by the fact that the NRC dictionnary is more biased towards positive words.
 
-We still observe quite the same patterns though with `pcmasterrace`  at the top and `news` at the bottom.
+We still observe quite the same patterns though with `pcmasterrace` at the top and `news` near the bottom.
 
 #### Summary
 
-To summarize it is interesting to observe that the NRC classification is totally different from the AFINN and BING classification. Indeed, the NRC classification seems to be more biased towards positive words but on the other hand it shall be more precise as it has more categories. 
+To summarize it is interesting to observe that the NRC classification is totally different from the AFINN and BING classification.
+Indeed, the NRC classification seems to be more biased towards positive words but on the other hand it shall be more precise as it has more categories.
 
-Why one to choose ? It depends on the goal of the analysis. If we want a simple and easy to use classification we can use AFINN or BING. If we want a more precise classification we can use NRC.
+Why one to choose ?
+It depends on the goal of the analysis.
+If we want a simple and easy to use classification we can use AFINN or BING.
+If we want a more precise classification we can use NRC.
 
 ### Sentiment by comment
 
-Now to have a more precise understanding of the sentiment of the comments, we will analyze the sentiment per comment for each dictionary (AFINN, BING, NRC). So that we can choose the best dictionary for our analysis.
+Now to have a more precise understanding of the sentiment of the comments, we will analyze the sentiment per comment for each dictionary (AFINN, BING, NRC).
+So that we can choose the best dictionary for our analysis.
 
 We will analyze a sample of small comments to have a better understanding.
 
@@ -1054,9 +1133,11 @@ reactable(df.sentiment.b,
 #write_csv(df.sentiment, "../../data/BING_sentiment_sample.csv")
 ```
 
-After reading the comments, we observe that they are mostly right. For example this comment was classified as neutral with a score of 0 : [Dude Congrats Im hoping to lose a large amount of weight in the same amount of time Huge inspiration here Keep kicking ass]
+After reading the comments, we observe mixed results.
 
-And this comment was classified as quite negative with a score of -2 : [Why did the chicken cross the road It didnt HHAHHAHAHAHHAHAHHA sorry that wasnt funny 472]. It seems, it did not understood the context
+  -  \[Dude Congrats Im hoping to lose a large amount of weight in the same amount of time Huge inspiration here Keep kicking ass\] was classified as neutral with a score of 0.
+
+  - \[Why did the chicken cross the road It didnt HHAHHAHAHAHHAHAHHA sorry that wasnt funny 472\] was classified as quite negative with a score of -2; it seems, it did not understand the full context
 
 #### NRC
 
@@ -1088,7 +1169,8 @@ reactable(df.sentiment.n,
 #write_csv(df.sentiment, "../../data/NRC_sentiment_sample.csv")
 ```
 
-We observe here that comments like "Night time moon light and a light snow The glow of the moon and the silence is amazing", which evokes a serene and appreciative tone for natural beauty suggest a strong positive emotion. The three dictionaries seem to have classified this comment as positive with the BING and AFINN dicitonnary attributing a higher score than the NRC.
+We observe here that comments like "Night time moon light and a light snow The glow of the moon and the silence is amazing", which evokes a serene and appreciative tone for natural beauty suggest a strong positive emotion.
+The three dictionaries seem to have classified this comment as positive with the BING and AFINN dictionary attributing a higher score than the NRC.
 
 #### Vizualising the Sentiment distribution based on a dictionnary
 
@@ -1120,11 +1202,16 @@ ggplot() +
   theme_minimal()
 ```
 
-- The AFINN method shows a relatively flat distribution with a slight peak around 0. This suggests that the sentiment scores are spread out, with a slight tendency towards neutrality.
+-   The AFINN method shows a relatively flat distribution with a slight peak around 0.
+    This suggests that the sentiment scores are spread out, with a slight tendency towards neutrality.
 
-- The Bing method displays a bimodal distribution with two distinct peaks, one around -1 and another around 1. This indicates that the sentiment scores are polarized, with many comments being classified as either quite negative or quite positive. Which is logical based on the previous analysis
+-   The Bing method displays a bimodal distribution with two distinct peaks, one around -1 and another around 1.
+    This indicates that the sentiment scores are polarized, with many comments being classified as either quite negative or quite positive.
+    Which is logical based on the previous analysis
 
-- The NRC method has a sharp peak at 0, suggesting that most of the sentiment scores are neutral. This implies that the NRC method tends to classify a large number of comments as neutral, with fewer comments being classified as strongly positive or negative. But we note that the NRC is also quite condensed
+-   The NRC method has a sharp peak at 0, suggesting that most of the sentiment scores are neutral.
+    This implies that the NRC method tends to classify a large number of comments as neutral, with fewer comments being classified as strongly positive or negative.
+    But we note that the NRC is also quite condensed
 
 #### Normalization to correctly compare
 
@@ -1158,12 +1245,15 @@ interactive_plot
 
 #### Summary
 
-We might choose one method over the others. For example, if we need a method that captures strong sentiments, Bing might be more suitable. For a more balanced view, AFINN could be the way to go. With more neutral comments, NRC might be the best choice.
+We might choose one method over the others.
+For example, if we need a method that captures strong sentiments, Bing might be more suitable.
+For a more balanced view, AFINN could be the way to go.
+With more neutral comments, NRC might be the best choice.
 
 
 ### Apply The findings on the whole dataset
 
-- investigate why it reduces the number of comment
+-   investigate why it reduces the number of comment
 
 ```{r}
 df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
@@ -1215,6 +1305,7 @@ ggplot(range_filtered, aes(x = score)) +
   theme_minimal() +
   theme(panel.grid.major = element_line(color = "grey", linetype = "dashed", size = 0.5))
 ```
+
 ```{r}
 print(summary(df_hugo$score))
 ```
@@ -1234,7 +1325,6 @@ ggplot(df_high_score, aes(x = score)) +
   scale_y_continuous(labels = scales::label_comma())
 ```
 
-
 ```{r}
 df_low_score <- df_hugo %>%
   filter(score %in% (-302:-10))
@@ -1251,12 +1341,32 @@ ggplot(df_low_score, aes(x = score)) +
   scale_y_continuous(labels = scales::label_comma())
 
 ```
+
+#### Score categoreis
+```{r}
+df <- df %>%
+  mutate(score_category = case_when(
+    score >= 100 ~ "extremely_positive",
+    score >= 20 & score < 100 ~ "very_positive",
+    score >= 10 & score < 20 ~ "positive",
+    score >= 2 & score < 10 ~ "somewhat_positive",
+    score == 1 ~ "untouched",
+    score > -10 & score <= 0 ~ "somewhat_negative",
+    score >= -20 & score <= -10 ~ "negative",
+    score < -20 ~ "very_negative"
+  ))
+```
+
+
+
 ```{r}
 # Counting unique subreddits in the dataset
 unique_subreddits <- n_distinct(df_high_score$subreddit)
 print(paste0("Total number of unique subreddits in the High-score dataset: ", unique_subreddits))
 ```
+
 Only keep the subreddits with 5 or more comments
+
 ```{r}
 # Analyzing subreddit-wise tendency of high scores
 df_subreddit_high_score <- df_high_score %>%
@@ -1268,7 +1378,6 @@ df_subreddit_high_score <- df_high_score %>%
 # Printing subreddit analysis
 df_subreddit_high_score
 ```
-
 
 ```{r}
 # Plotting histogram of the number of comments per subreddit for high scoring comments without subreddit names
@@ -1286,6 +1395,7 @@ ggplot(count_distribution, aes(x = comment_count)) +
        y = "Frequency") +
   theme_minimal()
 ```
+
 ```{r}
 # Plotting average score by subreddit for high scoring comments with 5 or more comments
 ggplot(df_subreddit_high_score, aes(x = reorder(subreddit, avg_score), y = avg_score)) +
@@ -1296,6 +1406,7 @@ ggplot(df_subreddit_high_score, aes(x = reorder(subreddit, avg_score), y = avg_s
        y = "Average Score") +
   theme_minimal()
 ```
+
 ```{r}
 # Analyzing subreddit-wise tendency of low scores
 df_subreddit_low_score <- df_low_score %>%
@@ -1336,8 +1447,6 @@ ggplot(count_distribution_low, aes(x = comment_count)) +
 
 ```
 
-
-
 ```{r}
 # Clustering analysis based on number of comments and average score for high scoring subreddits
 df_subreddit_cluster <- df_high_score %>%
@@ -1357,6 +1466,7 @@ fviz_nbclust(cluster_data, kmeans, method = "wss") +
        y = "Within-Cluster Sum of Squares") +
   theme_minimal()
 ```
+
 We'll settle with 5 clusters
 
 ```{r}
@@ -1375,10 +1485,10 @@ ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = clust
 ```
 
 ## Additional Variable
-### related subreddits
 
-scrap 
+We now refine our dataset to explore some more relationships, as well as plotting a first knowledge graph.
 
+### scrap related subreddits
 ```{r, eval=FALSE}
 
 # Function to scrape related subreddits
@@ -1399,8 +1509,7 @@ get_related_subreddits <- function(subreddit) {
         stringsAsFactors = FALSE
       ))
     }
-    
-    # Parse the HTML content
+     # Parse the HTML content
     page <- read_html(content(response, "text"))
     
     # Extract related subreddit elements
@@ -1432,8 +1541,6 @@ get_related_subreddits <- function(subreddit) {
 
 # Example usage with a few subreddit names
 subreddit_names <- combined_subreddit_theme$subreddit[3501:nrow(combined_subreddit_theme)]
-
-
 # Loop through subreddits and fetch related subreddits
 results <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
   cat(paste("Processing:", subreddit, "\n"))
@@ -1444,12 +1551,12 @@ results <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
 # View the results
 print(results)
 
-```
+```   
 ```{r}
 #write_csv(results, "subreddit_relatedsub_part3.csv")
 
 ```
-
+    
 ```{r, warning=FALSE, message=FALSE}
 subreddit_related_part1 <- read_csv("../../data/subreddit_relatedsub_part1.csv")
 #remove r/ in column related subreddit
@@ -1479,10 +1586,7 @@ combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_sub
 #yes the code could be more efficient than copy paste 5 times the line above 
 ```
 
-#### add column
-
 add column to match related subreddit with the subreddit in our database
-
 ```{r}
 # Split related subreddits into individual components
 combined_subreddit_related$matching_related_subreddits <- sapply(
@@ -1502,10 +1606,17 @@ combined_subreddit_related$matching_related_subreddits <- sapply(
 #we remove the NA values
 combined_subreddit_related <- na.omit(combined_subreddit_related)
 
+# remove empty related_subreddit in combined_subreddit_related
+combined_subreddit_related <- combined_subreddit_related %>%
+  filter(related_subreddits != "")
+
 
 ```
 
-```{r}
+merge df with combined_subreddit_theme and combined_subreddit_related
+
+```{r, warning=FALSE}
+
 # Perform a left join to add the columns to 'df'
 df <- df %>%
   left_join(combined_subreddit_related, by = "subreddit")
@@ -1513,17 +1624,15 @@ df <- df %>%
 head(df)
 ```
 
-#### Plot graph of matching related subreddits
-
+plot graph of matching related subreddits
 ```{r}
-
 # Filter rows where `matching_related_subreddits` is not empty
 filtered_data <- combined_subreddit_related[
   combined_subreddit_related$matching_related_subreddits != "", 
 ]
 
 # Take only the first 100 rows
-filtered_data <- head(filtered_data, 200)
+filtered_data <- head(filtered_data, 300)
 
 # Prepare the edges for the graph
 edges <- do.call(rbind, lapply(1:nrow(filtered_data), function(i) {
@@ -1555,6 +1664,7 @@ visNetwork(nodes, edges) %>%
 ```
 
 other graph with everything
+
 ```{r}
 
 # Filter rows where `matching_related_subreddits` is not empty
@@ -1605,6 +1715,7 @@ plot(
 
 
 ```
+
 top 20 most related
 
 ```{r}
@@ -1677,16 +1788,21 @@ summary(df$length)
 head(df)
 #rename column 'theme (cluster number)' to 'theme'
 df <- df %>%
-  rename(theme = `theme..cluster.number.`)
+  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, score_category)
 
-# Save the final dataset to a CSV file
-# select only columns ; 'id','author' ,'subreddit', 'display_name', 'body', 'score', 'sentiment_category', 'length', 'description', 'theme'
-df_final <- df %>%
-  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, matching_related_subreddits)
-
+# Adding score categories
+df <- df %>%
+  mutate(score_category = case_when(
+    score >= 100 ~ "extremely_positive",
+    score >= 20 & score < 100 ~ "very_positive",
+    score >= 10 & score < 20 ~ "positive",
+    score >= 2 & score < 10 ~ "somewhat_positive",
+    score == 1 ~ "untouched",
+    score > -10 & score <= 0 ~ "somewhat_negative",
+    score >= -20 & score <= -10 ~ "negative",
+    score < -20 ~ "very_negative"
+  ))
 nrow(df_final)
-
-head(df_final)
 
 #count NA in related subreddits
 sum(is.na(df_final$matching_related_subreddits))

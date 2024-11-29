@@ -27,6 +27,11 @@ CREATE INDEX comment_parent_id_small IF NOT EXISTS FOR (c:Comment) ON (c.parent_
 CREATE INDEX sentiment_type IF NOT EXISTS FOR (s:Sentiment) ON (s.type);
 ```
 
+```
+// Index for Theme by id (new index)
+CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
+```
+
 ## Load Data
 
 ```         
@@ -40,19 +45,17 @@ CREATE INDEX sentiment_type IF NOT EXISTS FOR (s:Sentiment) ON (s.type);
 
 ```         
 // Step 2: Load Comments and link them to Authors and Subreddits
-:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_cleaned_NOBODY.csv" AS row CALL {
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v3.csv" AS row CALL {
     WITH row
     MATCH (a:Author {id: row.author})
     MATCH (s:Subreddit {name: row.subreddit})
     MERGE (c:Comment {id: row.id})
         SET c.score = toInteger(row.score),
-            c.created_utc = row.created_utc,
-            c.controversiality = toInteger(row.controversiality),
-            c.gilded = toInteger(row.gilded),
-            c.edited = row.edited,
-            c.parent_id = row.parent_id,
-            c.parent_id_small = row.parent_id_small,
-            c.sentiment_category = row.sentiment_category
+            c.body = row.body,
+            c.display_name = row.display_name,
+            c.length = toInteger(row.length),
+            c.theme = toInteger(row.theme),
+            c.matching_related_subreddits = row.matching_related_subreddits
     MERGE (a)-[:POSTED]->(c)
     MERGE (c)-[:IN]->(s)
 } IN TRANSACTIONS OF 1000 ROWS;
@@ -75,18 +78,57 @@ MERGE (:Sentiment {type: "Negative"});
 } IN TRANSACTIONS OF 1000 ROWS;
 ```
 
-### **Alternative Approach: Create**
-
 ## Graphs
-
-### **Create Relationships Between `Comment` and `Sentiment` Nodes**
+### Sentiment
+#### **Create Relationships Between `Comment` and `Sentiment` Nodes**
 
 ```         
 MATCH (c:Comment), (s:Sentiment) WHERE toLower(c.sentiment_category) = toLower(s.type) MERGE (c)-[:HAS_SENTIMENT]->(s) 
 ```
 
-### Query to Limit Comment Nodes per Sentiment Node
+#### Query to Limit Comment Nodes per Sentiment Node
 
 ```         
 MATCH (s:Sentiment) CALL {     WITH s     MATCH (s)<-[:HAS_SENTIMENT]-(c:Comment)     RETURN c     LIMIT 10  // Adjust the limit as needed } RETURN s, c
+```
+### Theme
+
+```
+// Create Theme nodes for non-null and non-empty themes
+MATCH (c:Comment)
+WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
+WITH DISTINCT c.theme AS theme_id
+MERGE (:Theme {id: theme_id});
+```
+
+create relationship
+
+```
+// Link Comments to Themes, limiting to 10 comments per theme
+MATCH (c:Comment)
+WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
+WITH c.theme AS theme_id, c
+ORDER BY theme_id, c.created_utc  // Order by theme_id and created date (optional)
+WITH theme_id, COLLECT(c)[0..10] AS limited_comments  // Limit to 10 comments per theme
+UNWIND limited_comments AS c  // Unwind the limited comments list
+MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
+MERGE (c)-[:HAS_THEME]->(t);  // Create the relationship between Comment and Theme
+```
+graph
+```
+// Query to show all Themes with their associated Comments (limited to 10 per theme)
+MATCH (c:Comment)-[:HAS_THEME]->(t:Theme)
+WITH t, COLLECT(c)[0..10] AS limited_comments  // Limit to 10 comments per theme
+RETURN t, limited_comments;
+```
+
+### Sentiment AND Theme
+
+```
+// Query to show both Sentiment and Theme graphs linked to Comments
+MATCH (c:Comment)
+OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)  // Match Theme node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
+RETURN c, t, s
+LIMIT 100;  // Limit the result to avoid too many nodes in case of large dataset
 ```
