@@ -121,3 +121,14 @@ MATCH (c:Comment)-[:HAS_THEME]->(t:Theme)
 WITH t, COLLECT(c)[0..10] AS limited_comments  // Limit to 10 comments per theme
 RETURN t, limited_comments;
 ```
+
+### Sentiment AND Theme
+
+```
+// Query to show both Sentiment and Theme graphs linked to Comments
+MATCH (c:Comment)
+OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)  // Match Theme node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
+RETURN c, t, s
+LIMIT 100;  // Limit the result to avoid too many nodes in case of large dataset
+```
