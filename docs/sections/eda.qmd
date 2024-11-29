@@ -878,6 +878,11 @@ head(combined_subreddit_theme)
 merge df with combined_subreddit_theme
 
 ```{r, warning=FALSE}
+#save data
+# write.csv(combined_subreddit_theme, "combined_subreddit_theme.csv", row.names = TRUE)
+
+#read data
+combined_subreddit_theme <- read.csv("../../data/combined_subreddit_theme.csv")
 # Perform a left join to add the columns to 'df'
 df <- df %>%
   left_join(combined_subreddit_theme, by = "subreddit")
@@ -1155,34 +1160,21 @@ interactive_plot
 
 We might choose one method over the others. For example, if we need a method that captures strong sentiments, Bing might be more suitable. For a more balanced view, AFINN could be the way to go. With more neutral comments, NRC might be the best choice.
 
-#### LLM interpretation
-
-We are going to use some LLM on a random sample to judge the accuracy of each dictionnary and judge which one to take.
-
-prompt : 'Assign a sentiment score to this reddit comment from 0 (extremely negative) to 1 (extremely positive)'
-
-Loop through the comments and assign a sentiment score 
-
-## Analyzing the relationship between sentiment and score
-
-There seem to be two outliers in this plot, let's examine them
-
-
-There seems to be no relation between sentiment and score
 
 ### Apply The findings on the whole dataset
 
 - investigate why it reduces the number of comment
 
 ```{r}
-# use afinn to analyse sentiment all the rows based on column body
 df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
- get_sentiments("afinn"), by = c("word" = "word")) %>% group_by(id) %>%
- summarize(Sentiment = mean(value)) %>% inner_join(df, by = "id")
+ get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id) %>%
+ summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
+ inner_join(df, by = "id")
 
 # Normalize the sentiment scores
 df.sentiment <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
+
 
 #new column for sentiment category
 df.sentiment$sentiment_category <- ifelse(df.sentiment$Sentiment >= 1, "positive",
@@ -1191,7 +1183,7 @@ df.sentiment$sentiment_category <- ifelse(df.sentiment$Sentiment >= 1, "positive
 df <- df.sentiment 
 
 # save the data as a .csv file
-#write_csv(df.sentiment, "../../data/AFINN_sentiment.csv")
+#write.csv(df.sentiment, "../../data/BING_sentiment.csv", row.names = TRUE)
 ```
 
 ## Score
@@ -1485,8 +1477,6 @@ combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_sub
 combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_subreddit_related$related_subreddits)
 
 #yes the code could be more efficient than copy paste 5 times the line above 
-
-
 ```
 
 #### add column
@@ -1519,6 +1509,8 @@ combined_subreddit_related <- na.omit(combined_subreddit_related)
 # Perform a left join to add the columns to 'df'
 df <- df %>%
   left_join(combined_subreddit_related, by = "subreddit")
+
+head(df)
 ```
 
 #### Plot graph of matching related subreddits
@@ -1685,15 +1677,22 @@ summary(df$length)
 head(df)
 #rename column 'theme (cluster number)' to 'theme'
 df <- df %>%
-  rename(theme = `theme (cluster number)`)
+  rename(theme = `theme..cluster.number.`)
+
 # Save the final dataset to a CSV file
 # select only columns ; 'id','author' ,'subreddit', 'display_name', 'body', 'score', 'sentiment_category', 'length', 'description', 'theme'
-df <- df %>%
-  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme)
-#write_csv(df, "../../data/reddit_comments_15k_v2.csv")
-#load the data
-df <- read_csv("../../data/reddit_comments_15k_v2.csv")
-#count nunber of rows
-nrow(df)
-```
+df_final <- df %>%
+  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, matching_related_subreddits)
 
+nrow(df_final)
+
+head(df_final)
+
+#count NA in related subreddits
+sum(is.na(df_final$matching_related_subreddits))
+
+#write.csv(df_final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
+#load the data
+df_final <- read_csv("../../data/reddit_comments_15k_v2.csv")
+head(df_final)
+```

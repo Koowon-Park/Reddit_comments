@@ -49,7 +49,7 @@ df[sample(nrow(df), 1000),]
 summary(df)
 
 #save csv as cleaned (a reecrire qd on clean +)
-#write.csv(df, here("data/15k_cleaned.csv"), row.names = TRUE)
+write.csv(df, here("data/15k_cleaned.csv"), row.names = TRUE)
 
 #create new dataset as csv but without col body
 #write.csv(df[, -9], here("data/15k_cleaned_no_body.csv"), row.names = TRUE)
