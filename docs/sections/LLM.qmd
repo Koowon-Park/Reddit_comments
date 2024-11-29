@@ -76,12 +76,11 @@ for comment in comments:
 ```
 # LLM Integration
 
-api key: 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
 
 ```{python}
 from openai import OpenAI
 
-client= OpenAI(api_key="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")
+client= OpenAI(api_key="Entrer API KEY")
 
 completion = client.chat.completions.create(
     model="gpt-4o-mini",
