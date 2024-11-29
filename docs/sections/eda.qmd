@@ -723,6 +723,17 @@ combined_subreddit_theme$description <- gsub("/r/", "subreddit ", combined_subre
 combined_subreddit_theme$description <- gsub("[^[:alnum:][:space:]]", "", 
                                              iconv(combined_subreddit_theme$description, 
                                                    from = "UTF-8", to = "ASCII", sub = ""))
+# Remove observations with empty or whitespace-only descriptions
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  filter(str_trim(description) != "")
+
+# Remove observations with "weird" descriptions
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  filter(
+    str_trim(description) != "" &            # Remove empty or whitespace-only descriptions
+    nchar(str_trim(description)) > 3 &       # Keep descriptions longer than 3 characters
+    str_detect(description, "[A-Za-z0-9]")   # Ensure descriptions contain alphanumeric characters
+  )
 
 # View the cleaned dataframe
 head(combined_subreddit_theme)
@@ -770,7 +781,7 @@ Based on the data we scrapped, we test our most promising method (LDA) on small 
 
 ```{r cache=TRUE}
 # Define irrelevant words
-irrelevant_words <- c("reddit", "reddit's","www.reddit.com","https","http", "subreddit", "redditors","related", "community", "dedicated", "discussion", "discuss", "discussed")
+irrelevant_words <- c("reddit","reddits", "reddit's","www.reddit.com","https","http", "subreddit", "redditors","related", "community", "dedicated", "discussion", "discuss", "discussed","post", "content", "questions", "discussions", "share", "stories", "httpswwwredditcomsubreddit")
 
 # Remove irrelevant words during the cleaning process
 data_clean <- combined_subreddit_theme %>%
@@ -820,7 +831,7 @@ top_terms %>%
 We see that the results are promising, we keep analyzing further.We now test with 30 topics. We use this incremental method because of the heavy computational resources needed for this method.
 
 ```{r, cache=TRUE}
-num_topics <- 30  # Choose the number of topics you want to extract
+num_topics <- 20  # Choose the number of topics you want to extract
 lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
 
 
@@ -898,44 +909,33 @@ print(dominant_topics)
 
 ### add name
 
-merge
-
 ```{r}
 # Add dominant topic to the original dataframe
 combined_subreddit_theme <- combined_subreddit_theme %>%
   left_join(dominant_topics, by = c("subreddit" = "subreddit"))
 
+# Define meaningful names for each topic
 topic_names <- c(
-  "Trading, Learning, and Community Chats", 
-  "Mobile Apps, Gaming, and Fan Art", 
-  "Creative Content Sharing and Technology", 
-  "Comics, Books, and Safe Spaces", 
-  "Football, Stories, and Social Clubs", 
-  "Hobbies, Food, and Enthusiast Groups", 
-  "Tech, Hardware, and Gaming Products", 
-  "NSFW and Adult Content Communities", 
-  "Tech Enthusiasts and VR Communities", 
-  "Beauty, Women, and Professional Advice", 
-  "Music, Art, and Cultural Events", 
-  "Visual Media and Car Enthusiasts", 
-  "Science, Research, and Fiction", 
-  "TV Shows, University Life, and Writing", 
-  "Video Games and Nintendo Focus", 
-  "Memes, Projects, and Recipe Sharing", 
-  "Football, College, and Team Discussions", 
-  "Creative Artwork and Magic Enthusiasts", 
-  "Anime, Manga, and Visual Media", 
-  "Animal Fans and Survival Communities", 
-  "Star Wars, Cosplay, and Global Analysis", 
-  "Social Media, Programming, and Roleplaying", 
-  "Family, Fictional Worlds, and Storytelling", 
-  "Rules, Moderation, and Wiki Communities", 
-  "Local News, Events, and Politics", 
-  "Lifestyle, Fashion, and Living Advice", 
-  "Reddit Issues, Policies, and Protests", 
-  "Sports, Team Discussions, and Strategies", 
-  "Life Tips, Minecraft, and Industry Skills", 
-  "Home, Forums, and Internet Enthusiasts"
+  "Rules, Information, and Wiki Communities", 
+  "Language, Sports, and Club Communities", 
+  "Discord, Servers, and Safe Spaces", 
+  "Gaming, TV Shows, and Strategy", 
+  "University, Work, and Support Groups", 
+  "NSFW, Visual Media, and Photography", 
+  "City, Policy, and Political Communities", 
+  "Food, Environment, and Social Selling", 
+  "Sports, Teams, and Player Discussions", 
+  "RPG, Fire, and Online Roleplaying", 
+  "Advice, Forums, and Technical Help", 
+  "Music, Tech, and Enthusiast Groups", 
+  "Fans, Comics, and Book Discussions", 
+  "Advice, Pokémon, and Basic Tips", 
+  "Art, Social Media, and Tactics", 
+  "Learning, Projects, and Flair Sharing", 
+  "Politics, Science, and Star Wars", 
+  "Sharing Tips, Events, and Hardcore Music", 
+  "Visual Media, Fans, and Rock Music", 
+  "Gaming Systems, PC, and Friends"
 )
 
 
@@ -950,13 +950,188 @@ head(combined_subreddit_theme)
 ```
 In the table combined_subreddit_theme, the subreddit are regrouped in a more meaningful way only when beta is closer from 1. But it's far from perfect, in the end the best method is probably to find a theme manually for each subreddit.
 
-merge df with combined_subreddit_theme
+### other way to cluster
+topic modeling with LDA / similarity
+
+### scrap related subreddits
+```{r, eval=FALSE}
+
+# Function to scrape related subreddits
+get_related_subreddits <- function(subreddit) {
+  # Construct the URL
+  url <- paste0("https://www.reddit.com/r/", subreddit, "/")
+  
+  tryCatch({
+    # Make the GET request with a User-Agent
+    response <- GET(url, add_headers("User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"))
+    
+    # Check HTTP status code
+    if (status_code(response) != 200) {
+      cat(paste("Failed to fetch:", subreddit, "Status Code:", status_code(response), "\n"))
+      return(data.frame(
+        subreddit = subreddit,
+        related_subreddits = NA,
+        stringsAsFactors = FALSE
+      ))
+    }
+     # Parse the HTML content
+    page <- read_html(content(response, "text"))
+    
+    # Extract related subreddit elements
+    related_subreddits <- page %>%
+      html_nodes("li .overflow-ellipsis") %>%  # Target divs with the specific class inside list items
+      html_text(trim = TRUE)                  # Extract the visible text
+    
+    # Check if any related subreddits were found
+    if (length(related_subreddits) == 0) {
+      cat(paste("No related subreddits found for:", subreddit, "\n"))
+      related_subreddits <- NA
+    }
+    
+    # Return the results
+    return(data.frame(
+      subreddit = subreddit,
+      related_subreddits = paste(related_subreddits, collapse = ", "), # Join as a single string
+      stringsAsFactors = FALSE
+    ))
+  }, error = function(e) {
+    cat(paste("Error for subreddit:", subreddit, "with error:", e$message, "\n"))
+    return(data.frame(
+      subreddit = subreddit,
+      related_subreddits = NA,
+      stringsAsFactors = FALSE
+    ))
+  })
+}
+
+# Example usage with a few subreddit names
+subreddit_names <- combined_subreddit_theme$subreddit[3501:nrow(combined_subreddit_theme)]
+# Loop through subreddits and fetch related subreddits
+results <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
+  cat(paste("Processing:", subreddit, "\n"))
+  Sys.sleep(runif(1, min = 2, max = 3.5))  # Randomized delay
+  get_related_subreddits(subreddit)
+}))
+
+# View the results
+print(results)
+
+```   
+```{r}
+#write_csv(results, "subreddit_relatedsub_part3.csv")
+
+```
+    
+```{r, warning=FALSE, message=FALSE}
+subreddit_related_part1 <- read_csv("../../data/subreddit_relatedsub_part1.csv")
+#remove r/ in column related subreddit
+subreddit_related_part1$related_subreddits <- gsub("r/", "", subreddit_related_part1$related_subreddits)
+
+subreddit_related_part2 <- read_csv("../../data/subreddit_relatedsub_part2.csv")
+#remove r/ in column related subreddit
+subreddit_related_part2$related_subreddits <- gsub("r/", "", subreddit_related_part2$related_subreddits)
+
+subreddit_related_part3 <- read_csv("../../data/subreddit_relatedsub_part3.csv")
+#remove r/ in column related subreddit
+subreddit_related_part3$related_subreddits <- gsub("r/", "", subreddit_related_part3$related_subreddits)
+
+combined_subreddit_related <- rbind(subreddit_related_part1, subreddit_related_part2,subreddit_related_part3)
+
+#remove Megathread and Announcement from related subreddits
+combined_subreddit_related$related_subreddits <- gsub("Megathread", "", combined_subreddit_related$related_subreddits)
+combined_subreddit_related$related_subreddits <- gsub("Announcement", "", combined_subreddit_related$related_subreddits)
+
+#remove ", ", ", , ", ", , , " in the beginning of the string
+combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_subreddit_related$related_subreddits)
+combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_subreddit_related$related_subreddits)
+combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_subreddit_related$related_subreddits)
+combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_subreddit_related$related_subreddits)
+combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_subreddit_related$related_subreddits)
+
+#yes the code could be more efficient than copy paste 5 times the line above 
+
+
+```
+
+add column to match related subreddit with the subreddit in our database
+```{r}
+# Split related subreddits into individual components
+combined_subreddit_related$matching_related_subreddits <- sapply(
+  strsplit(combined_subreddit_related$related_subreddits, ",\\s*"), 
+  function(related) {
+    # Return only related subreddits that are in the 'subreddit' column
+    related[related %in% combined_subreddit_related$subreddit]
+  }
+)
+
+# Convert the list back into a string for easy viewing
+combined_subreddit_related$matching_related_subreddits <- sapply(
+  combined_subreddit_related$matching_related_subreddits, 
+  paste, collapse = ", "
+)
+
+#we remove the NA values
+combined_subreddit_related <- na.omit(combined_subreddit_related)
+
+# remove empty related_subreddit in combined_subreddit_related
+combined_subreddit_related <- combined_subreddit_related %>%
+  filter(related_subreddits != "")
+
+
+```
+
+merge df with combined_subreddit_theme and combined_subreddit_related
 
 ```{r, warning=FALSE}
 # Perform a left join to add the columns to 'df'
 df <- df %>%
   left_join(combined_subreddit_theme, by = "subreddit")
+
+# Perform a left join to add the columns to 'df'
+df <- df %>%
+  left_join(combined_subreddit_related, by = "subreddit")
 ```
+
+plot graph of matching related subreddits
+```{r}
+# Filter rows where `matching_related_subreddits` is not empty
+filtered_data <- combined_subreddit_related[
+  combined_subreddit_related$matching_related_subreddits != "", 
+]
+
+# Take only the first 100 rows
+filtered_data <- head(filtered_data, 300)
+
+# Prepare the edges for the graph
+edges <- do.call(rbind, lapply(1:nrow(filtered_data), function(i) {
+  source <- filtered_data$subreddit[i]
+  targets <- unlist(strsplit(filtered_data$matching_related_subreddits[i], ",\\s*"))
+  if (length(targets) > 0) {
+    data.frame(from = source, to = targets, stringsAsFactors = FALSE)
+  }
+}))
+
+# Ensure no duplicates in edges
+edges <- unique(edges)
+
+# Create nodes
+nodes <- data.frame(
+  id = unique(c(edges$from, edges$to)), # Unique nodes from edges
+  label = unique(c(edges$from, edges$to)), # Labels are the same as IDs
+  stringsAsFactors = FALSE
+)
+
+# Create the interactive graph
+visNetwork(nodes, edges) %>%
+  visNodes(size = 10) %>%
+  visEdges(arrows = "to") %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visLayout(randomSeed = 42) # Consistent layout
+
+```
+
+
 
 ## Sentiment Analysis
 
