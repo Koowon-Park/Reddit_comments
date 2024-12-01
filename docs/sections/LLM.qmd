@@ -6,9 +6,10 @@ library(here)
 venv_path <- here("venv")
 if (!dir.exists(venv_path)) {
   virtualenv_create(venv_path)
-  virtualenv_install(venv_path, packages = c("pandas", "transformers", "neo4j"))
+  virtualenv_install(venv_path, packages = c("pandas", "transformers", "neo4j", "openai"))
 }
 
+virtualenv_install(venv_path, packages = c("openai"))
 use_virtualenv(venv_path, required = TRUE)
 
 
@@ -80,7 +81,9 @@ for comment in comments:
 ```{python}
 from openai import OpenAI
 
-client= OpenAI(api_key="Entrer API KEY")
+neo4j_output = "Sample data from Neo4j"
+
+client= OpenAI(api_key="ENTER API KEY")
 
 completion = client.chat.completions.create(
     model="gpt-4o-mini",
