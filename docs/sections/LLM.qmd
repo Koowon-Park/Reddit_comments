@@ -3,9 +3,18 @@
 ```{r}
 library(reticulate)
 library(here)
-use_virtualenv(here("venv"), required = TRUE)
-#use_python("C:/Python312/python.exe")
-#py_config()
+venv_path <- here("venv")
+if (!dir.exists(venv_path)) {
+  virtualenv_create(venv_path)
+  virtualenv_install(venv_path, packages = c("pandas", "transformers", "neo4j", "openai"))
+}
+
+virtualenv_install(venv_path, packages = c("openai"))
+use_virtualenv(venv_path, required = TRUE)
+
+
+#use_python("C:\Users\troen\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Python 3.10")
+py_config()
 ```
 
 # NEO4J problem
@@ -30,10 +39,11 @@ df.to_csv("../../data/reddit_comments_15k_v3.csv", index=False)
 
 ## NEO4J
 
-```{python}
+```{python, eval = FALSE}
 #install neo4j
 from neo4j import GraphDatabase
 uri = "bolt://localhost:7687"
+
 #connect to the database
 driver = GraphDatabase.driver(uri, auth=("neo4j", "11111111"))
 
@@ -67,15 +77,30 @@ for comment in comments:
 ```
 # LLM Integration
 
-```{python}
-from transformers import pipeline
 
-messages = [
-    {"role": "user", "content": "Who are you?"},
-]
-pipe = pipeline("text-generation", model="mistralai/Mistral-7B-Instruct-v0.2")
-pipe(messages)
+```{python}
+from openai import OpenAI
+
+neo4j_output = "Sample data from Neo4j"
+
+client= OpenAI(api_key="ENTER API KEY")
+
+completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": f"Based on the following data, analyze the sentiment and provide insights: {neo4j_output}"
+        }
+    ]
+)
+
+print(completion.choices[0].message)
+
 ```
+
+
 
 
 
