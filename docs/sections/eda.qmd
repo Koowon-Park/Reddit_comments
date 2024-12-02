@@ -200,10 +200,10 @@ We choose the Jaccard index because it is a good measure of similarity between t
 #load
 df.subreddit.jac.mat <- read.csv("../../data/df.subreddit.jac.mat_1000.csv")
 
-#heatmap representation of similariteis between subreddits
-## jaccard
+# Heatmap representation of similarities between subreddits
+## Jaccard
 p <- ggplot(data = df.subreddit.jac.mat, 
-            mapping = aes(x = Var1, y = Var2, fill = value, text = paste("Subreddit 1:", Var1, "<br>Subreddit 2:", Var2, "<br>Jaccard:", round(value, 2)))) +
+            mapping = aes(x = Var1, y = Var2, fill = value)) +
   scale_fill_gradient2(
     low = viridis_1, 
     high = viridis_5, 
@@ -218,11 +218,8 @@ p <- ggplot(data = df.subreddit.jac.mat,
         axis.text.y = element_blank(),  # Remove y-axis text
         axis.ticks = element_blank())   # Remove axis ticks
 
-# Convert ggplot to plotly for interactivity
-p_interactive <- ggplotly(p, tooltip = "text")
-
-# Display the interactive plot
-p_interactive
+# Display the non-interactive plot
+print(p)
 ```
 
 We observe that similarity using Jaccard index on the top 1000 tf-idf words is inconclusive.
@@ -257,7 +254,7 @@ df.subreddit.km$cluster
 Only 50 where selected to show, but same applies to all subreddits.
 Again, we observe that the clustering is not very clear, even worse.
 We have a lot of subreddits that are not well regrouped.
-his is due to the fact that we have a lot of specific words in each subreddit.
+This is due to the fact that we have a lot of specific words in each subreddit.
 Therefore, we will try to use topic modeling to see if we can regroup the subreddits in a more meaningful way.
 
 ## Themes and topics
@@ -408,7 +405,7 @@ topic_counts
 
 Topic 7 with  subreddits such as AskReddit, funny, pics and news is the most popular topic with words like "people", "time", "im", "youre" which may represent human experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human.
 
-However, the distinction between topics is still not very clear. We observe a lot of overlapping terms within the differnt topics.
+However, the distinction between topics is still not very clear. We observe a lot of overlapping terms within the different topics.
 
 #### LDA diagnostics
 
@@ -603,6 +600,7 @@ print(subreddit_metadata)
 ```
 
 Second attempt, better way to scrape data.
+
 ```{r, eval=FALSE}
 # Function to scrape display-name and description
 get_subreddit_metadata <- function(subreddit) {
@@ -693,6 +691,7 @@ print(results)
 ```
 
 Store in csv file
+
 ```{r}
 #write_csv(subreddit_metadata, "subreddit_metadata_first1000.csv")
 #write_csv(results, "subreddit_metadata_last2500.csv")
@@ -701,6 +700,7 @@ Store in csv file
 For computational purpose we don't run the code above as it takes a lot of time to scrape the data. We will use the data that we have already scraped.
 
 remove NA
+
 ```{r, message=FALSE}
 subreddit_first1000 <- read_csv("../../data/subreddit_metadata_first1000.csv")
 subreddit_first1000 <- na.omit(subreddit_first1000)
@@ -731,11 +731,10 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
 
 # View the cleaned dataframe
 head(combined_subreddit_theme)
-
-
 ```
 
 clustering test similarity
+
 ```{r, warning=FALSE}
 corpus <- Corpus(VectorSource(combined_subreddit_theme$description))
 corpus <- tm_map(corpus, content_transformer(tolower))
@@ -745,6 +744,7 @@ dtm <- DocumentTermMatrix(corpus)
 ```
 
 ### Clusters
+
 ```{r, cache=TRUE}
 set.seed(123)
 k <- 30  # Choose the number of clusters
@@ -822,7 +822,7 @@ top_terms %>%
   scale_x_reordered()
 ```
 
-We see that the results are promising, we keep analyzing further.We now test with 30 topics. We use this incremental method because of the heavy computational resources needed for this method.
+We see that the results are promising, we keep analyzing further.We now test with 20 topics. We use this incremental method because of the heavy computational resources needed for this method.
 
 ```{r, cache=TRUE}
 num_topics <- 20  # Choose the number of topics you want to extract
@@ -848,6 +848,7 @@ print(subreddit_topics)
 ```
 
 Visualize:
+
 ```{r, warning=FALSE}
 top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
@@ -866,8 +867,6 @@ chosen method because best so far
 below is just the graph in text
 
 ```{r}
-library(dplyr)
-
 # Assuming your data is stored in a dataframe called `top_terms`
 top_terms_text <- top_terms %>%
   group_by(topic) %>%                # Group by topic
@@ -956,6 +955,8 @@ combined_subreddit_theme <- read.csv("../../data/combined_subreddit_theme.csv")
 # Perform a left join to add the columns to 'df'
 df <- df %>%
   left_join(combined_subreddit_theme, by = "subreddit")
+
+head(df)
 ```
 
 
@@ -1250,6 +1251,7 @@ For example, if we need a method that captures strong sentiments, Bing might be 
 For a more balanced view, AFINN could be the way to go.
 With more neutral comments, NRC might be the best choice.
 
+We will go with the Bing method as it seems to capture the sentiment of the comments more accurately.
 
 ### Apply The findings on the whole dataset
 
@@ -1261,17 +1263,39 @@ df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
  summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
  inner_join(df, by = "id")
 
+head(df.sentiment)
+#show bing distrubtion interactive plot
+#plot the three sentiment distribution on one using viridis color
+ggplot() +
+  geom_density(data = df.sentiment, aes(x = Sentiment, fill = "BING"), alpha = 0.5) +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  #more detail on x axis
+  scale_x_continuous(limits = c(-1, 1), breaks = seq(-1, 1, by = 0.1)) +
+  #tilt 45 degree x axis
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+We will 'cut' the sentiment score into 5 categories: 
+
+- extremely_positive, 0.75 to 1
+- positive, 0.2 to 0.75
+- somewhat_positive, neutral, -0.2 to 0.2
+- somewhat_negative, negative, -0.8 to -0.2
+- negative, -1 to -0.8
+
+
+```{r}
 # Normalize the sentiment scores
 df.sentiment <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
 
-#new column for sentiment category
-df.sentiment$sentiment_category <- ifelse(df.sentiment$Sentiment >= 1, "positive",
- ifelse(df.sentiment$Sentiment <= -1, "negative", "neutral"))
+# Categorize sentiment into five groups 
+df.sentiment <- df.sentiment %>% mutate(Sentiment_Group = case_when( Sentiment >= 0.75 ~ "extremely_positive", Sentiment >= 0.2 ~ "positive", Sentiment > -0.2 & Sentiment < 0.2 ~ "somewhat_positive, neutral", Sentiment >= -0.8 & Sentiment <= -0.2 ~ "somewhat_negative, negative", Sentiment < -0.8 ~ "negative" ))
 
 df <- df.sentiment 
-
+head(df)
 # save the data as a .csv file
 #write.csv(df.sentiment, "../../data/BING_sentiment.csv", row.names = TRUE)
 ```
