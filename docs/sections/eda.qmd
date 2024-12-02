@@ -941,6 +941,7 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
 # View updated dataframe
 head(combined_subreddit_theme)
 ```
+
 In the table combined_subreddit_theme, the subreddit are regrouped in a more meaningful way only when beta is closer from 1. But it's far from perfect, in the end the best method is probably to find a theme manually for each subreddit.
 
 merge df with combined_subreddit_theme
@@ -1830,6 +1831,10 @@ nrow(df_final)
 
 #count NA in related subreddits
 sum(is.na(df_final$matching_related_subreddits))
+
+# Perform a left join to add the columns to 'df'
+df <- df %>%
+  left_join(combined_subreddit_theme, by = "subreddit")
 
 #write.csv(df_final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
 #load the data
