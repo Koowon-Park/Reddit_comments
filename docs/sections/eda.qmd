@@ -702,11 +702,14 @@ For computational purpose we don't run the code above as it takes a lot of time 
 remove NA
 
 ```{r, message=FALSE}
-subreddit_first1000 <- read_csv("../../data/subreddit_metadata_first1000.csv")
+subreddit_first1000 <- read_csv(here("data", "subreddit_metadata_first1000.csv"))
 subreddit_first1000 <- na.omit(subreddit_first1000)
-subreddit_next2500 <- read_csv("../../data/subreddit_metadata_next2500.csv")
+
+subreddit_next2500 <- read_csv(here("data", "subreddit_metadata_next2500.csv"))
 subreddit_next2500 <- na.omit(subreddit_next2500)
-subreddit_last <-read_csv("../../data/subreddit_metadata_last2500.csv")
+
+subreddit_last <- read_csv(here("data", "subreddit_metadata_last2500.csv"))
+
 subreddit_last <- na.omit(subreddit_last)
 # Combine the two dataframes
 combined_subreddit_theme <- rbind(subreddit_first1000, subreddit_next2500,subreddit_last)
@@ -1089,7 +1092,9 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
 # Normalize the sentiment scores
 df.sentiment.a <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
+```
 
+```{r, eval=TRUE, echo=FALSE}  
 # show the sentiment of the comments
 reactable(df.sentiment.a,
           resizable = TRUE,
@@ -1098,12 +1103,8 @@ reactable(df.sentiment.a,
           searchable = TRUE,
           filterable = TRUE,
           pagination = TRUE,
-          highlight = TRUE,
-          #add possibility to increase rows per page
-          pageSizeOptions = c(5, 10, 15, 20)
+          highlight = TRUE
           )
-#save data as 'AFINN_sentiment_sample.csv'
-#write_csv(df.sentiment, "../../data/AFINN_sentiment_sample.csv")
 ```
 
 #### Bing
@@ -1118,6 +1119,9 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
 df.sentiment.b <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
+```
+
+```{r, eval=TRUE, echo=FALSE}
 #show 
 reactable(df.sentiment.b,
           resizable = TRUE,
@@ -1126,13 +1130,7 @@ reactable(df.sentiment.b,
           searchable = TRUE,
           filterable = TRUE,
           pagination = TRUE,
-          highlight = TRUE,
-          #add possibility to increase rows per page
-          pageSizeOptions = c(5, 10, 15, 20)
-          )
-
-#save data as 'AFINN_sentiment_sample.csv'
-#write_csv(df.sentiment, "../../data/BING_sentiment_sample.csv")
+          highlight = TRUE)
 ```
 
 After reading the comments, we observe mixed results.
@@ -1154,6 +1152,9 @@ df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
 df.sentiment.n <- df.sentiment %>%
  mutate(Normalized_Sentiment = (Sentiment - min(Sentiment)) / (max(Sentiment) - min(Sentiment)))
 
+```
+
+```{r, eval=TRUE, echo=FALSE}
 #show 
 reactable(df.sentiment.n,
           resizable = TRUE,
@@ -1162,13 +1163,7 @@ reactable(df.sentiment.n,
           searchable = TRUE,
           filterable = TRUE,
           pagination = TRUE,
-          highlight = TRUE,
-          #add possibility to increase rows per page
-          pageSizeOptions = c(5, 10, 15, 20)
-          )
-
-#save data as 'AFINN_sentiment_sample.csv'
-#write_csv(df.sentiment, "../../data/NRC_sentiment_sample.csv")
+          highlight = TRUE)
 ```
 
 We observe here that comments like "Night time moon light and a light snow The glow of the moon and the silence is amazing", which evokes a serene and appreciative tone for natural beauty suggest a strong positive emotion.
@@ -1582,15 +1577,16 @@ print(results)
 
     
 ```{r, warning=FALSE, message=FALSE}
-subreddit_related_part1 <- read_csv("../../data/subreddit_relatedsub_part1.csv")
-#remove r/ in column related subreddit
+subreddit_related_part1 <- read_csv(here("data", "subreddit_relatedsub_part1.csv"))
+# Remove r/ in column related subreddit
 subreddit_related_part1$related_subreddits <- gsub("r/", "", subreddit_related_part1$related_subreddits)
 
-subreddit_related_part2 <- read_csv("../../data/subreddit_relatedsub_part2.csv")
-#remove r/ in column related subreddit
+subreddit_related_part2 <- read_csv(here("data", "subreddit_relatedsub_part2.csv"))
+# Remove r/ in column related subreddit
 subreddit_related_part2$related_subreddits <- gsub("r/", "", subreddit_related_part2$related_subreddits)
 
-subreddit_related_part3 <- read_csv("../../data/subreddit_relatedsub_part3.csv")
+subreddit_related_part3 <- read_csv(here("data", "subreddit_relatedsub_part3.csv"))
+
 #remove r/ in column related subreddit
 subreddit_related_part3$related_subreddits <- gsub("r/", "", subreddit_related_part3$related_subreddits)
 
@@ -1810,12 +1806,12 @@ summary(df$length)
 
 ## Final Dataset
 
-```{r}
+```{r, eval=FALSE}
 head(df)
 
 #rename theme..cluster.number. to theme
-# df <- df %>%
-#   rename(theme = theme..cluster.number.)
+df <- df %>%
+ rename(theme = theme..cluster.number.)
 
 df.final <- df %>%
   select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, matching_related_subreddits, score_category)
@@ -1832,7 +1828,20 @@ sum(is.na(df.final$matching_related_subreddits))
 #   left_join(combined_subreddit_theme, by = "subreddit")
 
 #write.csv(df.final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
-#load the data
-df.final <- read_csv("../../data/reddit_comments_15k_v2.csv")
-head(df.final)
+#load the data using here
+df.final <- read_csv(here("data", "reddit_comments_15k_v2.csv"))
+(head(df.final))
+```
+
+```{r, eval=FALSE, echo=FALSE}
+#show five row of df.final using reactable
+reactable(head(df.final, 1000), 
+          resizable = TRUE,
+          defaultPageSize = 2,
+          sortable = TRUE,
+          searchable = TRUE,
+          filterable = TRUE,
+          pagination = TRUE,
+          highlight = TRUE
+          )
 ```
