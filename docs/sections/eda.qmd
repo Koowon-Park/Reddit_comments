@@ -195,10 +195,10 @@ We choose the Jaccard index because it is a good measure of similarity between t
 # df.subreddit.jac.mat <- melt(as.matrix(df.subreddit.jac))
 
 #save
-#write.csv(df.subreddit.jac.mat, "../../data/df.subreddit.jac.mat_1000.csv")
-
-#load
-df.subreddit.jac.mat <- read.csv("../../data/df.subreddit.jac.mat_1000.csv")
+# write.csv(df.subreddit.jac.mat, "../../data/df.subreddit.jac.mat_1000.csv")
+# 
+# #load using here()
+df.subreddit.jac.mat <- read.csv(here("data/df.subreddit.jac.mat_1000.csv"))
 
 # Heatmap representation of similarities between subreddits
 ## Jaccard
@@ -951,7 +951,7 @@ merge df with combined_subreddit_theme
 # write.csv(combined_subreddit_theme, "combined_subreddit_theme.csv", row.names = TRUE)
 
 #read data
-combined_subreddit_theme <- read.csv("../../data/combined_subreddit_theme.csv")
+# combined_subreddit_theme <- read.csv("../../data/combined_subreddit_theme.csv")
 
 # Perform a left join to add the columns to 'df'
 df <- df %>%
