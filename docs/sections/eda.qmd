@@ -1293,7 +1293,7 @@ df.sentiment <- df.sentiment %>%
 
 
 # Categorize sentiment into five groups 
-df.sentiment <- df.sentiment %>% mutate(Sentiment_Group = case_when( Sentiment >= 0.75 ~ "extremely_positive", Sentiment >= 0.2 ~ "positive", Sentiment > -0.2 & Sentiment < 0.2 ~ "somewhat_positive, neutral", Sentiment >= -0.8 & Sentiment <= -0.2 ~ "somewhat_negative, negative", Sentiment < -0.8 ~ "negative" ))
+df.sentiment <- df.sentiment %>% mutate(sentiment_category = case_when( Sentiment >= 0.75 ~ "extremely_positive", Sentiment >= 0.2 ~ "positive", Sentiment > -0.2 & Sentiment < 0.2 ~ "somewhat_positive, neutral", Sentiment >= -0.8 & Sentiment <= -0.2 ~ "somewhat_negative, negative", Sentiment < -0.8 ~ "negative" ))
 
 df <- df.sentiment 
 head(df)
@@ -1304,8 +1304,7 @@ head(df)
 ## Score
 
 ```{r}
-df_hugo <- df %>%
-  select(-c("X","author_flair_text","id"))
+df_hugo <- df
 
 score_2 <- sum(df_hugo$score==2)
 score_1 <- sum(df_hugo$score==1)
@@ -1323,7 +1322,7 @@ range_filtered <- df_hugo %>%
 
 # Plotting the distribution of the 'score' column from -10 to 100 using ggplot2
 ggplot(range_filtered, aes(x = score)) +
-  geom_histogram(bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
+  geom_histogram(bins = 30, fill = viridis_3, color = "black", alpha = 0.7) +
   labs(title = "Distribution of Score Column from -10 to 20",
        x = "Score",
        y = "Frequency") +
@@ -1340,7 +1339,7 @@ df_high_score <- df_hugo %>%
   filter(score %in% (10:3967))
 
 ggplot(df_high_score, aes(x = score)) +
-  geom_histogram(bins = 30, fill = "lightblue", color = "black", alpha = 0.7) +
+  geom_histogram(bins = 30, fill = viridis_4, color = "black", alpha = 0.7) +
   scale_y_log10() +
   scale_x_log10()+
   labs(title = "Log-Distribution of High Scoring (10+ upvotes) Comments",
@@ -1356,7 +1355,7 @@ df_low_score <- df_hugo %>%
 
 # Plotting the distribution of low scoring comments using ggplot2 with log transformation on both axes
 ggplot(df_low_score, aes(x = score)) +
-  geom_histogram(bins = 30, fill = "lightblue", color = "black", alpha = 0.7) +
+  geom_histogram(bins = 30, fill = viridis_5, color = "black", alpha = 0.7) +
   scale_y_log10() +
   scale_x_reverse() +
   labs(title = "Log-Distribution of Low Scoring (-10 and below) Comments",
@@ -1368,6 +1367,7 @@ ggplot(df_low_score, aes(x = score)) +
 ```
 
 #### Score categoreis
+
 ```{r}
 df <- df %>%
   mutate(score_category = case_when(
@@ -1414,7 +1414,7 @@ count_distribution <- df_high_score %>%
 
 # Plotting the distribution of number of comments per subreddit
 ggplot(count_distribution, aes(x = comment_count)) +
-  geom_histogram(bins = 30, fill = "darkorange", alpha = 0.8) +
+  geom_histogram(bins = 30, fill = viridis_6, alpha = 0.8) +
   labs(title = "Distribution of Number of Comments per Subreddit for High Scoring Comments",
        x = "Number of Comments",
        y = "Frequency") +
@@ -1424,7 +1424,7 @@ ggplot(count_distribution, aes(x = comment_count)) +
 ```{r}
 # Plotting average score by subreddit for high scoring comments with 5 or more comments
 ggplot(df_subreddit_high_score, aes(x = reorder(subreddit, avg_score), y = avg_score)) +
-  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +
+  geom_bar(stat = "identity", fill = viridis_7, alpha = 0.8) +
   coord_flip() +
   labs(title = "Average Score by Subreddit for High Scoring Comments (5 or more comments)",
        x = "Subreddit",
@@ -1446,7 +1446,7 @@ df_subreddit_low_score
 
 ```{r}
 ggplot(df_subreddit_low_score, aes(x = avg_score, y = reorder(subreddit, avg_score))) +
-  geom_bar(stat = "identity", fill = "red", alpha = 0.8) +
+  geom_bar(stat = "identity", fill = viridis_9, alpha = 0.8) +
   scale_x_reverse(limits = c(0, min(df_subreddit_low_score$avg_score))) +
   labs(title = "Average Score by Subreddit for Low Scoring Comments (5 or more comments)",
        x = "Subreddit",
@@ -1464,7 +1464,7 @@ count_distribution_low <- df_low_score %>%
 
 # Plotting the distribution of number of comments per subreddit for low scores
 ggplot(count_distribution_low, aes(x = comment_count)) +
-  geom_histogram(bins = 20, fill = "darkred", alpha = 0.8) +
+  geom_histogram(bins = 20, fill = viridis_10, alpha = 0.8) +
   labs(title = "Distribution of Number of Comments per Subreddit for Low Scoring Comments",
        x = "Number of Comments",
        y = "Frequency") +
@@ -1503,6 +1503,7 @@ df_subreddit_cluster$cluster <- as.factor(kmeans_result$cluster)
 # Plotting the clusters
 ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = cluster)) +
   geom_point(size = 3, alpha = 0.7) +
+  scale_color_viridis_d() +
   labs(title = "Clustering of Subreddits Based on Number of Comments and Average Score",
        x = "Number of Comments",
        y = "Average Score") +
@@ -1514,6 +1515,7 @@ ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = clust
 We now refine our dataset to explore some more relationships, as well as plotting a first knowledge graph.
 
 ### scrap related subreddits
+
 ```{r, eval=FALSE}
 
 # Function to scrape related subreddits
@@ -1577,10 +1579,7 @@ results <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
 print(results)
 
 ```   
-```{r}
-#write_csv(results, "subreddit_relatedsub_part3.csv")
 
-```
     
 ```{r, warning=FALSE, message=FALSE}
 subreddit_related_part1 <- read_csv("../../data/subreddit_relatedsub_part1.csv")
@@ -1612,6 +1611,7 @@ combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_sub
 ```
 
 add column to match related subreddit with the subreddit in our database
+
 ```{r}
 # Split related subreddits into individual components
 combined_subreddit_related$matching_related_subreddits <- sapply(
@@ -1650,6 +1650,7 @@ head(df)
 ```
 
 plot graph of matching related subreddits
+
 ```{r}
 # Filter rows where `matching_related_subreddits` is not empty
 filtered_data <- combined_subreddit_related[
@@ -1783,7 +1784,7 @@ barplot(
   top_20_df$Number_of_Links, 
   names.arg = top_20_df$Subreddit, 
   las = 2, # Rotate labels for better readability
-  col = "steelblue", 
+  col = viridis_3, 
   main = "Top 20 Subreddits with Most Links to Them",
   ylab = "Number of Links",
   cex.names = 0.8 # Adjust label size
@@ -1811,33 +1812,27 @@ summary(df$length)
 
 ```{r}
 head(df)
-#rename column 'theme (cluster number)' to 'theme'
-df <- df %>%
-  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, score_category)
 
-# Adding score categories
-df <- df %>%
-  mutate(score_category = case_when(
-    score >= 100 ~ "extremely_positive",
-    score >= 20 & score < 100 ~ "very_positive",
-    score >= 10 & score < 20 ~ "positive",
-    score >= 2 & score < 10 ~ "somewhat_positive",
-    score == 1 ~ "untouched",
-    score > -10 & score <= 0 ~ "somewhat_negative",
-    score >= -20 & score <= -10 ~ "negative",
-    score < -20 ~ "very_negative"
-  ))
-nrow(df_final)
+#rename theme..cluster.number. to theme
+# df <- df %>%
+#   rename(theme = theme..cluster.number.)
+
+df.final <- df %>%
+  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, matching_related_subreddits, score_category)
+
+head(df.final)
+
+nrow(df.final)
 
 #count NA in related subreddits
-sum(is.na(df_final$matching_related_subreddits))
+sum(is.na(df.final$matching_related_subreddits))
 
 # Perform a left join to add the columns to 'df'
-df <- df %>%
-  left_join(combined_subreddit_theme, by = "subreddit")
+# df.final <- df %>%
+#   left_join(combined_subreddit_theme, by = "subreddit")
 
-#write.csv(df_final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
+#write.csv(df.final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
 #load the data
-df_final <- read_csv("../../data/reddit_comments_15k_v2.csv")
-head(df_final)
+df.final <- read_csv("../../data/reddit_comments_15k_v2.csv")
+head(df.final)
 ```
