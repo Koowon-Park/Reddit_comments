@@ -902,8 +902,9 @@ dominant_topics <- subreddit_topics %>%
 # View dominant topics
 print(dominant_topics)
 ```
+the majority of the subreddits are not well associated with their dominant topic, some with higher gamma are better classified than with lower gamma but it's still not great
 
-### add name
+### Add name for each topic based on the terms using ChatGPT
 
 ```{r}
 # Add dominant topic to the original dataframe
@@ -1831,7 +1832,7 @@ head(df)
 
 #rename theme..cluster.number. to theme
 df <- df %>%
- rename(theme = theme..cluster.number.)
+  rename(theme = `theme (cluster number)`)
 
 df.final <- df %>%
   select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, matching_related_subreddits, score_category)
@@ -1846,6 +1847,11 @@ sum(is.na(df.final$matching_related_subreddits))
 # Perform a left join to add the columns to 'df'
 # df.final <- df %>%
 #   left_join(combined_subreddit_theme, by = "subreddit")
+
+#dataset without observations with missing values in some columns
+# d_leo <- df %>%
+#   drop_na()
+# write.csv(d_leo, "../../data/reddit_comments_leo.csv", row.names = TRUE)
 
 #write.csv(df.final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
 #load the data using here
