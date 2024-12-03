@@ -121,10 +121,12 @@ MATCH (c:Comment)
 WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
 WITH c.theme AS theme_id, c
 ORDER BY theme_id, c.created_utc  // Order by theme_id and created date (optional)
-WITH theme_id, COLLECT(c)[0..10] AS limited_comments  // Limit to 10 comments per theme
+WITH theme_id, COLLECT(c)[0..10] AS limited_comments  
+// Limit to 10 comments per theme
 UNWIND limited_comments AS c  // Unwind the limited comments list
 MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
-MERGE (c)-[:HAS_THEME]->(t);  // Create the relationship between Comment and Theme
+MERGE (c)-[:HAS_THEME]->(t); 
+ // Create the relationship between Comment and Theme
 ```
 
 #### relationship theme_authors
