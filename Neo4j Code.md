@@ -36,7 +36,7 @@ CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
 
 ```         
 // Step 1: Load Authors and Subreddits
-:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_cleaned_NOBODY.csv" AS row CALL {
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v2.csv" AS row CALL {
     WITH row
     MERGE (:Author {id: row.author})
     MERGE (:Subreddit {name: row.subreddit})
@@ -45,7 +45,7 @@ CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
 
 ```         
 // Step 2: Load Comments and link them to Authors and Subreddits
-:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v3.csv" AS row CALL {
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v2.csv" AS row CALL {
     WITH row
     MATCH (a:Author {id: row.author})
     MATCH (s:Subreddit {name: row.subreddit})
@@ -72,7 +72,7 @@ MERGE (:Sentiment {type: "extremely_positive"});
 
 ```         
 // Step 4: Link Comments to Sentiment nodes based on sentiment_category
-:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_cleaned_NOBODY.csv" AS row CALL {
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v2.csv" AS row CALL {
     WITH row
     MATCH (c:Comment {id: row.id})
     MATCH (s:Sentiment {type: row.sentiment_category})
