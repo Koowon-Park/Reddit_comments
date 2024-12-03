@@ -32,6 +32,10 @@ CREATE INDEX sentiment_type IF NOT EXISTS FOR (s:Sentiment) ON (s.type);
 CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
 ```
 
+```
+CREATE INDEX score_category IF NOT EXISTS FOR (s:Score) ON (s.category);
+```
+
 ## Load Data
 
 ```         
