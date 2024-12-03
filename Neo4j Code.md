@@ -173,3 +173,15 @@ OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node link
 RETURN c, t, s
 LIMIT 100;  // Limit the result to avoid too many nodes in case of large dataset
 ```
+
+### Sentiment AND Score AND Theme
+
+```
+// Query to show Sentiment, Theme, and Score graphs linked to Comments
+MATCH (c:Comment)
+OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)       // Match Theme node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SCORE]->(sc:Score)     // Match Score node linked to Comment
+RETURN c, t, s, sc
+LIMIT 100;
+```
