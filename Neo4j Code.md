@@ -1,6 +1,6 @@
 # Neo4j Code
 
-## To be ran Once
+## Index
 
 ```         
 // Index for Authors by id
@@ -80,21 +80,6 @@ MERGE (:Sentiment {type: "extremely_negative"});
 } IN TRANSACTIONS OF 1000 ROWS;
 ```
 
-## Graphs
-### Sentiment
-#### **Create Relationships Between `Comment` and `Sentiment` Nodes**
-
-```         
-MATCH (c:Comment), (s:Sentiment) WHERE toLower(c.sentiment_category) = toLower(s.type) MERGE (c)-[:HAS_SENTIMENT]->(s) 
-```
-
-#### Query to Limit Comment Nodes per Sentiment Node
-
-```         
-MATCH (s:Sentiment) CALL {     WITH s     MATCH (s)<-[:HAS_SENTIMENT]-(c:Comment)     RETURN c     LIMIT 10  // Adjust the limit as needed } RETURN s, c
-```
-### Theme
-#### Node
 ```
 // Create Theme nodes for non-null and non-empty themes
 MATCH (c:Comment)
@@ -102,6 +87,16 @@ WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
 WITH DISTINCT c.theme AS theme_id
 MERGE (:Theme {id: theme_id});
 ```
+
+## Relationship
+### Sentiment
+#### Between `Comment` and `Sentiment` 
+
+```         
+MATCH (c:Comment), (s:Sentiment) WHERE toLower(c.sentiment_category) = toLower(s.type) MERGE (c)-[:HAS_SENTIMENT]->(s) 
+```
+
+### Theme
 #### relationship theme-subreddit
 ``` 
 // Link Themes to Subreddits based on comments
@@ -141,8 +136,21 @@ MERGE (t)-[:THEME_AUTHORS]->(a);
 // Create the relationship between Theme and Author
 ```
 
-### graph
-#### Theme-Comment
+## Graph
+### Sentiment-Comment
+
+```
+MATCH (s:Sentiment) CALL {     
+    WITH s     
+    MATCH (s)<-[:HAS_SENTIMENT]-(c:Comment)     
+    RETURN c     
+    LIMIT 10  
+    // Adjust the limit as needed 
+} 
+RETURN s, c
+```
+
+### Theme-Comment
 
 ```
 // Query to show all Themes with their associated Comments (limited to 10 per theme)
