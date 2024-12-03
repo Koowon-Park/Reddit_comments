@@ -63,9 +63,11 @@ CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
 
 ```         
 // Step 3: Create Sentiment nodes (only needs to be done once)
-MERGE (:Sentiment {type: "Positive"})
-MERGE (:Sentiment {type: "Neutral"})
-MERGE (:Sentiment {type: "Negative"});
+MERGE (:Sentiment {type: "extremely_positive"})
+MERGE (:Sentiment {type: "somewhat_positive"})
+MERGE (:Sentiment {type: "neutral"});
+MERGE (:Sentiment {type: "somewhat_negative"});
+MERGE (:Sentiment {type: "extremely_positive"});
 ```
 
 ```         
