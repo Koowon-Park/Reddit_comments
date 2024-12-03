@@ -185,3 +185,18 @@ OPTIONAL MATCH (c)-[:HAS_SCORE]->(sc:Score)     // Match Score node linked to Co
 RETURN c, t, s, sc
 LIMIT 100;
 ```
+
+### Sentiment AND Score AND Theme AND Authors
+
+```
+// Query to show Sentiment, Theme, and Score graphs linked to Comments
+MATCH (c:Comment)
+// Query to show Sentiment, Theme, Score, and Author graphs linked to Comments
+MATCH (c:Comment)
+OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)       // Match Theme node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SCORE]->(sc:Score)     // Match Score node linked to Comment
+OPTIONAL MATCH (a:Author)-[:POSTED]->(c)        // Match Author node linked to Comment
+RETURN c, t, s, sc, a
+LIMIT 100;
+```
