@@ -103,7 +103,17 @@ WITH DISTINCT c.theme AS theme_id
 MERGE (:Theme {id: theme_id});
 ```
 
-create relationship
+``` create relationship theme-subreddit
+// Link Themes to Subreddits based on comments
+MATCH (c:Comment)-[:IN]->(s:Subreddit)
+WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
+WITH DISTINCT c.theme AS theme_id, s
+MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
+MERGE (t)-[:THEME_SUBREDDIT]->(s); 
+ // Create the relationship between Theme and Subreddit
+```
+
+create relationship theme-comment
 
 ```
 // Link Comments to Themes, limiting to 10 comments per theme
@@ -116,7 +126,21 @@ UNWIND limited_comments AS c  // Unwind the limited comments list
 MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
 MERGE (c)-[:HAS_THEME]->(t);  // Create the relationship between Comment and Theme
 ```
+
+create relationship theme_authors
+
+```
+// Link Themes to Authors based on comments
+MATCH (c:Comment)<-[:POSTED]-(a:Author)
+WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
+WITH c.theme AS theme_id, a
+MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
+MERGE (t)-[:THEME_AUTHORS]->(a);  
+// Create the relationship between Theme and Author
+```
+
 graph
+
 ```
 // Query to show all Themes with their associated Comments (limited to 10 per theme)
 MATCH (c:Comment)-[:HAS_THEME]->(t:Theme)
