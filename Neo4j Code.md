@@ -44,7 +44,6 @@ CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
 ```
 
 ```         
-// Step 2: Load Comments and link them to Authors and Subreddits
 :auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v2.csv" AS row CALL {
     WITH row
     MATCH (a:Author {id: row.author})
@@ -55,9 +54,15 @@ CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
             c.display_name = row.display_name,
             c.length = toInteger(row.length),
             c.theme = toInteger(row.theme),
-            c.matching_related_subreddits = row.matching_related_subreddits
+            c.matching_related_subreddits = row.matching_related_subreddits,
+            c.sentiment_category = row.sentiment_category,  // Add sentiment_category
+            c.score_category = row.score_category,          // Add score_category
+            c.description = row.description                 // Add description
     MERGE (a)-[:POSTED]->(c)
     MERGE (c)-[:IN]->(s)
+    // Link each comment to its Score based on score_category
+    MERGE (score:Score {category: row.score_category})
+    MERGE (c)-[:HAS_SCORE]->(score)  // Create relationship to Score node
 } IN TRANSACTIONS OF 1000 ROWS;
 ```
 
