@@ -1270,15 +1270,26 @@ ggplot() +
   scale_x_continuous(limits = c(-1, 1), breaks = seq(-1, 1, by = 0.1)) +
   #tilt 45 degree x axis
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#barplot
+ggplot(df.sentiment, aes(x = Sentiment)) +
+  geom_bar(fill = viridis_3, color = "black", alpha = 0.7, width = 0.05) +
+  labs(title = "Distribution of Sentiment Scores",
+       x = "Sentiment Score",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(panel.grid.major = element_line(color = "grey", linetype = "dashed", size = 0.5)) +
+  #tilt 45 degree x axis
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 We will 'cut' the sentiment score into 5 categories: 
 
-- extremely_positive, 0.75 to 1
-- positive, 0.2 to 0.75
+- extremely_positive, 1
+- positive, 0.2 to 0.99
 - somewhat_positive, neutral, -0.2 to 0.2
-- somewhat_negative, negative, -0.8 to -0.2
-- negative, -1 to -0.8
+- somewhat_negative, negative, -0.99 to -0.2
+- negative, -1 to -0.99
 
 
 ```{r}
@@ -1288,10 +1299,19 @@ df.sentiment <- df.sentiment %>%
 
 
 # Categorize sentiment into five groups 
-df.sentiment <- df.sentiment %>% mutate(sentiment_category = case_when( Sentiment >= 0.75 ~ "extremely_positive", Sentiment >= 0.2 ~ "positive", Sentiment > -0.2 & Sentiment < 0.2 ~ "somewhat_positive, neutral", Sentiment >= -0.8 & Sentiment <= -0.2 ~ "somewhat_negative, negative", Sentiment < -0.8 ~ "negative" ))
+df.sentiment <- df.sentiment %>% mutate(sentiment_category = case_when( 
+  Sentiment >= 0.99 ~ "extremely_positive", 
+  Sentiment > 0.2 & Sentiment < 0.99 ~ "somewhat_positive", 
+  Sentiment >= -0.2 & Sentiment <= 0.2 ~ "neutral",
+  Sentiment > -0.99 & Sentiment < -0.2 ~ "somewhat_negative",
+  Sentiment <= -0.99 ~ "extremely_negative"
+))
 
 df <- df.sentiment 
 head(df)
+
+#count each unique value in sentiment col
+table(df.sentiment$sentiment_category)
 # save the data as a .csv file
 #write.csv(df.sentiment, "../../data/BING_sentiment.csv", row.names = TRUE)
 ```
