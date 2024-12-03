@@ -67,7 +67,7 @@ MERGE (:Sentiment {type: "extremely_positive"})
 MERGE (:Sentiment {type: "somewhat_positive"})
 MERGE (:Sentiment {type: "neutral"});
 MERGE (:Sentiment {type: "somewhat_negative"});
-MERGE (:Sentiment {type: "extremely_positive"});
+MERGE (:Sentiment {type: "extremely_negative"});
 ```
 
 ```         
