@@ -200,3 +200,62 @@ OPTIONAL MATCH (a:Author)-[:POSTED]->(c)        // Match Author node linked to C
 RETURN c, t, s, sc, a
 LIMIT 100;
 ```
+
+### load leo dataset (lighter)
+```
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_leo.csv" AS row CALL {
+WITH row
+MATCH (s1:Subreddit {name: row.subreddit}) // Match the primary subreddit
+WITH s1, SPLIT(row.matching_related_subreddits, ",") AS related_subreddits // Split the related subreddits by comma
+UNWIND related_subreddits AS related_name // Break down the list into individual subreddit names
+WITH s1, TRIM(related_name) AS trimmed_name // Remove extra spaces
+MATCH (s2:Subreddit {name: trimmed_name}) // Match related subreddit nodes
+MERGE (s1)-[:RELATED_TO]->(s2) // Create a relationship between the subreddits
+} IN TRANSACTIONS OF 1000 ROWS;
+```
+
+### graph related sub 
+```
+MATCH (s1:Subreddit)-[:RELATED_TO]->(s2:Subreddit)
+RETURN s1, s2
+LIMIT 300;
+```
+
+### table top 20
+```
+MATCH (s1:Subreddit)-[:RELATED_TO]->(s2:Subreddit)
+RETURN s1.name AS subreddit, COUNT(s2) AS related_count
+ORDER BY related_count DESC
+LIMIT 10;
+```
+
+### related sub and sentiment
+```
+MATCH (c:Comment)-[:IN]->(s:Subreddit)
+MATCH (c)-[:HAS_SENTIMENT]->(sent:Sentiment)
+MERGE (s)-[:HAS_SENTIMENT]->(sent);
+```
+
+### graph related sub and sentiment
+```
+MATCH (c:Comment)-[:IN]->(s:Subreddit)
+MATCH (c)-[:HAS_SENTIMENT]->(sent:Sentiment)
+MERGE (s)-[:HAS_SENTIMENT]->(sent);
+```
+
+### related sub with top 20
+```
+MATCH (s:Subreddit)-[:RELATED_TO]->(:Subreddit)
+WITH s, COUNT(*) AS related_count
+ORDER BY related_count DESC
+LIMIT 20
+SET s:TopSubreddit;
+// Add a label for the top 20 subreddits
+```
+
+### graph related sub with top 20
+```
+MATCH (s1:Subreddit)-[:RELATED_TO]->(s2:Subreddit)
+RETURN s1, s2;
+```
+
