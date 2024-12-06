@@ -937,10 +937,15 @@ topic_names <- c(
 
 
 
-# Replace the dominant_topic column with topic names
+# Add a new column with topic names corresponding to dominant_topic
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  mutate(dominant_topic_name = topic_names[dominant_topic])
 
 combined_subreddit_theme <- combined_subreddit_theme %>%
-  mutate(dominant_topic = topic_names[dominant_topic])
+  rename(theme = dominant_topic)
+
+combined_subreddit_theme <- combined_subreddit_theme %>%
+  rename(theme_name = dominant_topic_name)
 
 # View updated dataframe
 head(combined_subreddit_theme)
@@ -1142,7 +1147,7 @@ After reading the comments, we observe mixed results.
 
 #### NRC
 
-```{r sample_NRC_comment}
+```{r sample_NRC_comment, warning=FALSE}
 #use NRC to analyse sentiment all the rows based on column body
 df.sentiment <- inner_join(df.sample %>% unnest_tokens(word, body),
  get_sentiments("nrc"), by = c("word" = "word")) %>% group_by(id) %>%
@@ -1830,12 +1835,9 @@ summary(df$length)
 ```{r, eval=FALSE}
 head(df)
 
-#rename theme..cluster.number. to theme
-df <- df %>%
-  rename(theme = `theme (cluster number)`)
 
 df.final <- df %>%
-  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, matching_related_subreddits, score_category)
+  select(id, author, subreddit, display_name, body, score, sentiment_category, length, description, theme, theme_name, matching_related_subreddits, score_category)
 
 head(df.final)
 
@@ -1853,7 +1855,7 @@ sum(is.na(df.final$matching_related_subreddits))
 #   drop_na()
 # write.csv(d_leo, "../../data/reddit_comments_leo.csv", row.names = TRUE)
 
-#write.csv(df.final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
+write.csv(df.final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
 #load the data using here
 df.final <- read_csv(here("data", "reddit_comments_15k_v2.csv"))
 (head(df.final))
