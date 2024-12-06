@@ -261,3 +261,47 @@ MATCH (s1:Subreddit)-[:RELATED_TO]->(s2:Subreddit)
 RETURN s1, s2;
 ```
 
+## Similarities
+### Author nodes and top similar authors.
+
+```         
+MATCH (n)-[r:THEME_AUTHORS]-(a1:Author) 
+with count(n) as deg1,a1 order by deg1 desc limit 10
+MATCH (a1)-[:THEME_AUTHORS]-(n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, count(n) as common ,deg1,  a2 order by common desc 
+MATCH (n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, a2, common, deg1, count(n) as deg2 
+with a1,a2, common, deg1, deg2, 100*common/(deg1+deg2-common) as simi order by simi desc
+return a1 , collect(a2)[..3]
+```
+
+### Author nodes, themes (t), and connections.
+
+```         
+MATCH (n)-[r:THEME_AUTHORS]-(a1:Author) 
+with count(n) as deg1,a1 order by deg1 desc limit 10
+MATCH (a1)-[:THEME_AUTHORS]-(n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, count(n) as common ,deg1,  a2 order by common desc 
+MATCH (n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, a2, common, deg1, count(n) as deg2 
+with a1,a2, common, deg1, deg2, 100*common/(deg1+deg2-common) as simi order by simi desc
+with a1 , collect(a2)[..5] as author_list
+unwind author_list as a2
+MATCH (a1)--(t)--(a2)
+return a1,t,a2
+```
+
+### Author ID pairs.
+
+```         
+MATCH (n)-[r:THEME_AUTHORS]-(a1:Author) 
+with count(n) as deg1,a1 order by deg1 desc limit 100
+MATCH (a1)-[:THEME_AUTHORS]-(n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, count(n) as common ,deg1,  a2 order by common desc 
+MATCH (n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, a2, common, deg1, count(n) as deg2 
+with a1,a2, common, deg1, deg2, 100*common/(deg1+deg2-common) as simi order by simi desc
+with a1 , collect(a2)[..5] as author_list
+unwind author_list as a2
+return a1.id,a2.id
+```
