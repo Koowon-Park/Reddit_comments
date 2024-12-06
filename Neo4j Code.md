@@ -125,7 +125,8 @@ MATCH (c:Comment)
 WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
 WITH toInteger(c.theme) AS theme_id, c  // Convert theme to integer if necessary
 MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
-MERGE (c)-[:HAS_THEME]->(t);  // Create the relationship between Comment and Theme
+MERGE (c)-[:HAS_THEME]->(t);
+// Create the relationship between Comment and Theme
 ```
 
 #### relationship theme_authors
@@ -171,7 +172,8 @@ MATCH (c:Comment)
 OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)  // Match Theme node linked to Comment
 OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
 RETURN c, t, s
-LIMIT 100;  // Limit the result to avoid too many nodes in case of large dataset
+LIMIT 100;
+// Limit the result to avoid too many nodes in case of large dataset
 ```
 
 ### Sentiment AND Score AND Theme
