@@ -46,7 +46,6 @@ CREATE INDEX score_category IF NOT EXISTS FOR (s:Score) ON (s.category);
             c.display_name = row.display_name,
             c.length = toInteger(row.length),
             c.theme = toInteger(row.theme),
-            c.matching_related_subreddits = row.matching_related_subreddits
             c.matching_related_subreddits = row.matching_related_subreddits,
             c.sentiment_category = row.sentiment_category,  // Add sentiment_category
             c.score_category = row.score_category,          // Add score_category
