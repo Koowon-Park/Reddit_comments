@@ -10,9 +10,6 @@ viridis_7 <- viridis(10)[7]
 viridis_8 <- viridis(10)[8]
 viridis_9 <- viridis(10)[9]
 viridis_10 <- viridis(10)[10]
-
-#plot each color side by side to observe them
-plot(1:10, rep(1, 10), col = viridis(10), pch = 19, cex = 2, xlab = "Color", ylab = "Color", xlim = c(0, 11), ylim = c(0, 2), xaxt = "n", yaxt = "n")
 ```
 
 # EDA
@@ -161,7 +158,9 @@ df.subreddit.dfm %>%
   facet_wrap(~document, ncol = 3)
 ```
 
-So in summary: - We observe that AskReddit has lots of words frequency which makes sense as it is the largest subreddit.
+So in summary: 
+
+- We observe that AskReddit has lots of words frequency which makes sense as it is the largest subreddit.
 
 -   We also observe that the term 'game' is associated in term of frequency with sports subreddits like CFB (College Football) and Hockey.
 
@@ -217,12 +216,7 @@ p <- ggplot(data = df.subreddit.jac.mat,
   theme(axis.text.x = element_blank(),  # Remove x-axis text
         axis.text.y = element_blank(),  # Remove y-axis text
         axis.ticks = element_blank())   # Remove axis ticks
-
-# Convert ggplot to plotly for interactivity
-p_interactive <- ggplotly(p, tooltip = "text")
-
-# Display the interactive plot
-p_interactive
+print(p)
 ```
 
 We observe that similarity using Jaccard index on the top 1000 tf-idf words is inconclusive.
@@ -265,6 +259,8 @@ Therefore, we will try to use topic modeling to see if we can regroup the subred
 ### Latent Semantic Analysis
 
 LSA is a core technique in topic modelling, it uses matrices to separate topics and terms.
+
+(see code for more detail on the results)
 
 ```{r lsa_subreddit, eval=TRUE, echo=TRUE}
 #select subset of data of the top 10 subreddits for readability purposes
@@ -343,7 +339,7 @@ We therefore inspect further with Singular Value Decomposition (SVD). The SVD co
 
 We restrict here the PCA for links between subreddits and topics to only dimension 2 and 3 to obverse its efficacy.
 
-```{r pca, cache=TRUE, eval=TRUE, echo=TRUE}
+```{r pca, cache=FALSE, eval=TRUE, echo=TRUE}
 set.seed(123)
 # Restrict chart to terms that are mostly related to dim2 and dim3 
 w.subset <- df.subreddit.lsa$features[ c(unique(c(names(w.top2), names(w.top3)))), 2:3]
@@ -371,6 +367,9 @@ p <- ggplot() +
 # Convert ggplot to plotly for interactivity
 p_interactive <- ggplotly(p, tooltip = "text")
 
+# Update width and heigth of the plot
+p_interactive <- p_interactive %>% layout(width = 800, height = 600)
+
 # Display the interactive plot
 p_interactive
 ```
@@ -385,6 +384,8 @@ The subreddits are indeed better regrouped, in a more meaningful way.
 
 LDA is a Bayesian version of the probabilistic Latent Semantic Analysis.
 It answers the question "*Given this type of distribution, what are some actual probability distributions I am likely to see?*"
+
+(see code for more details on the results)
 
 ```{r lda_subreddit, cache=TRUE, eval=TRUE, echo=TRUE}
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
@@ -488,13 +489,20 @@ phi.long %>%
 ```
 
 The distinction between topics is clearer now, we observe that:
-  - Topic 1 may be related to 'pc games' ("game", "pc", "steam", "play", etc.)
-  - Topic 2 seems to also be related to pc games, but more precisely to the game League of Legends, where terms such as "champions", "ping", "riot" and "team" are prevalent.
-  - Topic 3 is also related to some sorts of games, we can maybe infer that it related to sports more specifically, with the presence of words such as "fan".
-  - Topic 4 is harder to distinguish with the presence of conflicting words such as "play", "kill", "run", and "raid".
-  - Topic 5 seems to be related to feelings with words like "im", time", "day", "feel", etc.
-  - Topic 6 seems to be related to Crime and Justice with the presence of words such as "murder", "evidence", and "interview".
-  - Topic 7 seems to be related to news and world event with the presence of words such as "country", "american", "russia," "war".
+
+- Topic 1 may be related to 'pc games' ("game", "pc", "steam", "play", etc.)
+
+- Topic 2 seems to also be related to pc games, but more precisely to the game League of Legends, where terms such as "champions", "ping", "riot" and "team" are prevalent.
+
+- Topic 3 is also related to some sorts of games, we can maybe infer that it related to sports more specifically, with the presence of words such as "fan".
+
+- Topic 4 is harder to distinguish with the presence of conflicting words such as "play", "kill", "run", and "raid".
+
+- Topic 5 seems to be related to feelings with words like "im", time", "day", "feel", etc.
+
+- Topic 6 seems to be related to Crime and Justice with the presence of words such as "murder", "evidence", and "interview".
+
+- Topic 7 seems to be related to news and world event with the presence of words such as "country", "american", "russia," "war".
   
 We see that they reflect our subreddit which makes sense. It would be interesting to take more that 10 subreddit as we might uncover interesting grouping of subreddits but it is so computationally intensive that we refrain from doing that for now.
 
@@ -515,11 +523,12 @@ theta.long$Doc <- rep(df.top10_subreddit$subreddit, each = ncol(df.top10_subredd
 theta.long %>% 
   group_by(Topic) %>% 
   top_n(10, Theta) %>% 
-  ggplot(aes(reorder_within(Doc, Theta, Topic), Theta)) + 
+  ggplot(aes(reorder_within(Doc, Theta, Topic), Theta, fill = Theta)) + 
   geom_col(show.legend = FALSE) +
-  coord_flip()+
+  coord_flip() +
   facet_wrap(~ Topic, scales = "free_y") +
   scale_x_reordered() + 
+  scale_fill_viridis_c() + 
   xlab("Document") + 
   theme(
     axis.text.y = element_text(size = 5),
@@ -542,6 +551,7 @@ However, regrouping ALL the comments per subreddits is not the best way to analy
 ### Web Scraping (Description and name)
 
 First attempt to scrape data
+
 ```{r, eval=FALSE}
 # Example list of subreddit names (replace this with your dataframe column)
 #subreddit_names <- head(df.subreddit$subreddit, 1000)
@@ -603,6 +613,7 @@ print(subreddit_metadata)
 ```
 
 Second attempt, better way to scrape data.
+
 ```{r, eval=FALSE}
 # Function to scrape display-name and description
 get_subreddit_metadata <- function(subreddit) {
@@ -693,6 +704,7 @@ print(results)
 ```
 
 Store in csv file
+
 ```{r}
 #write_csv(subreddit_metadata, "subreddit_metadata_first1000.csv")
 #write_csv(results, "subreddit_metadata_last2500.csv")
@@ -701,6 +713,7 @@ Store in csv file
 For computational purpose we don't run the code above as it takes a lot of time to scrape the data. We will use the data that we have already scraped.
 
 remove NA
+
 ```{r, message=FALSE}
 subreddit_first1000 <- read_csv("../../data/subreddit_metadata_first1000.csv")
 subreddit_first1000 <- na.omit(subreddit_first1000)
@@ -736,6 +749,7 @@ head(combined_subreddit_theme)
 ```
 
 clustering test similarity
+
 ```{r, warning=FALSE}
 corpus <- Corpus(VectorSource(combined_subreddit_theme$description))
 corpus <- tm_map(corpus, content_transformer(tolower))
@@ -745,6 +759,7 @@ dtm <- DocumentTermMatrix(corpus)
 ```
 
 ### Clusters
+
 ```{r, cache=TRUE}
 set.seed(123)
 k <- 30  # Choose the number of clusters
@@ -819,7 +834,8 @@ top_terms %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   coord_flip() +
-  scale_x_reordered()
+  scale_x_reordered() +
+  scale_fill_viridis_d()
 ```
 
 We see that the results are promising, we keep analyzing further.We now test with 30 topics. We use this incremental method because of the heavy computational resources needed for this method.
@@ -848,6 +864,7 @@ print(subreddit_topics)
 ```
 
 Visualize:
+
 ```{r, warning=FALSE}
 top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
@@ -858,7 +875,8 @@ top_terms %>%
   scale_x_reordered() +
   labs(title = "Top Terms in Each Topic",
        x = "Terms",
-       y = "Beta")
+       y = "Beta") +
+  scale_fill_viridis_d()
 ```
 
 chosen method because best so far
@@ -1298,7 +1316,7 @@ range_filtered <- df_hugo %>%
 
 # Plotting the distribution of the 'score' column from -10 to 100 using ggplot2
 ggplot(range_filtered, aes(x = score)) +
-  geom_histogram(bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
+  geom_histogram(bins = 30, fill = viridis_3, color = "black", alpha = 0.7) +
   labs(title = "Distribution of Score Column from -10 to 20",
        x = "Score",
        y = "Frequency") +
@@ -1315,7 +1333,7 @@ df_high_score <- df_hugo %>%
   filter(score %in% (10:3967))
 
 ggplot(df_high_score, aes(x = score)) +
-  geom_histogram(bins = 30, fill = "lightblue", color = "black", alpha = 0.7) +
+  geom_histogram(bins = 30, fill = viridis_4, color = "black", alpha = 0.7) +
   scale_y_log10() +
   scale_x_log10()+
   labs(title = "Log-Distribution of High Scoring (10+ upvotes) Comments",
@@ -1331,7 +1349,7 @@ df_low_score <- df_hugo %>%
 
 # Plotting the distribution of low scoring comments using ggplot2 with log transformation on both axes
 ggplot(df_low_score, aes(x = score)) +
-  geom_histogram(bins = 30, fill = "lightblue", color = "black", alpha = 0.7) +
+  geom_histogram(bins = 30, fill = viridis_5, color = "black", alpha = 0.7) +
   scale_y_log10() +
   scale_x_reverse() +
   labs(title = "Log-Distribution of Low Scoring (-10 and below) Comments",
@@ -1342,7 +1360,7 @@ ggplot(df_low_score, aes(x = score)) +
 
 ```
 
-#### Score categoreis
+#### Score Categories
 ```{r}
 df <- df %>%
   mutate(score_category = case_when(
@@ -1389,7 +1407,7 @@ count_distribution <- df_high_score %>%
 
 # Plotting the distribution of number of comments per subreddit
 ggplot(count_distribution, aes(x = comment_count)) +
-  geom_histogram(bins = 30, fill = "darkorange", alpha = 0.8) +
+  geom_histogram(bins = 30, fill = viridis_3, alpha = 0.8) +
   labs(title = "Distribution of Number of Comments per Subreddit for High Scoring Comments",
        x = "Number of Comments",
        y = "Frequency") +
@@ -1399,7 +1417,7 @@ ggplot(count_distribution, aes(x = comment_count)) +
 ```{r}
 # Plotting average score by subreddit for high scoring comments with 5 or more comments
 ggplot(df_subreddit_high_score, aes(x = reorder(subreddit, avg_score), y = avg_score)) +
-  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +
+  geom_bar(stat = "identity", fill = viridis_4, alpha = 0.8) +
   coord_flip() +
   labs(title = "Average Score by Subreddit for High Scoring Comments (5 or more comments)",
        x = "Subreddit",
@@ -1421,7 +1439,7 @@ df_subreddit_low_score
 
 ```{r}
 ggplot(df_subreddit_low_score, aes(x = avg_score, y = reorder(subreddit, avg_score))) +
-  geom_bar(stat = "identity", fill = "red", alpha = 0.8) +
+  geom_bar(stat = "identity", fill = viridis_5, alpha = 0.8) +
   scale_x_reverse(limits = c(0, min(df_subreddit_low_score$avg_score))) +
   labs(title = "Average Score by Subreddit for Low Scoring Comments (5 or more comments)",
        x = "Subreddit",
@@ -1439,7 +1457,7 @@ count_distribution_low <- df_low_score %>%
 
 # Plotting the distribution of number of comments per subreddit for low scores
 ggplot(count_distribution_low, aes(x = comment_count)) +
-  geom_histogram(bins = 20, fill = "darkred", alpha = 0.8) +
+  geom_histogram(bins = 20, fill = viridis_2, alpha = 0.8) +
   labs(title = "Distribution of Number of Comments per Subreddit for Low Scoring Comments",
        x = "Number of Comments",
        y = "Frequency") +
@@ -1478,6 +1496,7 @@ df_subreddit_cluster$cluster <- as.factor(kmeans_result$cluster)
 # Plotting the clusters
 ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = cluster)) +
   geom_point(size = 3, alpha = 0.7) +
+  scale_color_viridis_d() +
   labs(title = "Clustering of Subreddits Based on Number of Comments and Average Score",
        x = "Number of Comments",
        y = "Average Score") +
@@ -1489,8 +1508,8 @@ ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = clust
 We now refine our dataset to explore some more relationships, as well as plotting a first knowledge graph.
 
 ### scrap related subreddits
-```{r, eval=FALSE}
 
+```{r, eval=FALSE}
 # Function to scrape related subreddits
 get_related_subreddits <- function(subreddit) {
   # Construct the URL
@@ -1587,6 +1606,7 @@ combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_sub
 ```
 
 add column to match related subreddit with the subreddit in our database
+
 ```{r}
 # Split related subreddits into individual components
 combined_subreddit_related$matching_related_subreddits <- sapply(
@@ -1609,8 +1629,6 @@ combined_subreddit_related <- na.omit(combined_subreddit_related)
 # remove empty related_subreddit in combined_subreddit_related
 combined_subreddit_related <- combined_subreddit_related %>%
   filter(related_subreddits != "")
-
-
 ```
 
 merge df with combined_subreddit_theme and combined_subreddit_related
@@ -1625,6 +1643,7 @@ head(df)
 ```
 
 plot graph of matching related subreddits
+
 ```{r}
 # Filter rows where `matching_related_subreddits` is not empty
 filtered_data <- combined_subreddit_related[
@@ -1758,7 +1777,7 @@ barplot(
   top_20_df$Number_of_Links, 
   names.arg = top_20_df$Subreddit, 
   las = 2, # Rotate labels for better readability
-  col = "steelblue", 
+  col = viridis_4, 
   main = "Top 20 Subreddits with Most Links to Them",
   ylab = "Number of Links",
   cex.names = 0.8 # Adjust label size
