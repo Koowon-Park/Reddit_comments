@@ -3,6 +3,7 @@
 ```{r}
 library(reticulate)
 library(here)
+
 venv_path <- here("venv")
 if (!dir.exists(venv_path)) {
   virtualenv_create(venv_path)
@@ -77,7 +78,6 @@ for comment in comments:
 ```
 # LLM Integration
 
-
 ```{python}
 from openai import OpenAI
 
@@ -97,6 +97,7 @@ completion = client.chat.completions.create(
 )
 
 print(completion.choices[0].message)
+<<<<<<< HEAD
 
 ```
 
@@ -104,3 +105,6 @@ print(completion.choices[0].message)
 
 
 
+=======
+```
+>>>>>>> a502214e9e58b6a9bc915d641aac4213e0da197c

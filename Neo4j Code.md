@@ -5,34 +5,22 @@
 ```         
 // Index for Authors by id
 CREATE INDEX author_id IF NOT EXISTS FOR (a:Author) ON (a.id);
-```
-
-```         
+         
 // Index for Subreddits by name
 CREATE INDEX subreddit_name IF NOT EXISTS FOR (s:Subreddit) ON (s.name);
-```
-
-```         
+        
 // Index for Comments by id
 CREATE INDEX comment_id IF NOT EXISTS FOR (c:Comment) ON (c.id);
-```
-
-```         
+        
 // Index for Comments by parent_id_small to facilitate parent-child relationships
 CREATE INDEX comment_parent_id_small IF NOT EXISTS FOR (c:Comment) ON (c.parent_id_small);
-```
-
-```         
+         
 // Index for Sentiment by type
 CREATE INDEX sentiment_type IF NOT EXISTS FOR (s:Sentiment) ON (s.type);
-```
 
-```
 // Index for Theme by id (new index)
 CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
-```
 
-```
 CREATE INDEX score_category IF NOT EXISTS FOR (s:Score) ON (s.category);
 ```
 
@@ -58,6 +46,7 @@ CREATE INDEX score_category IF NOT EXISTS FOR (s:Score) ON (s.category);
             c.display_name = row.display_name,
             c.length = toInteger(row.length),
             c.theme = toInteger(row.theme),
+            c.matching_related_subreddits = row.matching_related_subreddits
             c.matching_related_subreddits = row.matching_related_subreddits,
             c.sentiment_category = row.sentiment_category,  // Add sentiment_category
             c.score_category = row.score_category,          // Add score_category
@@ -72,6 +61,7 @@ CREATE INDEX score_category IF NOT EXISTS FOR (s:Score) ON (s.category);
 
 ```         
 // Step 3: Create Sentiment nodes (only needs to be done once)
+
 MERGE (:Sentiment {type: "extremely_positive"})
 MERGE (:Sentiment {type: "somewhat_positive"})
 MERGE (:Sentiment {type: "neutral"});
@@ -173,7 +163,6 @@ OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)  // Match Theme node linked to Commen
 OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
 RETURN c, t, s
 LIMIT 100;
-// Limit the result to avoid too many nodes in case of large dataset
 ```
 
 ### Sentiment AND Score AND Theme

@@ -10,9 +10,6 @@ viridis_7 <- viridis(10)[7]
 viridis_8 <- viridis(10)[8]
 viridis_9 <- viridis(10)[9]
 viridis_10 <- viridis(10)[10]
-
-#plot each color side by side to observe them
-plot(1:10, rep(1, 10), col = viridis(10), pch = 19, cex = 2, xlab = "Color", ylab = "Color", xlim = c(0, 11), ylim = c(0, 2), xaxt = "n", yaxt = "n")
 ```
 
 # EDA
@@ -161,7 +158,9 @@ df.subreddit.dfm %>%
   facet_wrap(~document, ncol = 3)
 ```
 
-So in summary: - We observe that AskReddit has lots of words frequency which makes sense as it is the largest subreddit.
+So in summary: 
+
+- We observe that AskReddit has lots of words frequency which makes sense as it is the largest subreddit.
 
 -   We also observe that the term 'game' is associated in term of frequency with sports subreddits like CFB (College Football) and Hockey.
 
@@ -254,7 +253,9 @@ df.subreddit.km$cluster
 Only 50 where selected to show, but same applies to all subreddits.
 Again, we observe that the clustering is not very clear, even worse.
 We have a lot of subreddits that are not well regrouped.
+
 This is due to the fact that we have a lot of specific words in each subreddit.
+
 Therefore, we will try to use topic modeling to see if we can regroup the subreddits in a more meaningful way.
 
 ## Themes and topics
@@ -262,6 +263,8 @@ Therefore, we will try to use topic modeling to see if we can regroup the subred
 ### Latent Semantic Analysis
 
 LSA is a core technique in topic modelling, it uses matrices to separate topics and terms.
+
+(see code for more detail on the results)
 
 ```{r lsa_subreddit, eval=TRUE, echo=TRUE}
 #select subset of data of the top 10 subreddits for readability purposes
@@ -368,8 +371,8 @@ p <- ggplot() +
 # Convert ggplot to plotly for interactivity
 p_interactive <- ggplotly(p, tooltip = "text")
 
-# Display the interactive plot
-p_interactive
+# Update width and heigth of the plot
+p_interactive <- p_interactive %>% layout(width = 800, height = 600)
 ```
 
 We only show the features (words) that are mostly related to dim2 and dim3 so that the chart is not overcrowded.
@@ -382,6 +385,8 @@ The subreddits are indeed better regrouped, in a more meaningful way.
 
 LDA is a Bayesian version of the probabilistic Latent Semantic Analysis.
 It answers the question "*Given this type of distribution, what are some actual probability distributions I am likely to see?*"
+
+(see code for more details on the results)
 
 ```{r lda_subreddit, cache=TRUE, eval=TRUE, echo=TRUE}
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
@@ -485,13 +490,20 @@ phi.long %>%
 ```
 
 The distinction between topics is clearer now, we observe that:
-  - Topic 1 may be related to 'pc games' ("game", "pc", "steam", "play", etc.)
-  - Topic 2 seems to also be related to pc games, but more precisely to the game League of Legends, where terms such as "champions", "ping", "riot" and "team" are prevalent.
-  - Topic 3 is also related to some sorts of games, we can maybe infer that it related to sports more specifically, with the presence of words such as "fan".
-  - Topic 4 is harder to distinguish with the presence of conflicting words such as "play", "kill", "run", and "raid".
-  - Topic 5 seems to be related to feelings with words like "im", time", "day", "feel", etc.
-  - Topic 6 seems to be related to Crime and Justice with the presence of words such as "murder", "evidence", and "interview".
-  - Topic 7 seems to be related to news and world event with the presence of words such as "country", "american", "russia," "war".
+
+- Topic 1 may be related to 'pc games' ("game", "pc", "steam", "play", etc.)
+
+- Topic 2 seems to also be related to pc games, but more precisely to the game League of Legends, where terms such as "champions", "ping", "riot" and "team" are prevalent.
+
+- Topic 3 is also related to some sorts of games, we can maybe infer that it related to sports more specifically, with the presence of words such as "fan".
+
+- Topic 4 is harder to distinguish with the presence of conflicting words such as "play", "kill", "run", and "raid".
+
+- Topic 5 seems to be related to feelings with words like "im", time", "day", "feel", etc.
+
+- Topic 6 seems to be related to Crime and Justice with the presence of words such as "murder", "evidence", and "interview".
+
+- Topic 7 seems to be related to news and world event with the presence of words such as "country", "american", "russia," "war".
   
 We see that they reflect our subreddit which makes sense. It would be interesting to take more that 10 subreddit as we might uncover interesting grouping of subreddits but it is so computationally intensive that we refrain from doing that for now.
 
@@ -512,11 +524,12 @@ theta.long$Doc <- rep(df.top10_subreddit$subreddit, each = ncol(df.top10_subredd
 theta.long %>% 
   group_by(Topic) %>% 
   top_n(10, Theta) %>% 
-  ggplot(aes(reorder_within(Doc, Theta, Topic), Theta)) + 
+  ggplot(aes(reorder_within(Doc, Theta, Topic), Theta, fill = Theta)) + 
   geom_col(show.legend = FALSE) +
-  coord_flip()+
+  coord_flip() +
   facet_wrap(~ Topic, scales = "free_y") +
   scale_x_reordered() + 
+  scale_fill_viridis_c() + 
   xlab("Document") + 
   theme(
     axis.text.y = element_text(size = 5),
@@ -539,6 +552,7 @@ However, regrouping ALL the comments per subreddits is not the best way to analy
 ### Web Scraping (Description and name)
 
 First attempt to scrape data
+
 ```{r, eval=FALSE}
 # Example list of subreddit names (replace this with your dataframe column)
 #subreddit_names <- head(df.subreddit$subreddit, 1000)
@@ -822,7 +836,8 @@ top_terms %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   coord_flip() +
-  scale_x_reordered()
+  scale_x_reordered() +
+  scale_fill_viridis_d()
 ```
 
 We see that the results are promising, we keep analyzing further.We now test with 20 topics. We use this incremental method because of the heavy computational resources needed for this method.
@@ -862,7 +877,8 @@ top_terms %>%
   scale_x_reordered() +
   labs(title = "Top Terms in Each Topic",
        x = "Terms",
-       y = "Beta")
+       y = "Beta") +
+  scale_fill_viridis_d()
 ```
 
 chosen method because best so far
@@ -902,6 +918,7 @@ dominant_topics <- subreddit_topics %>%
 # View dominant topics
 print(dominant_topics)
 ```
+
 the majority of the subreddits are not well associated with their dominant topic, some with higher gamma are better classified than with lower gamma but it's still not great
 
 ### Add name for each topic based on the terms using ChatGPT
@@ -935,8 +952,6 @@ topic_names <- c(
   "Gaming Systems, PC, and Friends"
 )
 
-
-
 # Add a new column with topic names corresponding to dominant_topic
 combined_subreddit_theme <- combined_subreddit_theme %>%
   mutate(dominant_topic_name = topic_names[dominant_topic])
@@ -968,7 +983,6 @@ df <- df %>%
 
 head(df)
 ```
-
 
 ## Sentiment Analysis
 
@@ -1387,8 +1401,6 @@ ggplot(df_low_score, aes(x = score)) +
 
 ```
 
-#### Score categoreis
-
 ```{r}
 df <- df %>%
   mutate(score_category = case_when(
@@ -1538,7 +1550,6 @@ We now refine our dataset to explore some more relationships, as well as plottin
 ### scrap related subreddits
 
 ```{r, eval=FALSE}
-
 # Function to scrape related subreddits
 get_related_subreddits <- function(subreddit) {
   # Construct the URL
@@ -1601,7 +1612,7 @@ print(results)
 
 ```   
 
-    
+
 ```{r, warning=FALSE, message=FALSE}
 subreddit_related_part1 <- read_csv(here("data", "subreddit_relatedsub_part1.csv"))
 # Remove r/ in column related subreddit
@@ -1656,8 +1667,6 @@ combined_subreddit_related <- na.omit(combined_subreddit_related)
 # remove empty related_subreddit in combined_subreddit_related
 combined_subreddit_related <- combined_subreddit_related %>%
   filter(related_subreddits != "")
-
-
 ```
 
 merge df with combined_subreddit_theme and combined_subreddit_related
