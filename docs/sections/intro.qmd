@@ -12,10 +12,6 @@ source(here("src/setup.R"))
 
 ### Aim Of The Investigation
 
-
-### Description of the Data
-
-
 ### Methodology
 
 
