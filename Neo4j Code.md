@@ -1,6 +1,6 @@
 # Neo4j Code
 
-## To be ran Once
+## Index
 
 ```         
 // Index for Authors by id
@@ -32,11 +32,18 @@ CREATE INDEX sentiment_type IF NOT EXISTS FOR (s:Sentiment) ON (s.type);
 CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
 ```
 
+<<<<<<< HEAD
+=======
+```
+CREATE INDEX score_category IF NOT EXISTS FOR (s:Score) ON (s.category);
+```
+
+>>>>>>> origin/main
 ## Load Data
 
 ```         
 // Step 1: Load Authors and Subreddits
-:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_cleaned_NOBODY.csv" AS row CALL {
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v2.csv" AS row CALL {
     WITH row
     MERGE (:Author {id: row.author})
     MERGE (:Subreddit {name: row.subreddit})
@@ -44,8 +51,12 @@ CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
 ```
 
 ```         
+<<<<<<< HEAD
 // Step 2: Load Comments and link them to Authors and Subreddits
 :auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v3.csv" AS row CALL {
+=======
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v2.csv" AS row CALL {
+>>>>>>> origin/main
     WITH row
     MATCH (a:Author {id: row.author})
     MATCH (s:Subreddit {name: row.subreddit})
@@ -55,22 +66,44 @@ CREATE INDEX theme_id IF NOT EXISTS FOR (t:Theme) ON (t.id);
             c.display_name = row.display_name,
             c.length = toInteger(row.length),
             c.theme = toInteger(row.theme),
+<<<<<<< HEAD
             c.matching_related_subreddits = row.matching_related_subreddits
+=======
+            c.matching_related_subreddits = row.matching_related_subreddits,
+            c.sentiment_category = row.sentiment_category,  // Add sentiment_category
+            c.score_category = row.score_category,          // Add score_category
+            c.description = row.description                 // Add description
+>>>>>>> origin/main
     MERGE (a)-[:POSTED]->(c)
     MERGE (c)-[:IN]->(s)
+    // Link each comment to its Score based on score_category
+    MERGE (score:Score {category: row.score_category})
+    MERGE (c)-[:HAS_SCORE]->(score)  // Create relationship to Score node
 } IN TRANSACTIONS OF 1000 ROWS;
 ```
 
 ```         
 // Step 3: Create Sentiment nodes (only needs to be done once)
+<<<<<<< HEAD
 MERGE (:Sentiment {type: "Positive"})
 MERGE (:Sentiment {type: "Neutral"})
 MERGE (:Sentiment {type: "Negative"});
+=======
+MERGE (:Sentiment {type: "extremely_positive"})
+MERGE (:Sentiment {type: "somewhat_positive"})
+MERGE (:Sentiment {type: "neutral"});
+MERGE (:Sentiment {type: "somewhat_negative"});
+MERGE (:Sentiment {type: "extremely_negative"});
+>>>>>>> origin/main
 ```
 
 ```         
 // Step 4: Link Comments to Sentiment nodes based on sentiment_category
+<<<<<<< HEAD
 :auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_cleaned_NOBODY.csv" AS row CALL {
+=======
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_15k_v2.csv" AS row CALL {
+>>>>>>> origin/main
     WITH row
     MATCH (c:Comment {id: row.id})
     MATCH (s:Sentiment {type: row.sentiment_category})
@@ -78,6 +111,7 @@ MERGE (:Sentiment {type: "Negative"});
 } IN TRANSACTIONS OF 1000 ROWS;
 ```
 
+<<<<<<< HEAD
 ## Graphs
 ### Sentiment
 #### **Create Relationships Between `Comment` and `Sentiment` Nodes**
@@ -93,6 +127,8 @@ MATCH (s:Sentiment) CALL {     WITH s     MATCH (s)<-[:HAS_SENTIMENT]-(c:Comment
 ```
 ### Theme
 
+=======
+>>>>>>> origin/main
 ```
 // Create Theme nodes for non-null and non-empty themes
 MATCH (c:Comment)
@@ -101,6 +137,7 @@ WITH DISTINCT c.theme AS theme_id
 MERGE (:Theme {id: theme_id});
 ```
 
+<<<<<<< HEAD
 create relationship
 
 ```
@@ -115,6 +152,68 @@ MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
 MERGE (c)-[:HAS_THEME]->(t);  // Create the relationship between Comment and Theme
 ```
 graph
+=======
+## Relationship
+### Sentiment
+#### Between `Comment` and `Sentiment` 
+
+```         
+MATCH (c:Comment), (s:Sentiment) WHERE toLower(c.sentiment_category) = toLower(s.type) MERGE (c)-[:HAS_SENTIMENT]->(s) 
+```
+
+### Theme
+#### relationship theme-subreddit
+``` 
+// Link Themes to Subreddits based on comments
+MATCH (c:Comment)-[:IN]->(s:Subreddit)
+WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
+WITH DISTINCT c.theme AS theme_id, s
+MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
+MERGE (t)-[:THEME_SUBREDDIT]->(s); 
+ // Create the relationship between Theme and Subreddit
+```
+
+#### relationship theme-comment
+
+```
+// Link Comments to Themes, ensuring proper type matching
+MATCH (c:Comment)
+WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
+WITH toInteger(c.theme) AS theme_id, c  // Convert theme to integer if necessary
+MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
+MERGE (c)-[:HAS_THEME]->(t);
+// Create the relationship between Comment and Theme
+```
+
+#### relationship theme_authors
+
+```
+// Link Themes to Authors based on comments
+MATCH (c:Comment)<-[:POSTED]-(a:Author)
+WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
+WITH c.theme AS theme_id, a
+MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
+MERGE (t)-[:THEME_AUTHORS]->(a);  
+// Create the relationship between Theme and Author
+```
+
+## Graph
+### Sentiment-Comment
+
+```
+MATCH (s:Sentiment) CALL {     
+    WITH s     
+    MATCH (s)<-[:HAS_SENTIMENT]-(c:Comment)     
+    RETURN c     
+    LIMIT 10  
+    // Adjust the limit as needed 
+} 
+RETURN s, c
+```
+
+### Theme-Comment
+
+>>>>>>> origin/main
 ```
 // Query to show all Themes with their associated Comments (limited to 10 per theme)
 MATCH (c:Comment)-[:HAS_THEME]->(t:Theme)
@@ -130,5 +229,140 @@ MATCH (c:Comment)
 OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)  // Match Theme node linked to Comment
 OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
 RETURN c, t, s
+<<<<<<< HEAD
 LIMIT 100;  // Limit the result to avoid too many nodes in case of large dataset
+=======
+LIMIT 100;
+// Limit the result to avoid too many nodes in case of large dataset
+```
+
+### Sentiment AND Score AND Theme
+
+```
+// Query to show Sentiment, Theme, and Score graphs linked to Comments
+MATCH (c:Comment)
+OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)       // Match Theme node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SCORE]->(sc:Score)     // Match Score node linked to Comment
+RETURN c, t, s, sc
+LIMIT 100;
+```
+
+### Sentiment AND Score AND Theme AND Authors
+
+```
+// Query to show Sentiment, Theme, and Score graphs linked to Comments
+MATCH (c:Comment)
+// Query to show Sentiment, Theme, Score, and Author graphs linked to Comments
+MATCH (c:Comment)
+OPTIONAL MATCH (c)-[:HAS_THEME]->(t:Theme)       // Match Theme node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SENTIMENT]->(s:Sentiment)  // Match Sentiment node linked to Comment
+OPTIONAL MATCH (c)-[:HAS_SCORE]->(sc:Score)     // Match Score node linked to Comment
+OPTIONAL MATCH (a:Author)-[:POSTED]->(c)        // Match Author node linked to Comment
+RETURN c, t, s, sc, a
+LIMIT 100;
+```
+
+### load leo dataset (lighter)
+```
+:auto LOAD CSV WITH HEADERS FROM "file:///reddit_comments_leo.csv" AS row CALL {
+WITH row
+MATCH (s1:Subreddit {name: row.subreddit}) // Match the primary subreddit
+WITH s1, SPLIT(row.matching_related_subreddits, ",") AS related_subreddits // Split the related subreddits by comma
+UNWIND related_subreddits AS related_name // Break down the list into individual subreddit names
+WITH s1, TRIM(related_name) AS trimmed_name // Remove extra spaces
+MATCH (s2:Subreddit {name: trimmed_name}) // Match related subreddit nodes
+MERGE (s1)-[:RELATED_TO]->(s2) // Create a relationship between the subreddits
+} IN TRANSACTIONS OF 1000 ROWS;
+```
+
+### graph related sub 
+```
+MATCH (s1:Subreddit)-[:RELATED_TO]->(s2:Subreddit)
+RETURN s1, s2
+LIMIT 300;
+```
+
+### table top 20
+```
+MATCH (s1:Subreddit)-[:RELATED_TO]->(s2:Subreddit)
+RETURN s1.name AS subreddit, COUNT(s2) AS related_count
+ORDER BY related_count DESC
+LIMIT 10;
+```
+
+### related sub and sentiment
+```
+MATCH (c:Comment)-[:IN]->(s:Subreddit)
+MATCH (c)-[:HAS_SENTIMENT]->(sent:Sentiment)
+MERGE (s)-[:HAS_SENTIMENT]->(sent);
+```
+
+### graph related sub and sentiment
+```
+MATCH (c:Comment)-[:IN]->(s:Subreddit)
+MATCH (c)-[:HAS_SENTIMENT]->(sent:Sentiment)
+MERGE (s)-[:HAS_SENTIMENT]->(sent);
+```
+
+### related sub with top 20
+```
+MATCH (s:Subreddit)-[:RELATED_TO]->(:Subreddit)
+WITH s, COUNT(*) AS related_count
+ORDER BY related_count DESC
+LIMIT 20
+SET s:TopSubreddit;
+// Add a label for the top 20 subreddits
+```
+
+### graph related sub with top 20
+```
+MATCH (s1:Subreddit)-[:RELATED_TO]->(s2:Subreddit)
+RETURN s1, s2;
+```
+
+## Similarities
+### Author nodes and top similar authors.
+
+```         
+MATCH (n)-[r:THEME_AUTHORS]-(a1:Author) 
+with count(n) as deg1,a1 order by deg1 desc limit 10
+MATCH (a1)-[:THEME_AUTHORS]-(n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, count(n) as common ,deg1,  a2 order by common desc 
+MATCH (n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, a2, common, deg1, count(n) as deg2 
+with a1,a2, common, deg1, deg2, 100*common/(deg1+deg2-common) as simi order by simi desc
+return a1 , collect(a2)[..3]
+```
+
+### Author nodes, themes (t), and connections.
+
+```         
+MATCH (n)-[r:THEME_AUTHORS]-(a1:Author) 
+with count(n) as deg1,a1 order by deg1 desc limit 10
+MATCH (a1)-[:THEME_AUTHORS]-(n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, count(n) as common ,deg1,  a2 order by common desc 
+MATCH (n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, a2, common, deg1, count(n) as deg2 
+with a1,a2, common, deg1, deg2, 100*common/(deg1+deg2-common) as simi order by simi desc
+with a1 , collect(a2)[..5] as author_list
+unwind author_list as a2
+MATCH (a1)--(t)--(a2)
+return a1,t,a2
+```
+
+### Author ID pairs.
+
+```         
+MATCH (n)-[r:THEME_AUTHORS]-(a1:Author) 
+with count(n) as deg1,a1 order by deg1 desc limit 100
+MATCH (a1)-[:THEME_AUTHORS]-(n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, count(n) as common ,deg1,  a2 order by common desc 
+MATCH (n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, a2, common, deg1, count(n) as deg2 
+with a1,a2, common, deg1, deg2, 100*common/(deg1+deg2-common) as simi order by simi desc
+with a1 , collect(a2)[..5] as author_list
+unwind author_list as a2
+return a1.id,a2.id
+>>>>>>> origin/main
 ```

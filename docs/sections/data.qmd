@@ -1,7 +1,8 @@
 # Data
 
-```{r load_data, cache=TRUE, eval=FALSE, echo=FALSE}
-#summary of the csv
+## check the CSV
+
+```{r load_data, cache=TRUE, eval=FALSE}
 #load csv with here
 df <- read.csv(here("data/reddit_comments_15k.csv"))
 (head(df, 10))
@@ -47,7 +48,6 @@ write.csv(df, here("data/15k_cleaned.csv"), row.names = TRUE)
 
 For rendering reasons, we load the cleaned dataset.
 Here is a sample of 20 observations from the dataset. We decided to show only the columns 'author' and 'body' for the sake of simplicity.
-
 
 ```{r load cleaned data, eval=TRUE, echo=TRUE}
 df <- read.csv(here("data/15k_cleaned.csv"))
