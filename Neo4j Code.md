@@ -103,7 +103,6 @@ WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
 WITH DISTINCT c.theme AS theme_id, s
 MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
 MERGE (t)-[:THEME_SUBREDDIT]->(s); 
- // Create the relationship between Theme and Subreddit
 ```
 
 #### relationship theme-comment
@@ -115,7 +114,6 @@ WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
 WITH toInteger(c.theme) AS theme_id, c  // Convert theme to integer if necessary
 MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
 MERGE (c)-[:HAS_THEME]->(t);
-// Create the relationship between Comment and Theme
 ```
 
 #### relationship theme_authors
@@ -127,7 +125,6 @@ WHERE c.theme IS NOT NULL AND c.theme <> ""  // Exclude null or empty themes
 WITH c.theme AS theme_id, a
 MATCH (t:Theme {id: theme_id})  // Match the Theme node by theme_id
 MERGE (t)-[:THEME_AUTHORS]->(a);  
-// Create the relationship between Theme and Author
 ```
 
 ## Graph
@@ -139,7 +136,6 @@ MATCH (s:Sentiment) CALL {
     MATCH (s)<-[:HAS_SENTIMENT]-(c:Comment)     
     RETURN c     
     LIMIT 10  
-    // Adjust the limit as needed 
 } 
 RETURN s, c
 ```
@@ -149,8 +145,7 @@ RETURN s, c
 ```
 // Query to show all Themes with their associated Comments (limited to 10 per theme)
 MATCH (c:Comment)-[:HAS_THEME]->(t:Theme)
-WITH t, COLLECT(c)[0..10] AS limited_comments  // Limit to 10 comments per theme
-RETURN t, limited_comments;
+WITH t, COLLECT(c)[0..10] AS limited_comments
 ```
 
 ### Sentiment AND Theme
