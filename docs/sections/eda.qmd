@@ -42,8 +42,8 @@ df.subreddit %>%
   coord_flip() +
   labs(title = "Top 10 Subreddits by Length", x = "Subreddit", y = "Length") +
   #increase text size
-  theme(axis.text.y = element_text(size = 10),
-        axis.text.x = element_text(size = 10))
+  theme(axis.text.y = element_text(size = 14),
+        axis.text.x = element_text(size = 14))
 ```
 
 We observe that AskReddit is by far the largest Subreddit.
@@ -99,8 +99,8 @@ df.subreddit.freq %>%
   xlab("Frequency") +
   ylab("term") +
   #increase size of text
-  theme(axis.text.y = element_text(size = 10),
-        axis.text.x = element_text(size = 10))
+  theme(axis.text.y = element_text(size = 14),
+        axis.text.x = element_text(size = 14))
 
 ```
 
@@ -116,7 +116,7 @@ df.subreddit.freq %>%
   top_n(30, frequency) %>%
   ggplot(aes(label = feature, size = frequency, color = frequency)) +
   geom_text_wordcloud() +
-  scale_size_area(max_size = 14) +
+  scale_size_area(max_size = 20) +
   scale_color_viridis_c() +
   theme_minimal()
 ```
@@ -153,7 +153,7 @@ df.subreddit.dfm %>%
   ggplot(aes(x = term, y = count)) +
   geom_bar(stat = "identity", fill = viridis_3) +
   coord_flip() +
-  theme(axis.text.y = element_text(size = 10),
+  theme(axis.text.y = element_text(size = 14),
         axis.ticks.y = element_blank()) +
   facet_wrap(~document, ncol = 3)
 ```
@@ -442,8 +442,8 @@ phi.long %>%
   scale_fill_viridis_d() +
   xlab("Term") + 
   theme(
-    axis.text.y = element_text(size = 5),
-    strip.text = element_text(size = 5))
+    axis.text.y = element_text(size = 10),
+    strip.text = element_text(size = 10))
 ```
 
 The Topic-Term Analysis produces similar results as the LDA. However this plot provides the probabilities, therefore refining our understanding.
@@ -485,8 +485,8 @@ phi.long %>%
   scale_fill_viridis_d() +
   xlab("Term") + 
   theme(
-    axis.text.y = element_text(size = 5),
-    strip.text = element_text(size = 5))
+    axis.text.y = element_text(size = 10),
+    strip.text = element_text(size = 10))
 ```
 
 The distinction between topics is clearer now, we observe that:
@@ -532,8 +532,8 @@ theta.long %>%
   scale_fill_viridis_c() + 
   xlab("Document") + 
   theme(
-    axis.text.y = element_text(size = 5),
-    strip.text = element_text(size = 5))
+    axis.text.y = element_text(size = 10),
+    strip.text = element_text(size = 10))
 ```
 
 This confirms our previous analysis. We see topic 1 related to pc/games, topic 2 related to league of legends, etc.
@@ -837,7 +837,10 @@ top_terms %>%
   facet_wrap(~ topic, scales = "free") +
   coord_flip() +
   scale_x_reordered() +
-  scale_fill_viridis_d()
+  scale_fill_viridis_d() +
+  #increase font size
+  theme(axis.text.x = element_text(size = 10),
+        strip.text = element_text(size = 10))
 ```
 
 We see that the results are promising, we keep analyzing further.We now test with 20 topics. We use this incremental method because of the heavy computational resources needed for this method.
@@ -878,7 +881,10 @@ top_terms %>%
   labs(title = "Top Terms in Each Topic",
        x = "Terms",
        y = "Beta") +
-  scale_fill_viridis_d()
+  scale_fill_viridis_d() +
+  #increase font size
+  theme(axis.text.x = element_text(size = 10),
+        strip.text = element_text(size = 10))
 ```
 
 chosen method because best so far
@@ -1016,8 +1022,8 @@ ggplot(df.top30_subreddit.affin, aes(x = Sentiment, y = reorder(subreddit, Senti
   scale_fill_viridis_c() +
   ylab("") + 
   #increase text size
-  theme(axis.text.y = element_text(size = 10),
-        axis.text.x = element_text(size = 10))
+  theme(axis.text.y = element_text(size = 14),
+        axis.text.x = element_text(size = 14))
 ```
 
 There seems to be more positive subreddits than negative ones.
@@ -1044,8 +1050,8 @@ ggplot(df.top30_subreddit.bing, aes(x = Sentiment, y = reorder(subreddit, Sentim
   scale_fill_viridis_c() +
   ylab("") + 
   #increase text size
-  theme(axis.text.y = element_text(size = 10),
-        axis.text.x = element_text(size = 10))
+  theme(axis.text.y = element_text(size = 14),
+        axis.text.x = element_text(size = 14))
 ```
 
 BING seems to reflect the same proportion of positive and negative as the AFINN dictionary.
@@ -1069,8 +1075,8 @@ ggplot(df.top30_subreddit.nrc, aes(x = Sentiment, y = reorder(subreddit, Sentime
   scale_fill_viridis_c() +
   ylab("") + 
   #increase text size
-  theme(axis.text.y = element_text(size = 10),
-        axis.text.x = element_text(size = 10))
+  theme(axis.text.y = element_text(size = 14),
+        axis.text.x = element_text(size = 14))
 ```
 
 Through the NRC dictionary we observe far more positive subreddits than negative ones.
@@ -1278,18 +1284,6 @@ df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
  get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id) %>%
  summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
  inner_join(df, by = "id")
-
-head(df.sentiment)
-#show bing distrubtion interactive plot
-#plot the three sentiment distribution on one using viridis color
-ggplot() +
-  geom_density(data = df.sentiment, aes(x = Sentiment, fill = "BING"), alpha = 0.5) +
-  scale_fill_viridis_d() +
-  theme_minimal() +
-  #more detail on x axis
-  scale_x_continuous(limits = c(-1, 1), breaks = seq(-1, 1, by = 0.1)) +
-  #tilt 45 degree x axis
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #barplot
 ggplot(df.sentiment, aes(x = Sentiment)) +
