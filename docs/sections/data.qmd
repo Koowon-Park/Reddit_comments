@@ -1,24 +1,14 @@
 # Data
 
--   Sources
--   Description
--   Wrangling/cleaning
--   Spotting mistakes and missing data (could be part of EDA too)
--   Listing anomalies and outliers (could be part of EDA too)
-
-setting eval=FALSE will not run the code when knitting the document
-
-
-## check the CSV
-
-```{r load_data, cache=TRUE, eval=FALSE}
+```{r load_data, cache=TRUE, eval=FALSE, echo=FALSE}
+#summary of the csv
 #load csv with here
 df <- read.csv(here("data/reddit_comments_15k.csv"))
 (head(df, 10))
 summary(df)
 ```
 
-## Clean the data
+## Data cleaning
 
 ```{r clean_data, cache=TRUE, eval=FALSE, echo=TRUE}
 #show column that contains 'deleted'
@@ -58,7 +48,6 @@ write.csv(df, here("data/15k_cleaned.csv"), row.names = TRUE)
 For rendering reasons, we load the cleaned dataset.
 Here is a sample of 20 observations from the dataset. We decided to show only the columns 'author' and 'body' for the sake of simplicity.
 
-### Load cleaned data
 
 ```{r load cleaned data, eval=TRUE, echo=TRUE}
 df <- read.csv(here("data/15k_cleaned.csv"))
