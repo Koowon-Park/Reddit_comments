@@ -9,8 +9,33 @@ source(here("src/setup.R"))
 
 ### Context and Background
 
+A REFORMULER COPY PASTE DES SLIDES
+History around the term knowledge graph
+ 1956, Rene Bakker (Utrecht) developed the notion of a Knowledge Graph in 
+his Ph.D. Thesis as a way of structuring and representing scientific 
+knowledge.
+ 1974, Marchi and Miguel defined a knowledge graph as a mathematical 
+structure with vertices as knowledge units connected by edges that 
+represent the prerequisite relation. Units of knowledge are only accessible if 
+other units are previously known.
+A (widely agreed) definition for the term 
+knowledge graph is lacking.
+ “...the use of the term has evolved and now may refer to a wide range of graphs, that 
+may not include clear and unambiguous definitions or references.”
+ McCusker et al. (2018), What is a Knowledge Graph?
+ “We define a knowledge graph as: a graph, composed of a set of assertions (edges 
+labeled with relations) that are expressed between entities (vertices), where the 
+meaning of the graph is encoded in its structure, the relations and entities are 
+unambiguously identified, a limited set of relations are used to label the edges, and 
+the 
+.” 
+graph encodes the provenance, especially justification and attribution, of the 
+assertions
+ McCusker et al. (2018), What is a Knowledge Graph
 
 ### Aim Of The Investigation
+
+WHAT KIND OF QUESTION TO WE WANT TO INVESTIGATE ?
 
 ### Methodology
 
