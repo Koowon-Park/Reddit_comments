@@ -1,18 +1,18 @@
 # Knowledge Graphs
 
-Knowledge Graphs serve multiple purposes
+Knowledge Graphs (KGs) provide a robust framework for representing, managing, and analyzing complex relationships between entities. They serve as valuable tools for uncovering patterns and gaining insights from interconnected datasets, such as Reddit discussions.
 
 ## Neo4j
 
-Here is a basic representation of our knowledge graph in Neo4j. Where authors in blue, comments in pink, theme in green, scores in orange, and sentiment in red.
+The initial construction of our Knowledge Graph was implemented in Neo4j. In this representation, we categorized the nodes as follows: authors in blue, comments in pink, themes in green, scores in orange, and sentiment in red.
 
 ![](../../images/graph.png)
 
-Increasing the complexity of the graph can help to understand the relationships between the different nodes.
+As we increase the complexity of the graph by incorporating additional nodes and relationships, the relationships between different entities become more evident.
 
 ![](../../images/clipboard-583397259.png)
 
-Increasing it even more
+Further complexity reveals richer insights but also introduces challenges in interpreting the data visually.
 
 ![](../../images/clipboard-747420762.png)
 
