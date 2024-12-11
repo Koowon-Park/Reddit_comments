@@ -1858,10 +1858,21 @@ sum(is.na(df.final$matching_related_subreddits))
 #   drop_na()
 # write.csv(d_leo, "../../data/reddit_comments_leo.csv", row.names = TRUE)
 
-write.csv(df.final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
+#write.csv(df.final, "../../data/reddit_comments_15k_v2.csv", row.names = TRUE)
 #load the data using here
 df.final <- read_csv(here("data", "reddit_comments_15k_v2.csv"))
 (head(df.final))
+
+
+# Create a table with theme names, their counts, and the theme column
+theme_counts <- as.data.frame(table(df.final$theme_name))
+colnames(theme_counts) <- c("Theme Name", "Count")
+theme_counts$Theme <- df.final$theme[match(theme_counts$`Theme Name`, df.final$theme_name)]
+
+#move theme column at the begining
+theme_counts <- theme_counts[, c(3, 1, 2)]
+# Display the table using kable
+kable(theme_counts, col.names = c("Theme Number", "Theme Name", "Count"), caption = "Theme Name Counts with Theme Column")
 ```
 
 ```{r, eval=FALSE, echo=FALSE}
