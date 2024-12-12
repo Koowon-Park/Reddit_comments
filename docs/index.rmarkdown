@@ -25,6 +25,5 @@ library(here)
 source(here("src/setup.R"))
 ```
 
-
 ```{r child = paste0('sections/', c('intro.qmd', 'data.qmd', 'eda.qmd', 'KG.qmd', 'LLM.qmd'))}
 ```
