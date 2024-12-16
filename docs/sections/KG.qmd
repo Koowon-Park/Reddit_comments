@@ -46,14 +46,21 @@ We observe here that theme 9 which is about 'Sports, Teams, and Player Discussio
 
 ![](../../images/clipboard-2630725974.png)
 
+
 ### Sentiment
 
 adding sentiment in green (positive) and red (negative) complexifies the graph but can be useful to understand the sentiment of the different themes. We observe for example that theme 9 as a lot of 'red' which means that it is mostly negative compares to other themes.
 
-![](images/clipboard-3037199124.png)
+![](../../images/clipboard-3037199124.png)
 ```{r sentiment, echo=TRUE}
 #check if theme 9 as indeed more negative sentiment
 table_data <- df %>% filter(theme == 9) %>% group_by(sentiment_category) %>% summarise(n = n())
+
+# Display the table using kable
+kable(table_data, col.names = c("Sentiment Category", "Count"), caption = "Sentiment Category Counts for Theme 9")
+
+#check if theme 9 as indeed more negative sentiment
+table_data <- df %>% filter(theme == 2) %>% group_by(sentiment_category) %>% summarise(n = n())
 
 # Display the table using kable
 kable(table_data, col.names = c("Sentiment Category", "Count"), caption = "Sentiment Category Counts for Theme 9")
@@ -65,6 +72,8 @@ Which is indeed verified.
 the same can be done with score in shades of blue but it becomes a bit more complex to interpret.
 
 ![](../../images/clipboard-688774298.png)
+
+changer couleur sur valeur extreme seulement, plus lisible
 
 ## Similarities
 
@@ -85,7 +94,9 @@ For example here we observe the relationship of authors based on theme 1, which 
 Now if we isolate theme 17 which is about 'Politics, Science, and Star Wars'.
 
 ![](../../images/clipboard-1197459568.png)
+rajouter texte dessus
 
 We observe that still Automoderator and autowikibot are part of it as they have a relation in all theme which is logical. But we also observe now techrush andd beefat99 and tweetposter for example.
 
 We can continue for other themes but you get the point that I want to demonstrate that we can play with those knowledge graph to get insights from it.
+
