@@ -9,37 +9,48 @@ source(here("src/setup.R"))
 
 ### Context and Background
 
-A REFORMULER COPY PASTE DES SLIDES
-History around the term knowledge graph
- 1956, Rene Bakker (Utrecht) developed the notion of a Knowledge Graph in 
-his Ph.D. Thesis as a way of structuring and representing scientific 
-knowledge.
- 1974, Marchi and Miguel defined a knowledge graph as a mathematical 
-structure with vertices as knowledge units connected by edges that 
-represent the prerequisite relation. Units of knowledge are only accessible if 
-other units are previously known.
-A (widely agreed) definition for the term 
-knowledge graph is lacking.
- “...the use of the term has evolved and now may refer to a wide range of graphs, that 
-may not include clear and unambiguous definitions or references.”
- McCusker et al. (2018), What is a Knowledge Graph?
- “We define a knowledge graph as: a graph, composed of a set of assertions (edges 
-labeled with relations) that are expressed between entities (vertices), where the 
-meaning of the graph is encoded in its structure, the relations and entities are 
-unambiguously identified, a limited set of relations are used to label the edges, and 
-the 
-.” 
-graph encodes the provenance, especially justification and attribution, of the 
-assertions
- McCusker et al. (2018), What is a Knowledge Graph
+In this project, we explore the intersection of knowledge graphs and generative AI (GenAI) using a dataset of Reddit comments. The idea of knowledge graphs has evolved significantly over the years, originating as a way to structure scientific knowledge and now encompassing a wide variety of graph-based representations.
+
+The term "knowledge graph" was first introduced by Rene Bakker in 1956 as part of his Ph.D. thesis, where he proposed structuring and representing scientific knowledge using a graph-based model. Later, in 1974, Marchi and Miguel defined a knowledge graph as a mathematical structure where vertices represent knowledge units and edges denote the prerequisite relationships between them. Over time, the concept has broadened significantly, and today there is no universally agreed-upon definition. (vuillon2024 - Course Slides).
+
+McCusker et al. (2018) propose a working definition: a knowledge graph is a set of assertions (edges labeled with relations) expressed between entities (vertices). These graphs encode meaning through their structure, unambiguously identify entities and relations, and include provenance information, such as justification and attribution of assertions. (vuillon2024 - Course Slides).
+
+In this project, we focus on leveraging knowledge graphs as a tool to model, visualize, and derive insights from our Reddit dataset. Coupled with generative AI, these graphs offer interesting opportunities to explore new ways of extracting and synthesizing knowledge.
 
 ### Aim Of The Investigation
 
-WHAT KIND OF QUESTION TO WE WANT TO INVESTIGATE ?
+How can the combination of knowledge graphs and generative AI enhance our understanding and exploration of complex datasets like Reddit comments, and what unique insights can we uncover through this approach?
 
 ### Methodology
 
+This project employed a variety of tools and technologies:
+
+-   **R** and **Python** were used for data loading, cleaning, and processing.
+
+-   **Neo4j** and **Gephi** were utilized to construct and visualize the knowledge graphs.
+
+-   **Generative AI** (via API integration) was implemented to interact with the knowledge graph and generate context-aware responses.
+
+The project workflow followed these key steps:
+
+1.  **Data Preparation**: The Reddit dataset was loaded, processed, and enriched with additional variables after an extensive exploratory data analysis (EDA).
+
+2.  **Knowledge Graph Construction**: Knowledge graphs were created using Neo4j, and further visualized and analyzed using Gephi.
+
+3.  **Integration with LLMs**: An API was used to enable seamless queries from Neo4j, demonstrating the ease and power of combining knowledge graphs with LLMs.
 
 ### Structure of the Report
 
+This report is structured to provide a coherent narrative of our investigation:
 
+1.  **Introduction**: Background, motivation, and objectives.
+
+2.  **Data**: Overview of the dataset and preprocessing steps.
+
+3.  **Exploratory Data Analysis (EDA)**: Key findings from data exploration.
+
+4.  **Knowledge Graphs and Generative AI**: Construction, insights, and integration of knowledge graphs with LLMs.
+
+5.  **Conclusion**: Reflections on the investigation and potential future directions.
+
+Through this structure, we aim to present a clear and compelling story of our exploration into knowledge graphs and generative AI using the Reddit dataset.

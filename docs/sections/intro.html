@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>kg</title>
+<title>intro</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,53 +20,19 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
-<script src="KG_files/libs/clipboard/clipboard.min.js"></script>
-<script src="KG_files/libs/quarto-html/quarto.js"></script>
-<script src="KG_files/libs/quarto-html/popper.min.js"></script>
-<script src="KG_files/libs/quarto-html/tippy.umd.min.js"></script>
-<script src="KG_files/libs/quarto-html/anchor.min.js"></script>
-<link href="KG_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="KG_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="KG_files/libs/bootstrap/bootstrap.min.js"></script>
-<link href="KG_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="KG_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="intro_files/libs/clipboard/clipboard.min.js"></script>
+<script src="intro_files/libs/quarto-html/quarto.js"></script>
+<script src="intro_files/libs/quarto-html/popper.min.js"></script>
+<script src="intro_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="intro_files/libs/quarto-html/anchor.min.js"></script>
+<link href="intro_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="intro_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="intro_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="intro_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="intro_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 
 
 </head>
@@ -80,148 +46,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<section id="knowledge-graphs" class="level1">
-<h1>Knowledge Graphs</h1>
-<p>Knowledge Graphs (KGs) provide a robust framework for representing, managing, and analyzing complex relationships between entities. They serve as valuable tools for uncovering patterns and gaining insights from interconnected datasets, such as Reddit discussions.</p>
-<section id="neo4j" class="level2">
-<h2 class="anchored" data-anchor-id="neo4j">Neo4j</h2>
-<p>The initial construction of our Knowledge Graph was implemented in Neo4j. In this representation, we categorized the nodes as follows: authors in blue, comments in pink, themes in green, scores in orange, and sentiment in red.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="index_files/images/graph.png" class="img-fluid figure-img"></p>
-<figcaption>Graph Image</figcaption>
-</figure>
-</div>
-<p>As we increase the complexity of the graph by incorporating additional nodes and relationships, the relationships between different entities become more evident.</p>
-<p><img src="../../images/clipboard-583397259.png" class="img-fluid"></p>
-<p>Further complexity reveals richer insights but also introduces challenges in interpreting the data visually.</p>
-<p><img src="../../images/clipboard-747420762.png" class="img-fluid"></p>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<section id="overview-and-motivation" class="level2">
+<h2 class="anchored" data-anchor-id="overview-and-motivation">Overview and Motivation</h2>
+<section id="context-and-background" class="level3">
+<h3 class="anchored" data-anchor-id="context-and-background">Context and Background</h3>
+<p>In this project, we explore the fascinating intersection of knowledge graphs and generative AI (GenAI) using a dataset of Reddit comments. The idea of knowledge graphs has evolved significantly over the years, originating as a way to structure scientific knowledge and now encompassing a wide variety of graph-based representations.</p>
+<p>The term “knowledge graph” was first introduced by Rene Bakker in 1956 as part of his Ph.D.&nbsp;thesis, where he proposed structuring and representing scientific knowledge using a graph-based model. Later, in 1974, Marchi and Miguel defined a knowledge graph as a mathematical structure where vertices represent knowledge units and edges denote the prerequisite relationships between them. Over time, the concept has broadened significantly, and today there is no universally agreed-upon definition.</p>
+<p>McCusker et al.&nbsp;(2018) propose a working definition: a knowledge graph is a set of assertions (edges labeled with relations) expressed between entities (vertices). These graphs encode meaning through their structure, unambiguously identify entities and relations, and include provenance information, such as justification and attribution of assertions.</p>
+<p>In this project, we focus on leveraging knowledge graphs as a tool to model, visualize, and derive insights from our Reddit dataset. Coupled with generative AI, these graphs offer exciting opportunities to explore new ways of extracting and synthesizing knowledge.</p>
+<p><span class="citation" data-cites="misc">@misc</span>{vuillon2024, author = {Laurent Vuillon}, title = {NEO4J and LLM}, year = {2024}, note = {Week 9 Lecture Slides} }</p>
 </section>
-<section id="gephi" class="level2">
-<h2 class="anchored" data-anchor-id="gephi">Gephi</h2>
-<p>As the complexity increase neo4j becomes really non efficient so we can use Gephi to visualize the graph.</p>
-<section id="openord" class="level3">
-<h3 class="anchored" data-anchor-id="openord">OpenOrd</h3>
-<p>Openord is a force-directed layout algorithm that is based on stress minimization. It is a good choice for large graphs.</p>
-<p><img src="../../images/gephi1_openord.png" class="img-fluid"></p>
-<p>We can ovserve here that the graph is really complex and hard to interpret.</p>
-<p><img src="../../images/clipboard-2332198561.png" class="img-fluid"></p>
-<p>Adding the scores nodes in blue did not help to understand the graph.</p>
+<section id="aim-of-the-investigation" class="level3">
+<h3 class="anchored" data-anchor-id="aim-of-the-investigation">Aim Of The Investigation</h3>
+<p>How can the combination of knowledge graphs and generative AI enhance our understanding and exploration of complex datasets like Reddit comments, and what unique insights can we uncover through this approach?</p>
 </section>
-<section id="yifanhu" class="level3">
-<h3 class="anchored" data-anchor-id="yifanhu">yifanHu</h3>
-<p>YifanHu is a force-directed layout algorithm that is based on the physical model of the system.</p>
+<section id="methodology" class="level3">
+<h3 class="anchored" data-anchor-id="methodology">Methodology</h3>
 </section>
-<section id="themes" class="level3">
-<h3 class="anchored" data-anchor-id="themes">Themes</h3>
-<p>Using YifanHu on gephi we can observe here an interesting representation of the prevalance of different theme in our dataset.</p>
-<p><img src="../../images/clipboard-927049404.png" class="img-fluid" width="224"></p>
-<p>We observe here that theme 9 which is about ‘Sports, Teams, and Player Discussions’ is the most prevalent for example.</p>
-<p><img src="../../images/clipboard-2630725974.png" class="img-fluid"></p>
+<section id="structure-of-the-report" class="level3">
+<h3 class="anchored" data-anchor-id="structure-of-the-report">Structure of the Report</h3>
 </section>
-<section id="sentiment" class="level3">
-<h3 class="anchored" data-anchor-id="sentiment">Sentiment</h3>
-<p>adding sentiment in green (positive) and red (negative) complexifies the graph but can be useful to understand the sentiment of the different themes. We observe for example that theme 9 as a lot of ‘red’ which means that it is mostly negative compares to other themes.</p>
-<p><img src="../../images/clipboard-3037199124.png" class="img-fluid"></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#check if theme 9 as indeed more negative sentiment</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>table_data <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(theme <span class="sc">==</span> <span class="dv">9</span>) <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(sentiment_category) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>())</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the table using kable</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(table_data, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Sentiment Category"</span>, <span class="st">"Count"</span>), <span class="at">caption =</span> <span class="st">"Sentiment Category Counts for Theme 9"</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#check if theme 9 as indeed more negative sentiment</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>table_data <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(theme <span class="sc">==</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(sentiment_category) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>())</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the table using kable</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(table_data, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Sentiment Category"</span>, <span class="st">"Count"</span>), <span class="at">caption =</span> <span class="st">"Sentiment Category Counts for Theme 9"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Which is indeed verified.</p>
-</section>
-<section id="scores" class="level3">
-<h3 class="anchored" data-anchor-id="scores">Scores</h3>
-<p>the same can be done with score in shades of blue but it becomes a bit more complex to interpret.</p>
-<p><img src="../../images/clipboard-688774298.png" class="img-fluid"></p>
-<p>changer couleur sur valeur extreme seulement, plus lisible</p>
-</section>
-</section>
-<section id="similarities" class="level2">
-<h2 class="anchored" data-anchor-id="similarities">Similarities</h2>
-<section id="author-theme" class="level3">
-<h3 class="anchored" data-anchor-id="author-theme">Author-Theme</h3>
-<p>They can also for example be used to understand similarities.</p>
-<p>It was tried here to identifies connection through theme between authors with a similaritie score found through an THEME_AUTHORS relationship on NEO4J.</p>
-<p><img src="../../images/clipboard-3780268986.png" class="img-fluid"></p>
-<p>We observe that the small dots (authors) on the left side have a lots of connection through different theme nodes.</p>
-<p><img src="../../images/clipboard-2533163853.png" class="img-fluid"></p>
-<p>For example here we observe the relationship of authors based on theme 1, which correspond to ‘Rules, Information, and Wiki Communitie’ finds authors similarities between ‘Automoderator’, ‘Autowikibot’, ‘totes_meta_bot’, and other it seems like non bot authors like ‘timewaitsforsome’, ect. It seems logical that those authors are connected through the same theme.</p>
-<p>Now if we isolate theme 17 which is about ‘Politics, Science, and Star Wars’.</p>
-<p><img src="../../images/clipboard-1197459568.png" class="img-fluid"></p>
-<p>rajouter texte dessus</p>
-<p>We observe that still Automoderator and autowikibot are part of it as they have a relation in all theme which is logical. But we also observe now techrush andd beefat99 and tweetposter for example.</p>
-<p>We can continue for other themes but you get the point that I want to demonstrate that we can play with those knowledge graph to get insights from it.</p>
-</section>
-</section>
-<section id="subreddits" class="level2">
-<h2 class="anchored" data-anchor-id="subreddits">Subreddits</h2>
-<p>Subreddit Knowledge Graphs help visualize and analyze relationships between subreddits, uncovering meaningful connections and thematic clusters. In this section, we explore the relationships in a subset of our dataset, providing insights and observations.</p>
-</section>
-<section id="disclaimer" class="level2">
-<h2 class="anchored" data-anchor-id="disclaimer">Disclaimer</h2>
-<p>The data presented is a lighter subset (approximately 1/5 of the previous dataset) that includes only subreddits we successfully scraped, found descriptions for, and identified related subreddits. This smaller dataset was easier to compute and provides more interpretable results.</p>
-<p>Not all subreddits list related subreddits on their pages. For example, two of the most commented subreddits (indicated by the black circles at the bottom right) are only related to each other.<br>
-so the absence of a related subreddit for some subreddit does not diminish its importance in the graph.</p>
-<p>To understand the graphs some nodes are colored to help understand the graph.</p>
-<p>In the graph, the nodes are colored as follows: in blue are the subreddit with a score more than 4 (it allow us to see if some place in the graph have more high score subreddit than other) in red are the top 20 subreddit with the most comments (to see which subreddit are the most popular) in dark green are the top 20 subreddit who are the most related to other subreddit (subreddit who are the most connected to other subreddit)</p>
-<p>Note that sometimes a subreddit can be in multiple categories.</p>
-<p><img src="../../images/nodes.png" class="img-fluid"> <img src="../../images/full%20related%20graph.png" class="img-fluid"> ## Clusters and Insights ### Sports Cluster</p>
-<p>A distinct <strong>sports cluster</strong> is visible, highlighting subreddits focused on athletic discussions and team-related themes.</p>
-<p><img src="../../images/sport%20cluster.png" class="img-fluid"></p>
-<section id="connections-between-themes" class="level3">
-<h3 class="anchored" data-anchor-id="connections-between-themes">Connections Between Themes</h3>
-<p>Some connections between seemingly unrelated topics are intriguing. For example, gardening and engineering are linked through <strong>biology</strong> and specifically <strong>mycology</strong>, with subreddits like “whatsthisplant” bridging these themes.</p>
-<p><img src="../../images/gardening%20engineering.png" class="img-fluid"></p>
-</section>
-<section id="nintendo-cluster" class="level3">
-<h3 class="anchored" data-anchor-id="nintendo-cluster">Nintendo Cluster</h3>
-<p>The <strong>Nintendo cluster</strong> is another noteworthy group, bringing together subreddits focused on games like Zelda, Metroid, Pokémon, NES, and other Nintendo-related topics.</p>
-<p><img src="../../images/nintendo.png" class="img-fluid"></p>
-</section>
-<section id="comicsmanga-cluster" class="level3">
-<h3 class="anchored" data-anchor-id="comicsmanga-cluster">Comics/Manga Cluster</h3>
-<p>A clear <strong>comics/manga cluster</strong> is also observed, demonstrating the grouping of subreddits around shared cultural interests.</p>
-<p><img src="../../images/comics%20manga.png" class="img-fluid"></p>
-</section>
-<section id="observations" class="level3">
-<h3 class="anchored" data-anchor-id="observations">Observations</h3>
-<p>The connections between subreddits generally align with expectations, validating the graph’s representation of thematic relationships.<br>
-Some subreddit themes are not perfectly classified due to reliance on automated methods, which explains the presence of many subreddits on the periphery of the graph. A manual classification approach might improve accuracy.</p>
-</section>
-</section>
-<section id="subreddit-similarities" class="level2">
-<h2 class="anchored" data-anchor-id="subreddit-similarities">Subreddit Similarities</h2>
-<p>The following Cypher query, implemented in Neo4j, calculates similarity scores between subreddits by analyzing shared connections:</p>
-<p>This query identifies and ranks related subreddits, providing insights into their relationships. We endup with this graph below : <img src="../../images/graph_teacher.png" class="img-fluid"><br>
-As we can see we have a new way to represent the graph with their similarities.</p>
-</section>
-<section id="observations-of-similarities" class="level2">
-<h2 class="anchored" data-anchor-id="observations-of-similarities">Observations of similarities</h2>
-<p>The current dataset reveals clusters that are harder to interpret in the central region of the graph, but distinct thematic groups remain identifiable:</p>
-<ul>
-<li><strong>Sports Cluster</strong>: Located at the bottom, it showcases connections between athletic and sports-focused subreddits.</li>
-</ul>
-<p><img src="../../images/sports_bottom_cluster.png" class="img-fluid"></p>
-<ul>
-<li><strong>Cars/Racing Cluster</strong>: Found on the left, it groups subreddits centered on cars, motorsports, and racing.</li>
-</ul>
-<p><img src="../../images/cars_racing_cluster.png" class="img-fluid"></p>
-<ul>
-<li><p><strong>Gaming Cluster</strong>: Positioned at the top, this cluster aggregates gaming-related subreddits.</p>
-<p><img src="../../images/gaming_cluster.png" class="img-fluid"></p></li>
-<li><p><strong>Science and Communities Cluster</strong>: Slightly above and to the right, this cluster includes discussions about science, life advice, and community engagement.</p>
-<p><img src="../../images/science_community_cluster.png" class="img-fluid"></p></li>
-</ul>
-<p>Conclusion: In this graph, the top related subreddits are more dispersed and less connected to the clusters compared to the previous graph. We knew that the top related subreddits are not always the most popular or those with the highest scores. It is also notable that some subreddits have no connections to others within the graph.</p>
 </section>
 </section>
 

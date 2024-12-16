@@ -6,15 +6,15 @@ Knowledge Graphs (KGs) provide a robust framework for representing, managing, an
 
 The initial construction of our Knowledge Graph was implemented in Neo4j. In this representation, we categorized the nodes as follows: authors in blue, comments in pink, themes in green, scores in orange, and sentiment in red.
 
-![Graph Image](../graph.png)
+![Graph Image](index_files/images/graph.png)
 
 As we increase the complexity of the graph by incorporating additional nodes and relationships, the relationships between different entities become more evident.
 
-![](../../images/clipboard-583397259.png)
+![](index_files/images/clipboard-583397259.png)
 
 Further complexity reveals richer insights but also introduces challenges in interpreting the data visually.
 
-![](../../images/clipboard-747420762.png)
+![](index_files/images/clipboard-747420762.png)
 
 ## Gephi
 
@@ -24,11 +24,11 @@ As the complexity increase neo4j becomes really non efficient so we can use Geph
 
 Openord is a force-directed layout algorithm that is based on stress minimization. It is a good choice for large graphs.
 
-![](../../images/gephi1_openord.png) 
+![](index_files/images/gephi1_openord.png) 
 
 We can ovserve here that the graph is really complex and hard to interpret.
 
-![](../../images/clipboard-2332198561.png)
+![](index_files/images/clipboard-2332198561.png)
 
 Adding the scores nodes in blue did not help to understand the graph.
 
@@ -40,20 +40,20 @@ YifanHu is a force-directed layout algorithm that is based on the physical model
 
 Using YifanHu on gephi we can observe here an interesting representation of the prevalance of different theme in our dataset.
 
-![](../../images/clipboard-927049404.png){width="224"}
+![](index_files/images/clipboard-927049404.png){width="224"}
 
 We observe here that theme 9 which is about 'Sports, Teams, and Player Discussions' is the most prevalent for example.
 
-![](../../images/clipboard-2630725974.png)
+![](index_files/images/clipboard-2630725974.png)
 
 
 ### Sentiment
 
 adding sentiment in green (positive) and red (negative) complexifies the graph but can be useful to understand the sentiment of the different themes. We observe for example that theme 9 as a lot of 'red' which means that it is mostly negative compares to other themes.
 
-![](../../images/clipboard-3037199124.png)
+![](index_files/images/clipboard-3037199124.png)
 
-```{r sentiment, echo=TRUE, eval=FALSE}
+```{r sentiment, echo=TRUE, eval=TRUE}
 #check if theme 9 as indeed more negative sentiment
 table_data <- df %>% filter(theme == 9) %>% group_by(sentiment_category) %>% summarise(n = n())
 
@@ -73,7 +73,7 @@ Which is indeed verified.
 
 the same can be done with score in shades of blue but it becomes a bit more complex to interpret.
 
-![](../../images/clipboard-688774298.png)
+![](index_files/images/clipboard-688774298.png)
 
 changer couleur sur valeur extreme seulement, plus lisible
 
@@ -85,17 +85,17 @@ They can also for example be used to understand similarities.
 
 It was tried here to identifies connection through theme between authors with a similaritie score found through an THEME_AUTHORS relationship on NEO4J.
 
-![](../../images/clipboard-3780268986.png)
+![](index_files/images/clipboard-3780268986.png)
 
 We observe that the small dots (authors) on the left side have a lots of connection through different theme nodes.
 
-![](../../images/clipboard-2533163853.png)
+![](index_files/images/clipboard-2533163853.png)
 
 For example here we observe the relationship of authors based on theme 1, which correspond to 'Rules, Information, and Wiki Communitie' finds authors similarities between 'Automoderator', 'Autowikibot', 'totes_meta_bot', and other it seems like non bot authors like 'timewaitsforsome', ect. It seems logical that those authors are connected through the same theme.
 
 Now if we isolate theme 17 which is about 'Politics, Science, and Star Wars'.
 
-![](../../images/clipboard-1197459568.png)
+![](index_files/images/clipboard-1197459568.png)
 
 rajouter texte dessus
 
@@ -122,32 +122,32 @@ in dark green are the top 20 subreddit who are the most related to other subredd
 
 Note that sometimes a subreddit can be in multiple categories.
 
-![](../../images/nodes.png)
-![](../../images/full related graph.png)
+![](index_files/images/nodes.png)
+![](index_files/images/full related graph.png)
 ## Clusters and Insights
 ### Sports Cluster  
 
 A distinct **sports cluster** is visible, highlighting subreddits focused on athletic discussions and team-related themes.  
 
-![](../../images/sport cluster.png)
+![](index_files/images/sport cluster.png)
 
 ### Connections Between Themes  
 
 Some connections between seemingly unrelated topics are intriguing. For example, gardening and engineering are linked through **biology** and specifically **mycology**, with subreddits like "whatsthisplant" bridging these themes.  
 
-![](../../images/gardening engineering.png)
+![](index_files/images/gardening engineering.png)
 
 ### Nintendo Cluster 
 
 The **Nintendo cluster** is another noteworthy group, bringing together subreddits focused on games like Zelda, Metroid, Pokémon, NES, and other Nintendo-related topics.
 
-![](../../images/nintendo.png)
+![](index_files/images/nintendo.png)
 
 ### Comics/Manga Cluster  
 
 A clear **comics/manga cluster** is also observed, demonstrating the grouping of subreddits around shared cultural interests. 
 
-![](../../images/comics manga.png)
+![](index_files/images/comics manga.png)
 
 ### Observations 
 
@@ -158,7 +158,7 @@ Some subreddit themes are not perfectly classified due to reliance on automated 
 
 The following Cypher query, implemented in Neo4j, calculates similarity scores between subreddits by analyzing shared connections:
 
-```{cypher, eval=FALSE,include=FALSE}
+```{cypher, eval=FALSE,include=TRUE}
 MATCH (n:Subreddit)--(l)--(m:Subreddit)
 WITH n,count(l) as common, m
 MATCH (n:Subreddit)--(l)
@@ -172,7 +172,7 @@ RETURN n,m
 ```
 
 This query identifies and ranks related subreddits, providing insights into their relationships. We endup with this graph below :
-![](../../images/graph_teacher.png)  
+![](index_files/images/graph_teacher.png)  
 As we can see we have a new way to represent the graph with their similarities.
 
 ## Observations of similarities
@@ -181,18 +181,18 @@ The current dataset reveals clusters that are harder to interpret in the central
 
 - **Sports Cluster**: Located at the bottom, it showcases connections between athletic and sports-focused subreddits.  
 
-![](../../images/sports_bottom_cluster.png)
+![](index_files/images/sports_bottom_cluster.png)
 
 - **Cars/Racing Cluster**: Found on the left, it groups subreddits centered on cars, motorsports, and racing. 
 
-![](../../images/cars_racing_cluster.png) 
+![](index_files/images/cars_racing_cluster.png) 
 
 - **Gaming Cluster**: Positioned at the top, this cluster aggregates gaming-related subreddits.  
 
-  ![](../../images/gaming_cluster.png) 
+  ![](index_files/images/gaming_cluster.png) 
   
 - **Science and Communities Cluster**: Slightly above and to the right, this cluster includes discussions about science, life advice, and community engagement.  
 
-  ![](../../images/science_community_cluster.png)
+  ![](index_files/images/science_community_cluster.png)
   
 Conclusion: In this graph, the top related subreddits are more dispersed and less connected to the clusters compared to the previous graph. We knew that the top related subreddits are not always the most popular or those with the highest scores. It is also notable that some subreddits have no connections to others within the graph.
