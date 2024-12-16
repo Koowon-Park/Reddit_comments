@@ -6,15 +6,15 @@ Knowledge Graphs (KGs) provide a robust framework for representing, managing, an
 
 The initial construction of our Knowledge Graph was implemented in Neo4j. In this representation, we categorized the nodes as follows: authors in blue, comments in pink, themes in green, scores in orange, and sentiment in red.
 
-![Graph Image](images/graph.png)
+![Graph Image](../graph.png)
 
 As we increase the complexity of the graph by incorporating additional nodes and relationships, the relationships between different entities become more evident.
 
-![](/images/clipboard-583397259.png)
+![](../../images/clipboard-583397259.png)
 
 Further complexity reveals richer insights but also introduces challenges in interpreting the data visually.
 
-![](../images/clipboard-747420762.png)
+![](../../images/clipboard-747420762.png)
 
 ## Gephi
 
