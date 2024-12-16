@@ -89,3 +89,106 @@ Now if we isolate theme 17 which is about 'Politics, Science, and Star Wars'.
 We observe that still Automoderator and autowikibot are part of it as they have a relation in all theme which is logical. But we also observe now techrush andd beefat99 and tweetposter for example.
 
 We can continue for other themes but you get the point that I want to demonstrate that we can play with those knowledge graph to get insights from it.
+
+
+
+
+
+
+
+# Subreddit Knowledge Graphs
+
+Subreddit Knowledge Graphs help visualize and analyze relationships between subreddits, uncovering meaningful connections and thematic clusters. In this section, we explore the relationships in a subset of our dataset, providing insights and observations.
+
+## Disclaimer
+
+The data presented is a lighter subset (approximately 1/5 of the previous dataset) that includes only subreddits we successfully scraped, found descriptions for, and identified related subreddits. This smaller dataset was easier to compute and provides more interpretable results.  
+Not all subreddits list related subreddits on their pages. For example, two of the most commented subreddits (indicated by the black circles at the bottom right) are only related to each other.  
+so the absence of a related subreddit for some subreddit does not diminish its importance in the graph.  
+
+To understand the graphs some nodes are colored to help understand the graph.
+In the graph, the nodes are colored as follows:
+in blue are the subreddit with a score more than 4 (it allow us to see if some place in the graph have more high score subreddit than other)
+in red are the top 20 subreddit with the most comments (to see which subreddit are the most popular)
+in dark green are the top 20 subreddit who are the most related to other subreddit (subreddit who are the most connected to other subreddit)
+Note that sometimes a subreddit can be in multiple categories.
+
+![](../../images/nodes.png)
+![](../../images/full related graph.png)
+
+## Clusters and Insights
+
+### Sports Cluster  
+A distinct **sports cluster** is visible, highlighting subreddits focused on athletic discussions and team-related themes.  
+
+![](../../images/sport cluster.png)
+
+### Connections Between Themes  
+Some connections between seemingly unrelated topics are intriguing. For example, gardening and engineering are linked through **biology** and specifically **mycology**, with subreddits like "whatsthisplant" bridging these themes.  
+
+![](../../images/gardening engineering.png)
+
+### Nintendo Cluster  
+The **Nintendo cluster** is another noteworthy group, bringing together subreddits focused on games like Zelda, Metroid, Pokémon, NES, and other Nintendo-related topics.  
+
+![](../../images/nintendo.png)
+
+### Comics/Manga Cluster  
+A clear **comics/manga cluster** is also observed, demonstrating the grouping of subreddits around shared cultural interests.  
+
+![](../../images/comics manga.png)
+
+### Observations  
+The connections between subreddits generally align with expectations, validating the graph's representation of thematic relationships.  
+Some subreddit themes are not perfectly classified due to reliance on automated methods, which explains the presence of many subreddits on the periphery of the graph. A manual classification approach might improve accuracy.  
+
+
+## Teacher's Algorithm for Subreddit Similarities
+
+The following Cypher query, implemented in Neo4j, calculates similarity scores between subreddits by analyzing shared connections:  
+```{cypher, eval=FALSE,include=FALSE}
+MATCH (n:Subreddit)--(l)--(m:Subreddit)
+WITH n,count(l) as common, m
+MATCH (n:Subreddit)--(l)
+WITH n,common, count(l) as degree1, m
+MATCH (m:Subreddit)--(l)
+WITH n,common, degree1, count(l) as degree2, m
+WITH n,m, 100 * tofloat(common)/toFloat(degree1 + degree2 - common) as simi ORDER BY simi DESC
+WITH n,collect(m)[..5] as similarnodes
+UNWIND similarnodes as m
+RETURN n,m
+```
+
+This query identifies and ranks related subreddits, providing insights into their relationships. We endup with this graph below :
+![](../../images/graph_teacher.png)  
+As we can see we have a new way to represent the graph with their similarities.
+
+## Observations of similarities
+
+The current dataset reveals clusters that are harder to interpret in the central region of the graph, but distinct thematic groups remain identifiable:  
+
+- **Sports Cluster**: Located at the bottom, it showcases connections between athletic and sports-focused subreddits.  
+![](../../images/sports_bottom_cluster.png)
+
+
+- **Cars/Racing Cluster**: Found on the left, it groups subreddits centered on cars, motorsports, and racing.  
+![](../../images/cars_racing_cluster.png)  
+
+- **Gaming Cluster**: Positioned at the top, this cluster aggregates gaming-related subreddits.  
+  ![](../../images/gaming_cluster.png)  
+
+- **Science and Communities Cluster**: Slightly above and to the right, this cluster includes discussions about science, life advice, and community engagement.  
+  ![](../../images/science_community_cluster.png)
+
+
+
+Conclusion: In this graph, the top related subreddits are more dispersed and less connected to the clusters compared to the previous graph. We knew that the top related subreddits are not always the most popular or those with the highest scores. It is also notable that some subreddits have no connections to others within the graph.
+
+
+
+
+
+
+
+
+
