@@ -16,13 +16,11 @@ viridis_10 <- viridis(10)[10]
 
 ## Intro: General exploration
 
-### Subreddits
+### Subreddits as Documents
 
 For further discussions: a subreddit = A document
 
-Here we take the idea that a 'document' is a subreddit.
-It is like all comments that are part of one subreddit will be a document, this will help for text mining analysis down the line.
-Here is a visualization of comments per subreddit
+Subreddits are treated as "documents," where all comments within a subreddit form a single document for text mining.
 
 ```{r top_10_sub, eval=TRUE, echo=TRUE}
 #take the df data and group all comments by subreddit
@@ -49,7 +47,8 @@ df.subreddit %>%
 We observe that AskReddit is by far the largest Subreddit.
 Half of the top 10 subreddits are for large audiences (i.e. news/worldnews, funny, etc.), while the other half is for more niche subjects.
 
-### Words
+### Words Analysis
+#### Common Words
 
 Here, we have a look at the most used words within comments while controlling for "meaningless" words, such as common stopwords (the, it, etc.) and reddit-related redundant words (reddit, subreddit, etc.)
 
@@ -107,22 +106,6 @@ df.subreddit.freq %>%
 We observe here a lot of abbreviations that are not taken into account by the stop words.
 Indeed, a lot of word are still meaningless without context (I'm, You're, etc.)
 
-We then produce a word cloud for better visualization of the most common words
-
-```{r textplot_wordcloud, eval=TRUE, echo=TRUE}
-#textplot_wordcloud(df.subreddit.dfm)
-
-df.subreddit.freq %>%
-  top_n(30, frequency) %>%
-  ggplot(aes(label = feature, size = frequency, color = frequency)) +
-  geom_text_wordcloud() +
-  scale_size_area(max_size = 20) +
-  scale_color_viridis_c() +
-  theme_minimal()
-```
-
-We can observe that the most frequent words are 'people', 'time', 'game'.
-
 #### Term-frequency - Inverse document frequency (TF-IDF)
 
 This methods allows for an exploration of unique word usage per subreddits.
@@ -171,8 +154,8 @@ So in summary:
 
 -   The subreddits 'news' is associated in terms of frequency with the term 'people' which is logical as news is about people.
 
-#### Similarity between Subreddits/Documents
-
+### Document Similarity and Clustering
+#### Similarity Analysis
 we analyze similarities and dissimilarities between the documents (through words) in the data.
 For this, we will extensively use the quanteda package and the objects created above.
 
@@ -226,7 +209,7 @@ Indeed, we do not observe any clear pattern.
 This is due to the fact that we have a lot of words that are specific to each subreddit.
 Therefore, we will try to cluster the subreddits to see if we can regroup them in a more meaningful way.
 
-#### Clustering of Documents
+#### Clustering and Topic Modeling
 
 Hierarchical clustering and K-means.
 The first one is applied on the dissimilarities (Euclidean).

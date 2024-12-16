@@ -1,17 +1,13 @@
 # Data
 
-## check the CSV
+## Data cleaning
 
-```{r load_data, cache=TRUE, eval=FALSE}
+```{r load_data-clean, cache=TRUE, eval=FALSE}
 #load csv with here
 df <- read.csv(here("data/reddit_comments_15k.csv"))
 (head(df, 10))
 summary(df)
-```
 
-## Data cleaning
-
-```{r clean_data, cache=TRUE, eval=FALSE, echo=TRUE}
 #show column that contains 'deleted'
 df[df$body == '[deleted]',]
 
@@ -63,7 +59,7 @@ df.no_body <- read.csv(here("data/15k_cleaned_no_body.csv"))
 reactable(
   head(df[, c("author", "body")], 20),
   searchable = TRUE,
-  defaultPageSize = 10,
+  defaultPageSize = 2,
   sortable = TRUE,
   resizable = TRUE,
   highlight = TRUE,
