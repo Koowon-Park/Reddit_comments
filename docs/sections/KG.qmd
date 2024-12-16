@@ -40,18 +40,18 @@ YifanHu is a force-directed layout algorithm that is based on the physical model
 
 Using YifanHu on gephi we can observe here an interesting representation of the prevalance of different theme in our dataset.
 
-![](index_files/images/clipboard-927049404.png){width="224"}
+![](index_files/images/clipboard-927049404.png){width="50%"}
 
 We observe here that theme 9 which is about 'Sports, Teams, and Player Discussions' is the most prevalent for example.
 
-![](index_files/images/clipboard-2630725974.png)
+![](index_files/images/clipboard-2630725974.png){width="50%"}
 
 
 ### Sentiment
 
 adding sentiment in green (positive) and red (negative) complexifies the graph but can be useful to understand the sentiment of the different themes. We observe for example that theme 9 as a lot of 'red' which means that it is mostly negative compares to other themes.
 
-![](index_files/images/clipboard-3037199124.png)
+![](index_files/images/clipboard-3037199124.png){width="50%"}
 
 ```{r sentiment, echo=TRUE, eval=TRUE}
 #check if theme 9 as indeed more negative sentiment
@@ -73,7 +73,7 @@ Which is indeed verified.
 
 the same can be done with score in shades of blue but it becomes a bit more complex to interpret.
 
-![](index_files/images/clipboard-688774298.png)
+![](index_files/images/clipboard-688774298.png){width="50%"}
 
 changer couleur sur valeur extreme seulement, plus lisible
 
@@ -85,17 +85,17 @@ They can also for example be used to understand similarities.
 
 It was tried here to identifies connection through theme between authors with a similaritie score found through an THEME_AUTHORS relationship on NEO4J.
 
-![](index_files/images/clipboard-3780268986.png)
+![](index_files/images/clipboard-3780268986.png){width="50%"}
 
 We observe that the small dots (authors) on the left side have a lots of connection through different theme nodes.
 
-![](index_files/images/clipboard-2533163853.png)
+![](index_files/images/clipboard-2533163853.png){width="50%"}
 
 For example here we observe the relationship of authors based on theme 1, which correspond to 'Rules, Information, and Wiki Communitie' finds authors similarities between 'Automoderator', 'Autowikibot', 'totes_meta_bot', and other it seems like non bot authors like 'timewaitsforsome', ect. It seems logical that those authors are connected through the same theme.
 
 Now if we isolate theme 17 which is about 'Politics, Science, and Star Wars'.
 
-![](index_files/images/clipboard-1197459568.png)
+![](index_files/images/clipboard-1197459568.png){width="50%"}
 
 rajouter texte dessus
 
@@ -122,32 +122,32 @@ in dark green are the top 20 subreddit who are the most related to other subredd
 
 Note that sometimes a subreddit can be in multiple categories.
 
-![](index_files/images/nodes.png)
-![](index_files/images/full related graph.png)
+![](index_files/images/nodes.png){width="50%"}
+![](index_files/images/full related graph.png){width="50%"}
 ## Clusters and Insights
 ### Sports Cluster  
 
 A distinct **sports cluster** is visible, highlighting subreddits focused on athletic discussions and team-related themes.  
 
-![](index_files/images/sport cluster.png)
+![](index_files/images/sport cluster.png){width="50%"}
 
 ### Connections Between Themes  
 
 Some connections between seemingly unrelated topics are intriguing. For example, gardening and engineering are linked through **biology** and specifically **mycology**, with subreddits like "whatsthisplant" bridging these themes.  
 
-![](index_files/images/gardening engineering.png)
+![](index_files/images/gardening engineering.png){width="50%"}
 
 ### Nintendo Cluster 
 
 The **Nintendo cluster** is another noteworthy group, bringing together subreddits focused on games like Zelda, Metroid, Pokémon, NES, and other Nintendo-related topics.
 
-![](index_files/images/nintendo.png)
+![](index_files/images/nintendo.png){width="50%"}
 
 ### Comics/Manga Cluster  
 
 A clear **comics/manga cluster** is also observed, demonstrating the grouping of subreddits around shared cultural interests. 
 
-![](index_files/images/comics manga.png)
+![](index_files/images/comics manga.png){width="50%"}
 
 ### Observations 
 
@@ -172,7 +172,8 @@ RETURN n,m
 ```
 
 This query identifies and ranks related subreddits, providing insights into their relationships. We endup with this graph below :
-![](index_files/images/graph_teacher.png)  
+
+![](index_files/images/graph_teacher.png){width="50%"} 
 As we can see we have a new way to represent the graph with their similarities.
 
 ## Observations of similarities
@@ -181,18 +182,18 @@ The current dataset reveals clusters that are harder to interpret in the central
 
 - **Sports Cluster**: Located at the bottom, it showcases connections between athletic and sports-focused subreddits.  
 
-![](index_files/images/sports_bottom_cluster.png)
+![](index_files/images/sports_bottom_cluster.png){width="50%"}
 
 - **Cars/Racing Cluster**: Found on the left, it groups subreddits centered on cars, motorsports, and racing. 
 
-![](index_files/images/cars_racing_cluster.png) 
+![](index_files/images/cars_racing_cluster.png){width="50%"} 
 
 - **Gaming Cluster**: Positioned at the top, this cluster aggregates gaming-related subreddits.  
 
-  ![](index_files/images/gaming_cluster.png) 
+  ![](index_files/images/gaming_cluster.png){width="50%"} 
   
 - **Science and Communities Cluster**: Slightly above and to the right, this cluster includes discussions about science, life advice, and community engagement.  
 
-  ![](index_files/images/science_community_cluster.png)
+  ![](index_files/images/science_community_cluster.png){width="50%"}
   
 Conclusion: In this graph, the top related subreddits are more dispersed and less connected to the clusters compared to the previous graph. We knew that the top related subreddits are not always the most popular or those with the highest scores. It is also notable that some subreddits have no connections to others within the graph.
