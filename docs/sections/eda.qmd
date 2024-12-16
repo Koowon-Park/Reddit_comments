@@ -446,7 +446,7 @@ phi.long %>%
     strip.text = element_text(size = 10))
 ```
 
-The Topic-Term Analysis produces similar results as the LDA. However this plot provides the probabilities, therefore refining our understanding.
+The Topic-Term Analysis produces similar results as the LDA. This plot also provides the probabilities, therefore refining our understanding.
 
 We still observe that lots of topics have the same terms.Therefore, adjusting k topics may be helpful. We first try with 7 topics
 
@@ -549,9 +549,9 @@ For our first analysis, we regrouped ALL comments per subreddit. From the result
 
 However, regrouping ALL the comments per subreddits is not the best way to analyze the data. Indeed, we have a lot of specific words that are not taken into account by the stop words. Therefore, we will try to group in a more meaningful way, using the 'description' and 'display name' of each subreddit, obtained  via web scraping.
 
-### Web Scraping (Description and name)
+### Web Scraping
 
-First attempt to scrape data
+#### First attempt to scrape data
 
 ```{r, eval=FALSE}
 # Example list of subreddit names (replace this with your dataframe column)
@@ -613,7 +613,7 @@ subreddit_metadata <- do.call(rbind, lapply(subreddit_names, function(subreddit)
 print(subreddit_metadata)
 ```
 
-Second attempt, better way to scrape data.
+#### Second attempt, better way to scrape data.
 
 ```{r, eval=FALSE}
 # Function to scrape display-name and description
@@ -713,8 +713,9 @@ Store in csv file
 
 For computational purpose we don't run the code above as it takes a lot of time to scrape the data. We will use the data that we have already scraped.
 
-remove NA
+#### Cleaning of scraped data
 
+Removeing NAs
 ```{r, message=FALSE}
 subreddit_first1000 <- read_csv(here("data", "subreddit_metadata_first1000.csv"))
 subreddit_first1000 <- na.omit(subreddit_first1000)
@@ -750,7 +751,10 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
 head(combined_subreddit_theme)
 ```
 
-clustering test similarity
+### Clusters
+Testing the text similarities through clusters
+
+#### K-means
 
 ```{r, warning=FALSE}
 corpus <- Corpus(VectorSource(combined_subreddit_theme$description))
@@ -759,8 +763,6 @@ corpus <- tm_map(corpus, removePunctuation)
 corpus <- tm_map(corpus, removeWords, stopwords("en"))
 dtm <- DocumentTermMatrix(corpus)
 ```
-
-### Clusters
 
 ```{r, cache=TRUE}
 set.seed(123)
@@ -783,13 +785,12 @@ combined_subreddit_theme %>%
   theme_minimal()
 ```
 
-The k-means clustering method does not present interesting results.
+The k-means clustering method does not present interesting results. We therefore test with another method.
 
-
-#### Further tests with the LDA method
-
+#### LDA method
 Based on the data we scrapped, we test our most promising method (LDA) on small scale of our new, more precise, dataset.
 
+##### Five topics
 ```{r cache=TRUE}
 # Define irrelevant words
 irrelevant_words <- c("reddit","reddits", "reddit's","www.reddit.com","https","http", "subreddit", "redditors","related", "community", "dedicated", "discussion", "discuss", "discussed","post", "content", "questions", "discussions", "share", "stories", "httpswwwredditcomsubreddit")
@@ -843,7 +844,10 @@ top_terms %>%
         strip.text = element_text(size = 10))
 ```
 
-We see that the results are promising, we keep analyzing further.We now test with 20 topics. We use this incremental method because of the heavy computational resources needed for this method.
+We see that the results are promising, we keep analyzing further. 
+
+##### Twenty topics
+We now test with 20 topics. We use this incremental method because of the heavy computational resources needed for this method.
 
 ```{r, cache=TRUE}
 num_topics <- 20  # Choose the number of topics you want to extract
@@ -869,7 +873,6 @@ print(subreddit_topics)
 ```
 
 Visualize:
-
 ```{r, warning=FALSE}
 top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
@@ -887,11 +890,9 @@ top_terms %>%
         strip.text = element_text(size = 10))
 ```
 
-chosen method because best so far
+The LDA method has yielded the best results in our various tests. We therefore use it for our analysis.
 
-below is just the graph in text
-
-```{r}
+```{r, eval=FALSE, include=FALSE}
 # Assuming your data is stored in a dataframe called `top_terms`
 top_terms_text <- top_terms %>%
   group_by(topic) %>%                # Group by topic
@@ -902,13 +903,11 @@ top_terms_text <- top_terms %>%
 
 # View the result
 #print(top_terms_text)
-
 ```
 
+#### Extract dominant topic
 
-### extract dominant topic
-
-to see more granularity
+To have a more granular view, we now try to assign a topic with the highest probability to each subreddit.
 
 ```{r}
 # Extract subreddit-topic probabilities
@@ -925,10 +924,11 @@ dominant_topics <- subreddit_topics %>%
 print(dominant_topics)
 ```
 
-the majority of the subreddits are not well associated with their dominant topic, some with higher gamma are better classified than with lower gamma but it's still not great
+The majority of the subreddits are not well associated with their dominant topic, some with higher gamma are better classified than with lower gamma but it's still not great.
 
-### Add name for each topic based on the terms using ChatGPT
+#### Naming the topics
 
+We now feed the dominant topics to ChatGPT to name them.
 ```{r}
 # Add dominant topic to the original dataframe
 combined_subreddit_theme <- combined_subreddit_theme %>%
@@ -972,9 +972,7 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
 head(combined_subreddit_theme)
 ```
 
-In the table combined_subreddit_theme, the subreddit are regrouped in a more meaningful way only when beta is closer from 1. But it's far from perfect, in the end the best method is probably to find a theme manually for each subreddit.
-
-merge df with combined_subreddit_theme
+In the table above, we see that names are better assigned when the beta is closer to 1. But it still far from perfect, the best method is probably to manually assign a theme to each subreddit.
 
 ```{r, warning=FALSE}
 #save data
@@ -1085,19 +1083,17 @@ This imbalance could be explain by the fact that the NRC dictionnary is more bia
 We still observe quite the same patterns though with `pcmasterrace` at the top and `news` near the bottom.
 
 #### Summary
-
 To summarize it is interesting to observe that the NRC classification is totally different from the AFINN and BING classification.
 Indeed, the NRC classification seems to be more biased towards positive words but on the other hand it shall be more precise as it has more categories.
 
-Why one to choose ?
+Which one to choose ?
 It depends on the goal of the analysis.
 If we want a simple and easy to use classification we can use AFINN or BING.
 If we want a more precise classification we can use NRC.
 
 ### Sentiment by comment
 
-Now to have a more precise understanding of the sentiment of the comments, we will analyze the sentiment per comment for each dictionary (AFINN, BING, NRC).
-So that we can choose the best dictionary for our analysis.
+Now to have a more precise understanding of the sentiment of the comments, we will analyze the sentiment per comment for each dictionary (AFINN, BING, NRC). So that we can choose the best dictionary for our analysis.
 
 We will analyze a sample of small comments to have a better understanding.
 
@@ -1330,7 +1326,16 @@ table(df.sentiment$sentiment_category)
 #write.csv(df.sentiment, "../../data/BING_sentiment.csv", row.names = TRUE)
 ```
 
-## Score
+## Score Analysis
+
+### Score distribution
+
+To complement our sentiment analysis, we perform a quick exploration of the score (Upvotes and Downvotes). First, we compute the total amount of comment with:
+
+
+- No interactions --> Score = 1
+- Only 1 interactions --> Score = 0 or 2
+
 
 ```{r}
 df_hugo <- df
@@ -1343,6 +1348,10 @@ print(paste0("Total number of comments without Up or Downvotes is ", score_1))
 print(paste0("Total number of comments with only one Up or Downvote is ", score_0 + score_2))
 print(paste0(round((100*(score_0 + score_1 + score_2)/138070),digits = 2), "% of the comments have 0 or 1 upvote/downvote"))
 ```
+
+We find that 44,12% of our comments have been interacted with 0 times or only once.
+
+We then focus on comments that received average interactions (Scores between -10 and 20).
 
 ```{r}
 # Filtering scores to focus on the range from -10 to 100
@@ -1358,10 +1367,13 @@ ggplot(range_filtered, aes(x = score)) +
   theme_minimal() +
   theme(panel.grid.major = element_line(color = "grey", linetype = "dashed", size = 0.5))
 ```
+We see here that indeed, most comments in our dataset have a score of 1 or 2.
 
 ```{r}
 print(summary(df_hugo$score))
 ```
+
+We now explore the distribution of high-scoring comments (Score > 9). We log-scale the axis to better visualize the results.
 
 ```{r}
 df_high_score <- df_hugo %>%
@@ -1377,6 +1389,9 @@ ggplot(df_high_score, aes(x = score)) +
   theme_minimal() +
   scale_y_continuous(labels = scales::label_comma())
 ```
+As expected, the higher scoring comments are rarer.
+
+We perform the same analysis on comments with high amounts of Downvotes (Score = -10 and below).
 
 ```{r}
 df_low_score <- df_hugo %>%
@@ -1395,6 +1410,11 @@ ggplot(df_low_score, aes(x = score)) +
 
 ```
 
+We come to the same conclusion as the high-score comments. There are a lot of comments with a small amount of downvotes, and very few that score extremely negatively.
+
+### Score categories
+We these distribution, we then categorize the scores between "Extremely positive" (Score > 99) and "Very negative" (Score < -20).
+
 ```{r}
 df <- df %>%
   mutate(score_category = case_when(
@@ -1409,7 +1429,11 @@ df <- df %>%
   ))
 ```
 
+### Score per subreddits
 
+#### High-scores
+
+We now want to explore whether different subreddits have different behaviours in terms of scoring.
 
 ```{r}
 # Counting unique subreddits in the dataset
@@ -1417,7 +1441,7 @@ unique_subreddits <- n_distinct(df_high_score$subreddit)
 print(paste0("Total number of unique subreddits in the High-score dataset: ", unique_subreddits))
 ```
 
-Only keep the subreddits with 5 or more comments
+We filter our dataset to only keep the subreddits with 5 or more comments. And then compute the average score of a comment in each subreddit.
 
 ```{r}
 # Analyzing subreddit-wise tendency of high scores
@@ -1430,6 +1454,10 @@ df_subreddit_high_score <- df_high_score %>%
 # Printing subreddit analysis
 df_subreddit_high_score
 ```
+
+We see that IAmA subreddit has the highest average score per comment, with an average score of 227,1 and a median score of 120, for a total of 47 comments.
+
+We also look at the distribution of the number of comments per subreddit retained.
 
 ```{r}
 # Plotting histogram of the number of comments per subreddit for high scoring comments without subreddit names
@@ -1448,6 +1476,8 @@ ggplot(count_distribution, aes(x = comment_count)) +
   theme_minimal()
 ```
 
+We now look at the distribution of the average score per subreddit.
+
 ```{r}
 # Plotting average score by subreddit for high scoring comments with 5 or more comments
 ggplot(df_subreddit_high_score, aes(x = reorder(subreddit, avg_score), y = avg_score)) +
@@ -1458,6 +1488,10 @@ ggplot(df_subreddit_high_score, aes(x = reorder(subreddit, avg_score), y = avg_s
        y = "Average Score") +
   theme_minimal()
 ```
+
+#### Low-scores
+
+We now perform the same analysis for low-scoring comments and subreddits. However, we keep all subreddits with 2 or more comments, to have a significant number of subreddits to analyze (given the rarer nature of low-scoring comments).
 
 ```{r}
 # Analyzing subreddit-wise tendency of low scores
@@ -1471,6 +1505,10 @@ df_subreddit_low_score <- df_low_score %>%
 df_subreddit_low_score
 ```
 
+We see that worldnews records the lowest average score of -61,4, with a median score of -17. This could probably be partly explained by the negative emotions brought by the usual news cycles.
+
+We then plot the distribution of the average score of low-scoring subreddits.
+
 ```{r}
 ggplot(df_subreddit_low_score, aes(x = avg_score, y = reorder(subreddit, avg_score))) +
   geom_bar(stat = "identity", fill = viridis_9, alpha = 0.8) +
@@ -1481,6 +1519,7 @@ ggplot(df_subreddit_low_score, aes(x = avg_score, y = reorder(subreddit, avg_sco
   theme_minimal()
 ```
 
+And look at the distribution of number of comments per subreddit with low scoring comments.
 ```{r}
 # Plotting histogram of the number of comments per subreddit for low scoring comments without subreddit names
 count_distribution_low <- df_low_score %>%
@@ -1498,6 +1537,10 @@ ggplot(count_distribution_low, aes(x = comment_count)) +
   theme_minimal()
 
 ```
+
+### Clusters of subreddits per scores
+
+We now want to cluster the different subreddits in our dataset based on their scoring behaviour. To do this, we first use the Elbow method with the Within-Sum-of-Squares to find the number of clusters.
 
 ```{r}
 # Clustering analysis based on number of comments and average score for high scoring subreddits
@@ -1519,7 +1562,7 @@ fviz_nbclust(cluster_data, kmeans, method = "wss") +
   theme_minimal()
 ```
 
-We'll settle with 5 clusters
+We'll settle with 5 clusters.
 
 ```{r}
 # Running k-means clustering with 5 clusters
@@ -1536,6 +1579,14 @@ ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = clust
        y = "Average Score") +
   theme_minimal() 
 ```
+
+We see an interesting distribution of clusters.
+
+ -  Our 1st cluster focuses on subreddits with a large number of comments, with medium to high scores.
+ -  Our 2nd cluster focuses on subreddits with an average number of comments, with medium to high scores.
+ -  Our 3rd cluster focuses on subreddits with a low number of comments, with medium to high scores.
+ -  Our 4th cluster focuses on subreddits with a low number of comments, with high to very high scores.
+ -  Our 5th cluster focuses on subreddits with a low number of comments, with low scores.
 
 ## Additional Variable
 
