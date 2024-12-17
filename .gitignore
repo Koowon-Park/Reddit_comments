@@ -8,3 +8,5 @@
 relate.project
 .DS_Store
 venv
+docs/index_cache/html/*.rdb
+docs/index_cache/html/*.RData
