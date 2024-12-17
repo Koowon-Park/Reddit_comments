@@ -574,7 +574,7 @@ The k-means clustering method does not present interesting results. We therefore
 Based on the data we scrapped, we test our most promising method (LDA) on small scale of our new, more precise, dataset.
 
 ##### Five topics
-```{r cache=TRUE}
+```{r, cache=TRUE, include=FALSE}
 # Define irrelevant words
 irrelevant_words <- c("reddit","reddits", "reddit's","www.reddit.com","https","http", "subreddit", "redditors","related", "community", "dedicated", "discussion", "discuss", "discussed","post", "content", "questions", "discussions", "share", "stories", "httpswwwredditcomsubreddit")
 
@@ -1338,7 +1338,9 @@ We see an interesting distribution of clusters.
 
 We now refine our dataset to explore some more relationships, as well as plotting a first knowledge graph.
 
-### scrap related subreddits
+### Scrap related subreddits
+
+We use the following code to scrape relevant data from Reddit pages.
 
 ```{r, eval=FALSE}
 # Function to scrape related subreddits
@@ -1399,12 +1401,12 @@ results <- do.call(rbind, lapply(subreddit_names, function(subreddit) {
 }))
 
 # View the results
-print(results)
+#print(results)
 
 ```   
 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 subreddit_related_part1 <- read_csv(here("data", "subreddit_relatedsub_part1.csv"))
 # Remove r/ in column related subreddit
 subreddit_related_part1$related_subreddits <- gsub("r/", "", subreddit_related_part1$related_subreddits)
@@ -1434,9 +1436,10 @@ combined_subreddit_related$related_subreddits <- gsub("^,\\s*", "", combined_sub
 #yes the code could be more efficient than copy paste 5 times the line above 
 ```
 
-add column to match related subreddit with the subreddit in our database
 
-```{r}
+```{r, echo=FALSE}
+#add column to match related subreddit with the subreddit in our database
+
 # Split related subreddits into individual components
 combined_subreddit_related$matching_related_subreddits <- sapply(
   strsplit(combined_subreddit_related$related_subreddits, ",\\s*"), 
@@ -1460,27 +1463,25 @@ combined_subreddit_related <- combined_subreddit_related %>%
   filter(related_subreddits != "")
 ```
 
-merge df with combined_subreddit_theme and combined_subreddit_related
-
-```{r, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 
 # Perform a left join to add the columns to 'df'
 df <- df %>%
   left_join(combined_subreddit_related, by = "subreddit")
 
-head(df)
+#head(df)
 ```
 
-plot graph of matching related subreddits
+After cleaning and updating and merging with the main database, we plot graphs of matching related subreddits.
 
-```{r}
+```{r, fig.width=7, fig.height=5, echo=FALSE}
 # Filter rows where `matching_related_subreddits` is not empty
 filtered_data <- combined_subreddit_related[
   combined_subreddit_related$matching_related_subreddits != "", 
 ]
 
-# Take only the first 100 rows
-filtered_data <- head(filtered_data, 300)
+# Take only the first 700 rows
+filtered_data <- head(filtered_data, 700)
 
 # Prepare the edges for the graph
 edges <- do.call(rbind, lapply(1:nrow(filtered_data), function(i) {
@@ -1507,66 +1508,70 @@ visNetwork(nodes, edges) %>%
   visEdges(arrows = "to") %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
   visInteraction(navigationButtons = TRUE) %>%
-  visLayout(randomSeed = 42) # Consistent layout
-
-```
-
-other graph with everything
-
-```{r}
-
-# Filter rows where `matching_related_subreddits` is not empty
-filtered_data <- combined_subreddit_related[
-  combined_subreddit_related$matching_related_subreddits != "", 
-]
-
-# Take the first 1000 rows
-filtered_data <- head(filtered_data, 1000)
-
-# Prepare the edges for the graph
-edges <- do.call(rbind, lapply(1:nrow(filtered_data), function(i) {
-  source <- filtered_data$subreddit[i]
-  targets <- unlist(strsplit(filtered_data$matching_related_subreddits[i], ",\\s*"))
-  if (length(targets) > 0) {
-    data.frame(from = source, to = targets, stringsAsFactors = FALSE)
-  }
-}))
-
-# Ensure no duplicates in edges
-edges <- unique(edges)
-
-# Create the igraph object
-graph <- graph_from_data_frame(
-  d = edges,  # Edge list
-  directed = TRUE # Directional relationships
-)
-
-# Use Kamada-Kawai layout for better node spacing
-set.seed(42) # For consistent layout
-layout <- layout_with_kk(graph)
-
-# Scale layout to further spread nodes
-layout <- layout * 2
-# Plot the graph with spacing
-plot(
-  graph,
-  vertex.size = 0.2,                      # Node size
-  vertex.label = NA,                    # Disable labels
-  # vertex.label.cex = 0.1,               # Reduced label text size
-  # vertex.label.color = "black",         # Label color
-  # vertex.label.dist = 1,                # Distance of label from node
-  edge.arrow.size = 0.05,                # Smaller arrow size
-  edge.color = "gray50",                # Edge color
-  layout = layout,                      # Use the scaled layout
-  main = "Subreddit Relationship Graph" # Add a title
-)
+  visLayout(randomSeed = 42) %>% # Consistent layout
+  visOptions(width="800px", height = "600px") # Control the height of the graph in the output
 
 
 ```
 
-top 20 most related
+This graph show how subreddits are connected to each other. We can see that some subreddits are more related to others. More analysis will be done later to understand the relationships between subreddits.
 
-```{r}
+```{r, echo=FALSE}
+#other graph with everything
+# 
+# # Filter rows where `matching_related_subreddits` is not empty
+# filtered_data <- combined_subreddit_related[
+#   combined_subreddit_related$matching_related_subreddits != "", 
+# ]
+# 
+# # Take the first 1000 rows
+# filtered_data <- head(filtered_data, 1000)
+# 
+# # Prepare the edges for the graph
+# edges <- do.call(rbind, lapply(1:nrow(filtered_data), function(i) {
+#   source <- filtered_data$subreddit[i]
+#   targets <- unlist(strsplit(filtered_data$matching_related_subreddits[i], ",\\s*"))
+#   if (length(targets) > 0) {
+#     data.frame(from = source, to = targets, stringsAsFactors = FALSE)
+#   }
+# }))
+# 
+# # Ensure no duplicates in edges
+# edges <- unique(edges)
+# 
+# # Create the igraph object
+# graph <- graph_from_data_frame(
+#   d = edges,  # Edge list
+#   directed = TRUE # Directional relationships
+# )
+# 
+# # Use Kamada-Kawai layout for better node spacing
+# set.seed(42) # For consistent layout
+# layout <- layout_with_kk(graph)
+# 
+# # Scale layout to further spread nodes
+# layout <- layout * 2
+# # Plot the graph with spacing
+# plot(
+#   graph,
+#   vertex.size = 0.2,                      # Node size
+#   vertex.label = NA,                    # Disable labels
+#   # vertex.label.cex = 0.1,               # Reduced label text size
+#   # vertex.label.color = "black",         # Label color
+#   # vertex.label.dist = 1,                # Distance of label from node
+#   edge.arrow.size = 0.05,                # Smaller arrow size
+#   edge.color = "gray50",                # Edge color
+#   layout = layout,                      # Use the scaled layout
+#   main = "Subreddit Relationship Graph" # Add a title
+# )
+# 
+
+```
+
+
+```{r, echo=FALSE}
+
+# top 20 most related subreddits
 # Filter rows where `matching_related_subreddits` is not empty
 filtered_data <- combined_subreddit_related[
   combined_subreddit_related$matching_related_subreddits != "", 
@@ -1599,7 +1604,7 @@ top_20_df <- as.data.frame(top_20_subreddits)
 colnames(top_20_df) <- c("Subreddit", "Number_of_Links")
 
 # Display the top 20 subreddits
-print(top_20_df)
+#print(top_20_df)
 
 # Optionally, create a barplot
 barplot(
@@ -1613,6 +1618,8 @@ barplot(
 )
 
 ```
+This graph allows us to identify the most interconnected subreddits in our dataset. Feel free to play with the interactive graph to see which subreddits are the most connected to each others.
+It’s important to note that this does not imply they are the most significant subreddits; rather, it indicates they are the most closely related to other subreddits based on the data we scraped from Reddit.
 
 ### Adding Length of comment as a feature
 
