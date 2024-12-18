@@ -1085,7 +1085,6 @@ To complement our sentiment analysis, we perform a quick exploration of the scor
 - No interactions --> Score = 1
 - Only 1 interactions --> Score = 0 or 2
 
-
 ```{r}
 df_hugo <- df
 
@@ -1107,62 +1106,25 @@ We then focus on comments that received average interactions (Scores between -10
 range_filtered <- df_hugo %>%
   filter(score >= -10 & score <= 20)
 
-# Plotting the distribution of the 'score' column from -10 to 100 using ggplot2
 ggplot(range_filtered, aes(x = score)) +
   geom_histogram(bins = 30, fill = viridis_3, color = "black", alpha = 0.7) +
   labs(title = "Distribution of Score Column from -10 to 20",
        x = "Score",
        y = "Frequency") +
   theme_minimal() +
-  theme(panel.grid.major = element_line(color = "grey", linetype = "dashed", size = 0.5))
-```
-We see here that indeed, most comments in our dataset have a score of 1 or 2.
-
-```{r}
-print(summary(df_hugo$score))
-```
-
-We now explore the distribution of high-scoring comments (Score > 9). We log-scale the axis to better visualize the results.
-
-```{r}
-df_high_score <- df_hugo %>%
-  filter(score %in% (10:3967))
-
-ggplot(df_high_score, aes(x = score)) +
-  geom_histogram(bins = 30, fill = viridis_4, color = "black", alpha = 0.7) +
-  scale_y_log10() +
-  scale_x_log10()+
-  labs(title = "Log-Distribution of High Scoring (10+ upvotes) Comments",
-       x = "Score",
-       y = "Log(Frequency)") +
-  theme_minimal() +
-  scale_y_continuous(labels = scales::label_comma())
-```
-As expected, the higher scoring comments are rarer.
-
-We perform the same analysis on comments with high amounts of Downvotes (Score = -10 and below).
-
-```{r}
-df_low_score <- df_hugo %>%
-  filter(score %in% (-302:-10))
-
-# Plotting the distribution of low scoring comments using ggplot2 with log transformation on both axes
-ggplot(df_low_score, aes(x = score)) +
-  geom_histogram(bins = 30, fill = viridis_5, color = "black", alpha = 0.7) +
-  scale_y_log10() +
-  scale_x_reverse() +
-  labs(title = "Log-Distribution of Low Scoring (-10 and below) Comments",
-       x = "Score",
-       y = "Log(Frequency)") +
-  theme_minimal() +
-  scale_y_continuous(labels = scales::label_comma())
-
+  theme(
+    panel.grid.major = element_line(color = "grey", linetype = "dashed", size = 0.5),
+    text = element_text(size = 16), # Increases overall text size
+    axis.title = element_text(size = 14), # Increases axis title text size
+    axis.text = element_text(size = 12), # Increases axis labels text size
+    plot.title = element_text(size = 18, face = "bold") # Increases title text size
+  )
 ```
 
-We come to the same conclusion as the high-score comments. There are a lot of comments with a small amount of downvotes, and very few that score extremely negatively.
+We see here that indeed, most comments in our dataset have a score of 1 or 2. Other exploratory graphs can be found in Annex, where the distribution of very popular (positively or negatively) comments are displayed. Overall, we find that most comments mostly follow a somewhat normal distribution, with most comments receiving little to no attention.
 
 ### Score categories
-We these distribution, we then categorize the scores between "Extremely positive" (Score > 99) and "Very negative" (Score < -20).
+With the distribution seen above (and the ones in Annex), we then categorize the scores between "Extremely positive" (Score > 99) and "Very negative" (Score < -20).
 
 ```{r}
 df <- df %>%
@@ -1182,7 +1144,7 @@ df <- df %>%
 
 #### High-scores
 
-We now want to explore whether different subreddits have different behaviours in terms of scoring.
+We now want to explore whether different subreddits have different behaviors in terms of scoring.
 
 ```{r}
 # Counting unique subreddits in the dataset
@@ -1206,33 +1168,18 @@ df_subreddit_high_score
 
 We see that IAmA subreddit has the highest average score per comment, with an average score of 227,1 and a median score of 120, for a total of 47 comments.
 
-We also look at the distribution of the number of comments per subreddit retained.
+We now look at the distribution of the average score per subreddit. We only display the first 10 results for readability.
 
 ```{r}
-# Plotting histogram of the number of comments per subreddit for high scoring comments without subreddit names
-count_distribution <- df_high_score %>%
-  group_by(subreddit) %>%
-  summarise(comment_count = n()) %>%
-  filter(comment_count >= 5) %>%
-  arrange(desc(comment_count))
+df_top10 <- df_subreddit_high_score %>%
+  arrange(desc(avg_score)) %>%  # Ensure data is sorted by avg_score
+  slice_head(n = 10)
 
-# Plotting the distribution of number of comments per subreddit
-ggplot(count_distribution, aes(x = comment_count)) +
-  geom_histogram(bins = 30, fill = viridis_6, alpha = 0.8) +
-  labs(title = "Distribution of Number of Comments per Subreddit for High Scoring Comments",
-       x = "Number of Comments",
-       y = "Frequency") +
-  theme_minimal()
-```
-
-We now look at the distribution of the average score per subreddit.
-
-```{r}
-# Plotting average score by subreddit for high scoring comments with 5 or more comments
-ggplot(df_subreddit_high_score, aes(x = reorder(subreddit, avg_score), y = avg_score)) +
+# Plotting average score by subreddit for high scoring comments
+ggplot(df_top10, aes(x = reorder(subreddit, avg_score), y = avg_score)) +
   geom_bar(stat = "identity", fill = viridis_7, alpha = 0.8) +
   coord_flip() +
-  labs(title = "Average Score by Subreddit for High Scoring Comments (5 or more comments)",
+  labs(title = "Top 10 Subreddits by Average Score for High Scoring Comments",
        x = "Subreddit",
        y = "Average Score") +
   theme_minimal()
@@ -1254,88 +1201,26 @@ df_subreddit_low_score <- df_low_score %>%
 df_subreddit_low_score
 ```
 
-We see that worldnews records the lowest average score of -61,4, with a median score of -17. This could probably be partly explained by the negative emotions brought by the usual news cycles.
-
 We then plot the distribution of the average score of low-scoring subreddits.
 
 ```{r}
+# Keep only the 10 lowest scores
+df_subreddit_low_score <- df_subreddit_low_score %>%
+  arrange(avg_score) %>%      # Sort by avg_score (ascending)
+  slice_head(n = 10)          # Select the first 10 rows
+
+# Plot the data
 ggplot(df_subreddit_low_score, aes(x = avg_score, y = reorder(subreddit, avg_score))) +
-  geom_bar(stat = "identity", fill = viridis_9, alpha = 0.8) +
-  scale_x_reverse(limits = c(0, min(df_subreddit_low_score$avg_score))) +
+  geom_bar(stat = "identity", fill = viridis(9)[1], alpha = 0.8) +
+  scale_x_reverse() +
   labs(title = "Average Score by Subreddit for Low Scoring Comments (5 or more comments)",
-       x = "Subreddit",
-       y = "Average Score") +
+       x = "Average Score",
+       y = "Subreddit") +
   theme_minimal()
 ```
+Funnily enough, the "cincinnati" subreddit has the lowest average score per comment, closely followed by explainlikeimfive and worldnews.
 
-And look at the distribution of number of comments per subreddit with low scoring comments.
-```{r}
-# Plotting histogram of the number of comments per subreddit for low scoring comments without subreddit names
-count_distribution_low <- df_low_score %>%
-  group_by(subreddit) %>%
-  summarise(comment_count = n()) %>%
-  filter(comment_count >= 2) %>%
-  arrange(desc(comment_count))
-
-# Plotting the distribution of number of comments per subreddit for low scores
-ggplot(count_distribution_low, aes(x = comment_count)) +
-  geom_histogram(bins = 20, fill = viridis_10, alpha = 0.8) +
-  labs(title = "Distribution of Number of Comments per Subreddit for Low Scoring Comments",
-       x = "Number of Comments",
-       y = "Frequency") +
-  theme_minimal()
-
-```
-
-### Clusters of subreddits per scores
-
-We now want to cluster the different subreddits in our dataset based on their scoring behaviour. To do this, we first use the Elbow method with the Within-Sum-of-Squares to find the number of clusters.
-
-```{r}
-# Clustering analysis based on number of comments and average score for high scoring subreddits
-df_subreddit_cluster <- df_high_score %>%
-  group_by(subreddit) %>%
-  summarise(avg_score = mean(score), comment_count = n())
-
-# Scaling the data for clustering
-cluster_data <- df_subreddit_cluster %>%
-  select(comment_count, avg_score) %>%
-  scale()
-
-# Determining the optimal number of clusters using the elbow method
-set.seed(123)
-fviz_nbclust(cluster_data, kmeans, method = "wss") +
-  labs(title = "Elbow Method for Determining Optimal Number of Clusters",
-       x = "Number of Clusters",
-       y = "Within-Cluster Sum of Squares") +
-  theme_minimal()
-```
-
-We'll settle with 5 clusters.
-
-```{r}
-# Running k-means clustering with 5 clusters
-set.seed(123) # For reproducibility
-kmeans_result <- kmeans(cluster_data, centers = 5)
-df_subreddit_cluster$cluster <- as.factor(kmeans_result$cluster)
-
-# Plotting the clusters
-ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = cluster)) +
-  geom_point(size = 3, alpha = 0.7) +
-  scale_color_viridis_d() +
-  labs(title = "Clustering of Subreddits Based on Number of Comments and Average Score",
-       x = "Number of Comments",
-       y = "Average Score") +
-  theme_minimal() 
-```
-
-We see an interesting distribution of clusters.
-
- -  Our 1st cluster focuses on subreddits with a large number of comments, with medium to high scores.
- -  Our 2nd cluster focuses on subreddits with an average number of comments, with medium to high scores.
- -  Our 3rd cluster focuses on subreddits with a low number of comments, with medium to high scores.
- -  Our 4th cluster focuses on subreddits with a low number of comments, with high to very high scores.
- -  Our 5th cluster focuses on subreddits with a low number of comments, with low scores.
+Some further exploration about scores and their relationships with subreddits can be found in the Annex. It is however not directly relevant for the rest of the report.
 
 ## Additional Variable
 
