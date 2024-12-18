@@ -63,21 +63,69 @@ We only show the features (words) that are mostly related to dim2 and dim3 so th
 We observe for example that the word `fuck` is associated with dim 3 and is interestingly inversly correlated to the word `happy` which makes sense.
 This is more convincing than the similarity and clustering analysis we did before.
 
+For readability, we apply it first on the top 10 subreddits to assess its application in our context.
+
+-   AskReddit is strongly associated with terms like "people" and "job," indicating discussions about personal experiences and employment.
+-   funny has a moderate association with "people" and "post," suggesting content related to social interactions and posts.
+-   CFB and league of legends are associated with terms like "team" and "game," indicating discussions about sports and gaming.
+
+The terms are associated with different dimensions, indicating their importance in the context of the documents.
+Here are some key terms and their associations:
+
+-   Dimension 1: "people" (0.1511), "question" (0.1346), "post" (0.1174)
+-   Dimension 2: "team" (-0.2862), "play" (-0.2991), "game" (-0.5395)
+-   Dimension 3: "fuck" (0.1837), "team" (0.1602), "call" (0.1255)
+-   Dimension 4: "bowl" (0.1155), "boise" (0.0894), "steam" (-0.1784)
+-   Dimension 5: "awesome" (-0.2124), "card" (-0.2553), "pc" (-0.2608)
+
+However, we can see that it is not precise in our use-case, dim 4 and 2 and 3 seems quite similar..
+
+We therefore inspect further with Singular Value Decomposition (SVD). The SVD coordinates help visualize the positioning of documents in the reduced-dimensional space, showing how closely related they are based on the terms they contain.
+
 ```{r}
 # Adjust layout for margins
 p_interactive_pca <- p_interactive_pca %>% layout(
   margin = list(l = 0, r = 0, t = 0, b = 0))
 ```
 
+### LDA
+
+LDA is a Bayesian version of the probabilistic Latent Semantic Analysis.
+It answers the question "*Given this type of distribution, what are some actual probability distributions I am likely to see?*"
+
+Topic 7 with  subreddits such as AskReddit, funny, pics and news is the most popular topic with words like "people", "time", "im", "youre" which may represent human experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human.
+
+However, the distinction between topics is still not very clear. We observe a lot of overlapping terms within the different topics. (see Annex for more details on the diagnostic of the LDA)
+
 ### Topic Term Analysis
 
 The Topic-Term Analysis produces similar results as the LDA. This plot also provides the probabilities, therefore refining our understanding.
 
-We still observe that lots of topics have the same terms.Therefore, adjusting k topics may be helpful. We first try with 7 topics
-
 ```{r}
 plot_topic_term_1
 ```
+
+We still observe that lots of topics have the same terms.Therefore, adjusting k topics may be helpful. We first try with 7 topics
+
+```{r}
+plot_topic_term_2
+```
+
+We observe that:
+
+- Topic 1 may be related to 'pc games' ("game", "pc", "steam", "play", etc.)
+
+- Topic 2 seems to also be related to pc games, but more precisely to the game League of Legends, where terms such as "champions", "ping", "riot" and "team" are prevalent.
+
+- Topic 3 is also related to some sorts of games, we can maybe infer that it related to sports more specifically, with the presence of words such as "fan".
+
+- Topic 4 is harder to distinguish with the presence of conflicting words such as "play", "kill", "run", and "raid".
+
+- Topic 5 seems to be related to feelings with words like "im", time", "day", "feel", etc.
+
+- Topic 6 seems to be related to Crime and Justice with the presence of words such as "murder", "evidence", and "interview".
+
+- Topic 7 seems to be related to news and world event with the presence of words such as "country", "american", "russia," "war".
 
 ### Topic Document Analysis
 

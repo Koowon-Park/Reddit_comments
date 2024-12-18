@@ -22,7 +22,7 @@ For further discussions: a subreddit = A document
 
 Subreddits are treated as "documents," where all comments within a subreddit form a single document for text mining.
 
-```{r top_10_sub, eval=TRUE, echo=TRUE}
+```{r top_10_sub, eval=TRUE, echo=FALSE}
 #take the df data and group all comments by subreddit
 df.subreddit <- df %>%
   group_by(subreddit) %>%
@@ -113,7 +113,7 @@ See Annex for more details on the TF-IDF method.
 This methods allows for an exploration of unique word usage per subreddits.
 
 
-```{r tf_idf, eval=TRUE, echo=TRUE}
+```{r tf_idf, eval=TRUE, echo=FALSE}
 #tf-idf
 df.subreddit.tfidf <- dfm_tfidf(df.subreddit.dfm)
 df.subreddit.tfidf.tidy <- tidy(df.subreddit.tfidf) %>%
@@ -125,7 +125,7 @@ So we have here lots of 'small' and 'rare' subreddit that have specific words th
 This is interesting as it shows us the specificity of each subreddit.
 (check the Annex for a representative table)
 
-```{r tf_idf_plot, eval=TRUE, echo=TRUE}
+```{r tf_idf_plot, eval=TRUE, echo=FALSE}
 #plot per document
 df.subreddit.dfm %>%
   tidy() %>%
@@ -156,7 +156,7 @@ df.subreddit.dfm %>%
 #### Similarity Analysis
 We analyze similarities and dissimilarities between the documents (through words) in the data.
 
-We will use the Jaccard index. (see Annex `Similarities` section for more details)
+We will use the Jaccard index. (see Annex `Similarities` section for more details and a visual representation of the heatmap) )
 
 ```{r similarity_subreddits, eval=TRUE, echo=TRUE, cache=TRUE}
 #We restrict ourselves to a small subset of the highest tf-idf of the data to avoid memory issues and readability issues in the plots.
@@ -197,9 +197,9 @@ p_similarities <- ggplot(data = df.subreddit.jac.mat,
 
 ```
 
-The similarity using Jaccard index on the top 1000 tf-idf words is inconclusive.
+The similarity using Jaccard index on the top 1000 tf-idf words is inconclusive. This is due to the fact that we have a lot of words that are specific to each subreddit.
 
-This is due to the fact that we have a lot of words that are specific to each subreddit.
+#### Clustering
 
 We have also tried to cluster the subreddits to see if we can regroup them in a more meaningful way, but the results are not very clear. (see Annex for more details)
 
@@ -213,9 +213,9 @@ df.subreddit.hc <- hclust(as.dist(df.subreddit.eucl))
 ## df.subreddit.hc <- hclust(as.dist(1 - df.subreddit.cos)) # use this line for Cosine
 ```
 
-Therefore, we will try to use topic modeling to see if we can regroup the subreddits in a more meaningful way.
+### Latent Semantic Analysis (LSA)
 
-### Latent Semantic Analysis
+Also tried Latent Semantic Analysis.
 
 LSA is a core technique in topic modelling, it uses matrices to separate topics and terms.
 
@@ -277,25 +277,9 @@ w.top2
 w.top3
 ```
 
-For readability, we apply it first on the top 10 subreddits to assess its application in our context.
+You can observe the interpretation of the following results of the code above (open to see) in the Annex.
 
--   AskReddit is strongly associated with terms like "people" and "job," indicating discussions about personal experiences and employment.
--   funny has a moderate association with "people" and "post," suggesting content related to social interactions and posts.
--   CFB and league of legends are associated with terms like "team" and "game," indicating discussions about sports and gaming.
-
-The terms are associated with different dimensions, indicating their importance in the context of the documents.
-Here are some key terms and their associations:
-
--   Dimension 1: "people" (0.1511), "question" (0.1346), "post" (0.1174)
--   Dimension 2: "team" (-0.2862), "play" (-0.2991), "game" (-0.5395)
--   Dimension 3: "fuck" (0.1837), "team" (0.1602), "call" (0.1255)
--   Dimension 4: "bowl" (0.1155), "boise" (0.0894), "steam" (-0.1784)
--   Dimension 5: "awesome" (-0.2124), "card" (-0.2553), "pc" (-0.2608)
-
-However, we can see that it is not precise in our use-case, dim 4 and 2 and 3 seems quite similar..
-
-We therefore inspect further with Singular Value Decomposition (SVD). The SVD coordinates help visualize the positioning of documents in the reduced-dimensional space, showing how closely related they are based on the terms they contain.
-
+The subreddits are indeed better regrouped, in a more meaningful way. (see Annex for more details and a visual representation of the PCA plot)
 
 ```{r pca, cache=TRUE, eval=TRUE, echo=TRUE}
 set.seed(123)
@@ -326,14 +310,11 @@ p <- ggplot() +
 p_interactive_pca <- ggplotly(p, tooltip = "text", width = 800, height = 600)
 ```
 
-The subreddits are indeed better regrouped, in a more meaningful way. (see Annex for more details and a visual representation of the PCA plot)
-
 ### Latent Dirichlet Allocation (LDA)
 
-LDA is a Bayesian version of the probabilistic Latent Semantic Analysis.
-It answers the question "*Given this type of distribution, what are some actual probability distributions I am likely to see?*"
+We also tried Latent Dirichlet Allocation (LDA) for topic modelling.
 
-(see code for more details on the results)
+You can observe more details on the results of the code below (open code) in the Annex.
 
 ```{r lda_subreddit, cache=TRUE, eval=TRUE, echo=TRUE}
 docnames(df.top10_subreddit.dfm) <- df.top10_subreddit$subreddit
@@ -355,12 +336,6 @@ topic_counts <- seededlda::topics(df.top10_subbredit.lda) %>% table
 topic_counts
 ```
 
-Topic 7 with  subreddits such as AskReddit, funny, pics and news is the most popular topic with words like "people", "time", "im", "youre" which may represent human experience and emotions. They touch on aspects of daily life, feelings, and the passage of time, with a bit of raw expression thrown in. It's a mix of the mundane and the profound, capturing the essence of what it means to be human.
-
-However, the distinction between topics is still not very clear. We observe a lot of overlapping terms within the different topics. (see Annex for more details on the diagnostic of the LDA)
-
-##### LDA diagnostics
-
 (See the code output for more details analysis)
 
 ```{r topic_diagnostics, eval=TRUE, echo=TRUE}
@@ -371,6 +346,8 @@ rev(sort(colSums(df.top10_subbredit.lda$theta)/sum(df.top10_subbredit.lda$theta)
 Topic 4 most prevalent by far which makes sense as it is related to feelings and human experience that people often use in their comments.
 
 ### Topic-term Analysis
+
+We then tried to analyze the topics in more detail by looking at the terms that are most associated with each topic.
 
 ```{r topic_term_analysis, eval=TRUE, echo=TRUE, cache=TRUE}
 #transform into a long df
@@ -417,7 +394,7 @@ phi.long <- melt(
   value.name = "Phi") 
 
 #plot 10 largest prob terms within each subject
-phi.long %>% 
+plot_topic_term_2 <- phi.long %>% 
   group_by(Topic) %>% 
   top_n(10, Phi) %>% 
   ggplot(aes(reorder_within(Term, Phi, Topic), Phi, fill = as.factor(Topic))) + 
@@ -430,25 +407,15 @@ phi.long %>%
   theme(
     axis.text.y = element_text(size = 10),
     strip.text = element_text(size = 10))
+
+plot_topic_term_2
 ```
 
-The distinction between topics is clearer now, we observe that:
-
-- Topic 1 may be related to 'pc games' ("game", "pc", "steam", "play", etc.)
-
-- Topic 2 seems to also be related to pc games, but more precisely to the game League of Legends, where terms such as "champions", "ping", "riot" and "team" are prevalent.
-
-- Topic 3 is also related to some sorts of games, we can maybe infer that it related to sports more specifically, with the presence of words such as "fan".
-
-- Topic 4 is harder to distinguish with the presence of conflicting words such as "play", "kill", "run", and "raid".
-
-- Topic 5 seems to be related to feelings with words like "im", time", "day", "feel", etc.
-
-- Topic 6 seems to be related to Crime and Justice with the presence of words such as "murder", "evidence", and "interview".
-
-- Topic 7 seems to be related to news and world event with the presence of words such as "country", "american", "russia," "war".
+The distinction between topics is clearer now.
   
 We see that they reflect our subreddit which makes sense. It would be interesting to take more that 10 subreddit as we might uncover interesting grouping of subreddits but it is so computationally intensive that we refrain from doing that for now.
+
+(You can a more detailled interpretation of the results in the Annex)
 
 ### Topic document Analysis
 
@@ -1029,17 +996,6 @@ df.sentiment <- inner_join(df %>% unnest_tokens(word, body),
  get_sentiments("bing"), by = c("word" = "word")) %>% group_by(id) %>%
  summarize(Sentiment = mean(ifelse(sentiment == "positive", 1, ifelse(sentiment == "negative", -1, 0)))) %>%
  inner_join(df, by = "id")
-
-#barplot
-ggplot(df.sentiment, aes(x = Sentiment)) +
-  geom_bar(fill = viridis_3, color = "black", alpha = 0.7, width = 0.05) +
-  labs(title = "Distribution of Sentiment Scores",
-       x = "Sentiment Score",
-       y = "Frequency") +
-  theme_minimal() +
-  theme(panel.grid.major = element_line(color = "grey", linetype = "dashed", size = 0.5)) +
-  #tilt 45 degree x axis
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 We will 'cut' the sentiment score into 5 categories: 
@@ -1517,6 +1473,8 @@ It’s important to note that this does not imply they are the most significant 
 
 ### Adding Length of comment as a feature
 
+We decided to add the length of the comment as a feature to our dataset. This could be useful for further analysis, such as understanding the relationship between comment length and sentiment or score. Or just to know the length of the comments in our dataset.
+
 ```{r, eval=TRUE, echo=TRUE}
 #show length of one random comment
 df$body[1] %>% nchar() #char shows the number of characters in a string
@@ -1533,7 +1491,9 @@ summary(df$length)
 
 ## Final Dataset
 
-```{r, eval=FALSE}
+Having made all of those changes, added new features, and cleaned the data, we now have a final dataset that we can use for further analysis. 
+
+```{r, eval=FALSE, echo=FALSE}
 head(df)
 
 
@@ -1573,7 +1533,8 @@ theme_counts <- theme_counts[, c(3, 1, 2)]
 kable(theme_counts, col.names = c("Theme Number", "Theme Name", "Count"), caption = "Theme Name Counts with Theme Column")
 ```
 
-```{r, eval=FALSE, echo=FALSE}
+```{r, eval=TRUE, echo=TRUE}
+df.final <- read_csv(here("data", "reddit_comments_15k_v2.csv"))
 #show five row of df.final using reactable
 reactable(head(df.final, 1000), 
           resizable = TRUE,

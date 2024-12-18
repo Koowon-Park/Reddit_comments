@@ -9,13 +9,7 @@ source(here("src/setup.R"))
 
 ### Context and Background
 
-In this project, we explore the intersection of knowledge graphs and generative AI (GenAI) using a dataset of Reddit comments. The idea of knowledge graphs has evolved significantly over the years, originating as a way to structure scientific knowledge and now encompassing a wide variety of graph-based representations.
-
-The term "knowledge graph" was first introduced by Rene Bakker in 1956 as part of his Ph.D. thesis, where he proposed structuring and representing scientific knowledge using a graph-based model. Later, in 1974, Marchi and Miguel defined a knowledge graph as a mathematical structure where vertices represent knowledge units and edges denote the prerequisite relationships between them. Over time, the concept has broadened significantly, and today there is no universally agreed-upon definition. (vuillon2024 - Course Slides).
-
-McCusker et al. (2018) propose a working definition: a knowledge graph is a set of assertions (edges labeled with relations) expressed between entities (vertices). These graphs encode meaning through their structure, unambiguously identify entities and relations, and include provenance information, such as justification and attribution of assertions. (vuillon2024 - Course Slides).
-
-In this project, we focus on leveraging knowledge graphs as a tool to model, visualize, and derive insights from our Reddit dataset. Coupled with generative AI, these graphs offer interesting opportunities to explore new ways of extracting and synthesizing knowledge.
+This project explores the intersection of knowledge graphs and generative AI using a Reddit comments dataset. Knowledge graphs, initially conceptualized by Rene Bakker in 1956 as a way to structure scientific knowledge, have evolved into versatile graph-based representations. Defined by McCusker et al. (2018) as sets of assertions (edges) between entities (vertices) that encode meaning, they incorporate provenance for justification and attribution. This project leverages knowledge graphs to model, visualize, and extract insights, demonstrating their potential when combined with generative AI for knowledge synthesis.
 
 ### Aim Of The Investigation
 

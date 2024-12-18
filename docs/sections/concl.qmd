@@ -1,11 +1,26 @@
 # Conclusion
 
+In this project, we successfully explored the Reddit comments dataset through the integration of knowledge graphs and generative AI. This approach provided interesting insights into the dataset's structure and content, demonstrating the effectiveness of knowledge graphs for modeling and visualizing complex relationships. By combining these graphs with generative AI, we highlighted their potential for knowledge synthesis and context-aware responses.
+
+While our analysis showcased promising results, it also opened avenues for further exploration. Deeper investigations into deleted subreddits, subreddit themes, comment metadata, user activity, and temporal patterns could yield additional insights. For instance, applying more sophisticated models to classify subreddit themes or analyzing the interactions between users and comments could enhance our understanding of community dynamics.
+
+Additionally, though we utilized a easy and straightforward method with an accessible API and Neo4j integration via Python, exploring the use of open-source models like Mistral trained on this dataset could refine results and provide a deeper understanding of the dataset's nuances.
+
+Moreover, the integration of generative AI with knowledge graphs could be further developed to create more interactive and context-aware systems. By leveraging advanced language models and graph-based reasoning, we could enhance the system's ability to generate meaningful responses and insights.
+
 ## Limitations
 
--id and parent id not really usefull in this context, but it is a limitation of the dataset. We could have used the parent id to link the comments together but we weren't able to upload the 205 gigas of the original dataset.
+- Dataset Constraints: Size limitations of the dataset restricted the depth of our analysis, particularly in exploring temporal patterns, user behavior, and subreddit dynamics. A larger dataset would provide more comprehensive insights into Reddit's ecosystem but we didn't have the ressources to do so.
 
--the theme classification with text mining of the subreddit description gave poor results compare to the manual classification. We could have used a more complex model to classify the themes but we didn't have the time to do it.
+- Lack of Data : The id and parent_id fields, while available, had limited utility due to the lack of a variable to identify the post. Uploading the full dataset would allow for a richer analysis, such as linking parent and child comments.
 
--the analysis was mainly on the still existing subreddits, we could have done a more in depth analysis on the deleted subreddits but it's harder to do data analysis on data that is not there anymore.
+- Theme Classification: Text mining of subreddit descriptions produced subpar results compared to manual classification. Implementing advanced models could improve accuracy.
 
--other...
+- Deleted Subreddits: Analyzing deleted subreddits was challenging due to the absence of relevant data, limiting our ability to assess their impact or significance.
+
+- Focus on Existing Subreddits: The analysis primarily centered on still-active subreddits, leaving potential insights from inactive or deleted subreddits unexplored.
+
+- Simplified Models: Time constraints led us to use simpler classification methods and models, leaving opportunities to enhance the analysis with more complex techniques.
+
+
+Despite these limitations, our project demonstrates a good introduction to knowledge graphs and the potential of combining KG and GenAI for analyzing and synthesizing insights from large-scale datasets. These findings lay the groundwork for future studies to build upon and deepen our understanding of complex digital ecosystems like Reddit.

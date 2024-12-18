@@ -26,7 +26,7 @@ Openord is a force-directed layout algorithm that is based on stress minimizatio
 
 ![OpenOrd Layout with Theme Colored - Gephi](index_files/images/gephi1_openord.png){width="70%"}
 
-We can ovserve here that the graph is really complex and hard to interpret. 
+We can observe here that the graph is really complex and hard to interpret. 
 
 ![OpenOrd Layout adding Scores in Blue - ](index_files/images/clipboard-2332198561.png){width="70%"}
 
@@ -107,13 +107,11 @@ On the other hand theme 2 which is about 'Politics, Science, and Star Wars' has 
 
 ### Author-Theme
 
-They can also for example be used to understand similarities.
-
-It was tried here to identifies connection through theme between authors with a similaritie score found through an THEME_AUTHORS relationship on NEO4J.
+It was tried here to identifies connection through theme between authors with a similarities score found through an THEME_AUTHORS relationship on NEO4J.
 
 ![Similarities Overview](index_files/images/clipboard-3780268986.png){width="80%"}
 
-We observe that the small dots (authors) on the `left` side have a lots of connection through different theme nodes.
+We observe that the small dots (authors) on the `left` side have a lots of connection through different theme nodes. Whereas the more right you go the less connection you have. With a minimum of connection on the far right with 2 connection per author.
 
 ![](index_files/images/clipboard-2533163853.png){width="80%"}
 
