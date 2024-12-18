@@ -154,7 +154,7 @@ df.subreddit.dfm %>%
 ## Topic Modelling I
 
 #### Similarity Analysis
-we analyze similarities and dissimilarities between the documents (through words) in the data.
+We analyze similarities and dissimilarities between the documents (through words) in the data.
 
 We will use the Jaccard index. (see Annex `Similarities` section for more details)
 
@@ -261,7 +261,7 @@ df.subreddit.lsa <- textmodel_lsa(
   x = df.top10_subreddit.dfm,
   nd = 5)
 
-head(df.subreddit.lsa$docs)
+#head(df.subreddit.lsa$docs)
 #interpretation
 ## we look at the five terms with the largest values and the five ones with the lowest value (i.e., largest negative value)
 
@@ -539,15 +539,13 @@ Testing the text similarities through clusters
 
 #### K-means
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, cache=TRUE}
 corpus <- Corpus(VectorSource(combined_subreddit_theme$description))
 corpus <- tm_map(corpus, content_transformer(tolower))
 corpus <- tm_map(corpus, removePunctuation)
 corpus <- tm_map(corpus, removeWords, stopwords("en"))
-dtm <- DocumentTermMatrix(corpus)
-```
 
-```{r, cache=TRUE}
+dtm <- DocumentTermMatrix(corpus)
 set.seed(123)
 k <- 30  # Choose the number of clusters
 clusters <- kmeans(as.matrix(dtm), centers = k)
@@ -568,12 +566,11 @@ combined_subreddit_theme %>%
   theme_minimal()
 ```
 
-The k-means clustering method does not present interesting results. We therefore test with another method.
+The k-means clustering method tend to classify the majority of the subreddits in only 5-6 clusters. We therefore test with another method.
 
 #### LDA method
 Based on the data we scrapped, we test our most promising method (LDA) on small scale of our new, more precise, dataset.
 
-##### Five topics
 ```{r, cache=TRUE, include=FALSE}
 # Define irrelevant words
 irrelevant_words <- c("reddit","reddits", "reddit's","www.reddit.com","https","http", "subreddit", "redditors","related", "community", "dedicated", "discussion", "discuss", "discussed","post", "content", "questions", "discussions", "share", "stories", "httpswwwredditcomsubreddit")
@@ -627,12 +624,11 @@ top_terms %>%
         strip.text = element_text(size = 10))
 ```
 
-We see that the results are promising, we keep analyzing further. 
-
 ##### Twenty topics
 We now test with 20 topics. We use this incremental method because of the heavy computational resources needed for this method.
 
 ```{r, cache=TRUE}
+
 num_topics <- 20  # Choose the number of topics you want to extract
 lda_model <- LDA(dtm, k = num_topics, control = list(seed = 1234))
 
@@ -653,10 +649,13 @@ print(top_terms)
 subreddit_topics <- tidy(lda_model, matrix = "gamma")
 
 print(subreddit_topics)
+
 ```
 
 Visualize:
-```{r, warning=FALSE}
+
+```{r, fig.width=20, fig.height=15, warning=FALSE}
+
 top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(term, beta, fill = as.factor(topic))) +
@@ -673,7 +672,8 @@ top_terms %>%
         strip.text = element_text(size = 10))
 ```
 
-The LDA method has yielded the best results in our various tests. We therefore use it for our analysis.
+Feel free to zoom on the graph to see which terms are most used for each topic.
+The LDA method has yielded the best results in our various tests. Based on the most commun words, we can infer that the topics are defined and that the subreddits are better regrouped. We therefore use it for our analysis.
 
 ```{r, eval=FALSE, include=FALSE}
 # Assuming your data is stored in a dataframe called `top_terms`
@@ -707,11 +707,12 @@ dominant_topics <- subreddit_topics %>%
 print(dominant_topics)
 ```
 
-The majority of the subreddits are not well associated with their dominant topic, some with higher gamma are better classified than with lower gamma but it's still not great.
+The majority of the subreddits are not well associated with their dominant topic, Gamma can be seen as a probability (from 0 to 1) that a subreddit belongs to a topic. We can see that some with higher gamma (close to 1 ) are better classified than with lower gamma (close to 0) but there is still work to do.
 
 #### Naming the topics
 
 We now feed the dominant topics to ChatGPT to name them.
+
 ```{r}
 # Add dominant topic to the original dataframe
 combined_subreddit_theme <- combined_subreddit_theme %>%
@@ -751,13 +752,15 @@ combined_subreddit_theme <- combined_subreddit_theme %>%
 combined_subreddit_theme <- combined_subreddit_theme %>%
   rename(theme_name = dominant_topic_name)
 
-# View updated dataframe
-head(combined_subreddit_theme)
+# Display the updated dataframe as a kable table (showing first few rows)
+combined_subreddit_theme %>%
+  head(3) %>% # Display only the first 10 rows for brevity
+  kable(caption = "Combined Subreddit Theme Table")
 ```
 
 In the table above, we see that names are better assigned when the beta is closer to 1. But it still far from perfect, the best method is probably to manually assign a theme to each subreddit.
 
-```{r, warning=FALSE}
+```{r,echo=FALSE, warning=FALSE}
 #save data
 # write.csv(combined_subreddit_theme, "combined_subreddit_theme.csv", row.names = TRUE)
 
@@ -768,7 +771,7 @@ In the table above, we see that names are better assigned when the beta is close
 df <- df %>%
   left_join(combined_subreddit_theme, by = "subreddit")
 
-head(df)
+#head(df)
 ```
 
 ## Sentiment Analysis

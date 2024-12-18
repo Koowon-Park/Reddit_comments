@@ -1,1 +1,11 @@
 # Conclusion
+
+## Limitations
+
+-id and parent id not really usefull in this context, but it is a limitation of the dataset. We could have used the parent id to link the comments together but we weren't able to upload the 205 gigas of the original dataset.
+
+-the theme classification with text mining of the subreddit description gave poor results compare to the manual classification. We could have used a more complex model to classify the themes but we didn't have the time to do it.
+
+-the analysis was mainly on the still existing subreddits, we could have done a more in depth analysis on the deleted subreddits but it's harder to do data analysis on data that is not there anymore.
+
+-other...
