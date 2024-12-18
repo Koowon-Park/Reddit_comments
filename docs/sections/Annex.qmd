@@ -280,3 +280,139 @@ table_n
 
 We observe here that comments like "Night time moon light and a light snow The glow of the moon and the silence is amazing", which evokes a serene and appreciative tone for natural beauty suggest a strong positive emotion.
 The three dictionaries seem to have classified this comment as positive with the BING and AFINN dictionary attributing a higher score than the NRC.
+
+## Score
+
+```{r}
+print(summary(df_hugo$score))
+```
+
+We now explore the distribution of high-scoring comments (Score > 9). We log-scale the axis to better visualize the results.
+
+```{r}
+df_high_score <- df_hugo %>%
+  filter(score %in% (10:3967))
+
+ggplot(df_high_score, aes(x = score)) +
+  geom_histogram(bins = 30, fill = viridis_4, color = "black", alpha = 0.7) +
+  scale_y_log10() +
+  scale_x_log10()+
+  labs(title = "Log-Distribution of High Scoring (10+ upvotes) Comments",
+       x = "Score",
+       y = "Log(Frequency)") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::label_comma())
+```
+As expected, the higher scoring comments are rarer.
+
+We perform the same analysis on comments with high amounts of Downvotes (Score = -10 and below).
+
+```{r}
+df_low_score <- df_hugo %>%
+  filter(score %in% (-302:-10))
+
+# Plotting the distribution of low scoring comments using ggplot2 with log transformation on both axes
+ggplot(df_low_score, aes(x = score)) +
+  geom_histogram(bins = 30, fill = viridis_5, color = "black", alpha = 0.7) +
+  scale_y_log10() +
+  scale_x_reverse() +
+  labs(title = "Log-Distribution of Low Scoring (-10 and below) Comments",
+       x = "Score",
+       y = "Log(Frequency)") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::label_comma())
+
+```
+
+We come to the same conclusion as the high-score comments. There are a lot of comments with a small amount of downvotes, and very few that score extremely negatively.
+
+## Score per subreddit
+
+We also look at the distribution of the number of comments per subreddit retained.
+
+```{r}
+# Plotting histogram of the number of comments per subreddit for high scoring comments without subreddit names
+count_distribution <- df_high_score %>%
+  group_by(subreddit) %>%
+  summarise(comment_count = n()) %>%
+  filter(comment_count >= 5) %>%
+  arrange(desc(comment_count))
+
+# Plotting the distribution of number of comments per subreddit
+ggplot(count_distribution, aes(x = comment_count)) +
+  geom_histogram(bins = 30, fill = viridis_6, alpha = 0.8) +
+  labs(title = "Distribution of Number of Comments per Subreddit for High Scoring Comments",
+       x = "Number of Comments",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+And look at the distribution of number of comments per subreddit with low scoring comments.
+```{r}
+# Plotting histogram of the number of comments per subreddit for low scoring comments without subreddit names
+count_distribution_low <- df_low_score %>%
+  group_by(subreddit) %>%
+  summarise(comment_count = n()) %>%
+  filter(comment_count >= 2) %>%
+  arrange(desc(comment_count))
+
+# Plotting the distribution of number of comments per subreddit for low scores
+ggplot(count_distribution_low, aes(x = comment_count)) +
+  geom_histogram(bins = 20, fill = viridis_10, alpha = 0.8) +
+  labs(title = "Distribution of Number of Comments per Subreddit for Low Scoring Comments",
+       x = "Number of Comments",
+       y = "Frequency") +
+  theme_minimal()
+
+```
+
+
+### Clusters of subreddits per scores
+
+We now want to cluster the different subreddits in our dataset based on their scoring behaviour. To do this, we first use the Elbow method with the Within-Sum-of-Squares to find the number of clusters.
+
+```{r}
+# Clustering analysis based on number of comments and average score for high scoring subreddits
+df_subreddit_cluster <- df_high_score %>%
+  group_by(subreddit) %>%
+  summarise(avg_score = mean(score), comment_count = n())
+
+# Scaling the data for clustering
+cluster_data <- df_subreddit_cluster %>%
+  select(comment_count, avg_score) %>%
+  scale()
+
+# Determining the optimal number of clusters using the elbow method
+set.seed(123)
+fviz_nbclust(cluster_data, kmeans, method = "wss") +
+  labs(title = "Elbow Method for Determining Optimal Number of Clusters",
+       x = "Number of Clusters",
+       y = "Within-Cluster Sum of Squares") +
+  theme_minimal()
+```
+
+We'll settle with 5 clusters.
+
+```{r}
+# Running k-means clustering with 5 clusters
+set.seed(123) # For reproducibility
+kmeans_result <- kmeans(cluster_data, centers = 5)
+df_subreddit_cluster$cluster <- as.factor(kmeans_result$cluster)
+
+# Plotting the clusters
+ggplot(df_subreddit_cluster, aes(x = comment_count, y = avg_score, color = cluster)) +
+  geom_point(size = 3, alpha = 0.7) +
+  scale_color_viridis_d() +
+  labs(title = "Clustering of Subreddits Based on Number of Comments and Average Score",
+       x = "Number of Comments",
+       y = "Average Score") +
+  theme_minimal() 
+```
+
+We see an interesting distribution of clusters.
+
+ -  Our 1st cluster focuses on subreddits with a large number of comments, with medium to high scores.
+ -  Our 2nd cluster focuses on subreddits with an average number of comments, with medium to high scores.
+ -  Our 3rd cluster focuses on subreddits with a low number of comments, with medium to high scores.
+ -  Our 4th cluster focuses on subreddits with a low number of comments, with high to very high scores.
+ -  Our 5th cluster focuses on subreddits with a low number of comments, with low scores.
