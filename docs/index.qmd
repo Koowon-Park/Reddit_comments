@@ -6,7 +6,7 @@ author:
  - Léo Wenger
 institute : University of Lausanne
 date: today
-title-block-banner: "#005069" #chosen for the university of lausanne
+title-block-banner: "#005069" 
 format:
   html:
     self-contained: false
