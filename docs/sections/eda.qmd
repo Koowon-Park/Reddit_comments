@@ -1456,16 +1456,31 @@ colnames(top_20_df) <- c("Subreddit", "Number_of_Links")
 # Display the top 20 subreddits
 #print(top_20_df)
 
-# Optionally, create a barplot
+# Set diagonal text angle
+par(las = 2, mar = c(10, 5, 4, 2)) # Increase bottom margin to fit diagonal labels
+
+# Create the bar plot
 barplot(
   top_20_df$Number_of_Links, 
   names.arg = top_20_df$Subreddit, 
-  las = 2, # Rotate labels for better readability
   col = viridis_3, 
   main = "Top 20 Subreddits with Most Links to Them",
   ylab = "Number of Links",
-  cex.names = 0.8 # Adjust label size
+  cex.names = 0.8, # Adjust label size
+  xaxt = "n" # Suppress x-axis labels temporarily
 )
+
+# Add diagonal labels manually
+text(
+  x = seq_along(top_20_df$Subreddit), # Bar positions
+  y = -1, # Position below the x-axis
+  labels = top_20_df$Subreddit, 
+  srt = 45, # Rotate to 45 degrees
+  adj = 1, # Adjust alignment
+  xpd = TRUE, # Allow text to plot outside the plot area
+  cex = 0.8 # Adjust label size
+)
+
 
 ```
 This graph allows us to identify the most interconnected subreddits in our dataset. Feel free to play with the interactive graph to see which subreddits are the most connected to each others.
