@@ -111,7 +111,7 @@ completion = client.chat.completions.create(
 print(completion.choices[0].message.content)
 ```
 
-Here below is ChatGPT's breakdown of the contents and potential insights:
+Here below is ChatGPT's breakdown of the contents and potential insights for the first example:
 
 Key Nodes and Relationships:
 
@@ -230,7 +230,24 @@ completion = client.chat.completions.create(
 print(completion.choices[0].message.content)
 ```
 
-Here below is ChatGPT's breakdown of the contents and potential insights:
+The second example asks 4o-mini to give insights on this query:
+
+```{python, eval=FALSE}
+#| code-fold: true
+query = """MATCH (n)-[r:THEME_AUTHORS]-(a1:Author) 
+with count(n) as deg1,a1 order by deg1 desc limit 100
+MATCH (a1)-[:THEME_AUTHORS]-(n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, count(n) as common ,deg1,  a2 order by common desc 
+MATCH (n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, a2, common, deg1, count(n) as deg2 
+with a1,a2, common, deg1, deg2, 100*common/(deg1+deg2-common) as simi order by simi desc
+with a1 , collect(a2)[..5] as author_list
+unwind author_list as a2
+return a1.id,a2.id
+"""
+```
+
+Here below is ChatGPT's breakdown of the contents and potential insights for the second example:
 
 The output you provided from the Neo4j database query represents records of relationships between various entities identified by their IDs. Each record consists of a pair of IDs (`a1.id` and `a2.id`), indicating a direct relationship between the two entities. Here are some insights and observations based on the data:
 
@@ -340,6 +357,21 @@ completion = client.chat.completions.create(
 )
 
 print(completion.choices[0].message.content)
+```
+
+The third example asks 4o-mini to give insights on this query:
+
+```{python, eval=FALSE}
+#| code-fold: true
+query = """MATCH (n)-[r:THEME_AUTHORS]-(a1:Author) 
+with count(n) as deg1,a1 order by deg1 desc limit 10
+MATCH (a1)-[:THEME_AUTHORS]-(n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, count(n) as common ,deg1,  a2 order by common desc 
+MATCH (n)-[r:THEME_AUTHORS]-(a2:Author) 
+with a1, a2, common, deg1, count(n) as deg2 
+with a1,a2, common, deg1, deg2, 100*common/(deg1+deg2-common) as simi order by simi desc
+return a1 , collect(a2)[..3]
+"""
 ```
 
 Here below is ChatGPT's breakdown of the contents and potential insights:
