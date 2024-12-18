@@ -4,17 +4,17 @@ Knowledge Graphs (KGs) provide a robust framework for representing, managing, an
 
 ## Neo4j
 
-The initial construction of our Knowledge Graph was implemented in Neo4j. In this representation, we categorized the nodes as follows: authors in blue, comments in pink, themes in green, scores in orange, and sentiment in red.
+The initial construction of our Knowledge Graph was implemented in Neo4j. In this representation, we categorized the nodes as follows: authors in `blue`, comments in `pink`, themes in `green`, scores in `orange`, and sentiment in `red`.
 
-![Graph Image](index_files/images/graph.png)
+![First Graph - Neo4J](index_files/images/graph.png){width="70%"}
 
 As we increase the complexity of the graph by incorporating additional nodes and relationships, the relationships between different entities become more evident.
 
-![](index_files/images/clipboard-583397259.png)
+![Second Graph - Neo4J](index_files/images/clipboard-583397259.png){width="70%"}
 
 Further complexity reveals richer insights but also introduces challenges in interpreting the data visually.
 
-![](index_files/images/clipboard-747420762.png)
+![Third Graph - Neo4J](index_files/images/clipboard-747420762.png){width="70%"}
 
 ## Gephi
 
@@ -24,34 +24,35 @@ As the complexity increase neo4j becomes really non efficient so we can use Geph
 
 Openord is a force-directed layout algorithm that is based on stress minimization. It is a good choice for large graphs.
 
-![](index_files/images/gephi1_openord.png) 
+![OpenOrd Layout with Theme Colored - Gephi](index_files/images/gephi1_openord.png){width="70%"}
 
-We can ovserve here that the graph is really complex and hard to interpret.
+We can ovserve here that the graph is really complex and hard to interpret. 
 
-![](index_files/images/clipboard-2332198561.png)
+![OpenOrd Layout adding Scores in Blue - ](index_files/images/clipboard-2332198561.png){width="70%"}
 
-Adding the scores nodes in blue did not help to understand the graph.
+Adding the scores nodes in blue did not help to understand the graph. So we'll try another layout.
 
-### yifanHu
+### YifanHu - I
 
-YifanHu is a force-directed layout algorithm that is based on the physical model of the system.
+YifanHu is a force-directed layout algorithm that is based on the physical model of the system. It is a good choice for large graphs as well
 
-### Themes
+#### Themes
 
 Using YifanHu on gephi we can observe here an interesting representation of the prevalance of different theme in our dataset.
 
-![](index_files/images/clipboard-927049404.png){width="50%"}
+![YifanHu I - Color Labels](index_files/images/clipboard-927049404.png){width="70%"}
 
 We observe here that theme 9 which is about 'Sports, Teams, and Player Discussions' is the most prevalent for example.
 
-![](index_files/images/clipboard-2630725974.png){width="50%"}
+![YifanHu I - Theme Representation ](index_files/images/clipboard-2630725974.png){width="70%"}
 
-
-### Sentiment
+#### Sentiment
 
 adding sentiment in green (positive) and red (negative) complexifies the graph but can be useful to understand the sentiment of the different themes. We observe for example that theme 9 as a lot of 'red' which means that it is mostly negative compares to other themes.
 
-![](index_files/images/clipboard-3037199124.png){width="50%"}
+![YifanHu I - Adding Sentiment Representation](index_files/images/clipboard-3037199124.png){width="70%"}
+
+We can verify the amount of negative and positive sentiment for theme 9 and 2 to verify our assumptions : 
 
 ```{r sentiment, echo=TRUE, eval=TRUE}
 #check if theme 9 as indeed more negative sentiment
@@ -64,18 +65,43 @@ kable(table_data, col.names = c("Sentiment Category", "Count"), caption = "Senti
 table_data <- df %>% filter(theme == 2) %>% group_by(sentiment_category) %>% summarise(n = n())
 
 # Display the table using kable
-kable(table_data, col.names = c("Sentiment Category", "Count"), caption = "Sentiment Category Counts for Theme 9")
+kable(table_data, col.names = c("Sentiment Category", "Count"), caption = "Sentiment Category Counts for Theme 2")
 ```
 
-Which is indeed verified.
+Which are indeed verified.
 
-### Scores
+#### Scores
 
 the same can be done with score in shades of blue but it becomes a bit more complex to interpret.
 
-![](index_files/images/clipboard-688774298.png){width="50%"}
+![YifanHu I - Adding Scores Representation](index_files/images/clipboard-688774298.png){width="50%"}
 
-changer couleur sur valeur extreme seulement, plus lisible
+We will therefore try another layout with YifanHu
+
+### YifanHu - II
+#### Theme
+
+We use the same color as previously to identify the different themes.
+
+![YifanHu II - Themes Representation](index_files/images/yifanhu2themes.png){width="70%"}
+
+#### Sentiment
+
+We can therefore have another representation of the sentiment of the different themes. We still observe that theme 9 is mostly negative.
+
+![YifanHu II - Sentiments Representation](index_files/images/yifanhu2sentiments.png){width="70%"}
+
+#### Scores
+
+We have here a better understanding of the score than in the previous graph.
+
+We observe here the scores. `Green` for the higest scores and `red` for the lowest and `orange` for neutral.
+
+![YifanHu II - Scores Representation](index_files/images/yifanhu2scores.png){width="70%"}
+
+Theme 9 that we previously identified has interestingly a lot of high scores (lots of green) even if the overall sentiment is negative. This can be due to the fact that people are passionate about sports and can have strong opinions about it.
+
+On the other hand theme 2 which is about 'Politics, Science, and Star Wars' has a lot of neutral scores.
 
 ## Similarities
 
@@ -85,23 +111,21 @@ They can also for example be used to understand similarities.
 
 It was tried here to identifies connection through theme between authors with a similaritie score found through an THEME_AUTHORS relationship on NEO4J.
 
-![](index_files/images/clipboard-3780268986.png){width="50%"}
+![Similarities Overview](index_files/images/clipboard-3780268986.png){width="80%"}
 
-We observe that the small dots (authors) on the left side have a lots of connection through different theme nodes.
+We observe that the small dots (authors) on the `left` side have a lots of connection through different theme nodes.
 
-![](index_files/images/clipboard-2533163853.png){width="50%"}
+![](index_files/images/clipboard-2533163853.png){width="80%"}
 
 For example here we observe the relationship of authors based on theme 1, which correspond to 'Rules, Information, and Wiki Communitie' finds authors similarities between 'Automoderator', 'Autowikibot', 'totes_meta_bot', and other it seems like non bot authors like 'timewaitsforsome', ect. It seems logical that those authors are connected through the same theme.
 
 Now if we isolate theme 17 which is about 'Politics, Science, and Star Wars'.
 
-![](index_files/images/clipboard-1197459568.png){width="50%"}
+![](index_files/images/clipboard-1197459568.png){width="80%"}
 
-rajouter texte dessus
+We observe that still Automoderator and autowikibot are part of it as they have a relation in all theme which is logical. But we also observe now techrush andd beefat99 and tweetposter which might be humans for example.
 
-We observe that still Automoderator and autowikibot are part of it as they have a relation in all theme which is logical. But we also observe now techrush andd beefat99 and tweetposter for example.
-
-We can continue for other themes but you get the point that I want to demonstrate that we can play with those knowledge graph to get insights from it.
+We can continue to isolate other themes to understand the similarities between authors. But you get the idea, which is to understand the similarities between authors based on the themes they are connected to.
 
 ## Subreddits
 
