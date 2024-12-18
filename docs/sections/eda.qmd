@@ -1148,6 +1148,9 @@ We now want to explore whether different subreddits have different behaviors in 
 
 ```{r}
 # Counting unique subreddits in the dataset
+df_high_score <- df_hugo %>%
+  filter(score %in% (10:3967))
+
 unique_subreddits <- n_distinct(df_high_score$subreddit)
 print(paste0("Total number of unique subreddits in the High-score dataset: ", unique_subreddits))
 ```
@@ -1191,6 +1194,9 @@ We now perform the same analysis for low-scoring comments and subreddits. Howeve
 
 ```{r}
 # Analyzing subreddit-wise tendency of low scores
+df_low_score <- df_hugo %>%
+  filter(score %in% (-302:-10))
+
 df_subreddit_low_score <- df_low_score %>%
   group_by(subreddit) %>%
   summarise(avg_score = mean(score), median_score = median(score), comment_count = n()) %>%
